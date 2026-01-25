@@ -1,19 +1,39 @@
-# Copilot Instructions
+# Copilot Instructions for Placemark
 
-This file contains guidance for AI-assisted development on the Placemark project.
+This project prioritizes clarity, safety, and explicit user control over automation or hidden behavior.
 
-## Project Overview
+When generating code or suggestions, follow these principles:
 
-<!-- Add project-specific context and guidelines here -->
+## General Principles
 
-## Development Guidelines
+- Prefer simple, readable solutions over clever abstractions.
+- Avoid introducing backend services or server-side state.
+- Assume all derived data is stored locally unless explicitly stated otherwise.
+- Treat file operations (copy/move/delete) as safety-critical.
 
-<!-- Add coding standards, patterns, and best practices here -->
+## Architecture
 
-## Architecture Notes
+- Core logic should be written in TypeScript and remain platform-agnostic.
+- UI code should be separated from data processing and file operations.
+- Platform-specific code (desktop/mobile) should be thin wrappers around shared logic.
 
-<!-- Add architectural decisions and patterns here -->
+## Privacy & Safety
 
-## Common Tasks
+- Never assume permission; require explicit user actions.
+- Avoid background scanning or automatic reprocessing.
+- Make destructive operations reversible where possible.
+- Prefer dry-run previews before executing file operations.
 
-<!-- Add common development workflows and patterns here -->
+## Mapping & Time
+
+- Geographic selection and date-window filtering are equal, independent constraints.
+- Do not infer missing locations unless explicitly requested.
+- Always expose counts and selection summaries to the user.
+
+## Style
+
+- Favor explicit naming over abbreviations.
+- Avoid magic values and hidden defaults.
+- Write code that is easy to reason about and audit.
+
+Placemark should feel trustworthy, predictable, and calm.
