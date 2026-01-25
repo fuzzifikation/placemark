@@ -17,12 +17,14 @@ Placemark is a privacy-first, local-first photo organizer. Read [projectgoal.md]
 **CRITICAL:** Core package must be pure TypeScript — no platform dependencies.
 
 ✅ **Allowed:**
+
 - Pure TypeScript types, interfaces, classes
 - Business logic (filters, validators, query builders)
 - Data models and transformations
 - Abstract interfaces (IStorage, IFileSystem)
 
 ❌ **Forbidden:**
+
 - `import fs from 'fs'` or any Node.js APIs
 - `import { Database } from 'better-sqlite3'` or native modules
 - Browser APIs (`document`, `window`, DOM)
@@ -88,9 +90,69 @@ pnpm -C packages/desktop build    # Production build
 - **Integration tests:** EXIF extraction with sample photos, SQLite queries
 - **E2E tests (Playwright):** Full desktop app workflow, skip for now until Phase 3+
 
+## Code Review & Simplification Protocol
+
+**MANDATORY BEFORE EVERY COMMIT:**
+
+When user requests a commit or says "let's commit", you MUST perform this full review:
+
+### 1. **Check for Complexity Reduction**
+
+- Remove unnecessary abstractions
+- Eliminate duplicate logic
+- Consolidate similar functions
+- Prefer straightforward code over "clever" solutions
+- Verify average function length is reasonable (< 50 lines ideal)
+
+### 2. **Check for Logic Errors**
+
+- Verify data flow correctness
+- Test edge cases (empty inputs, null values, undefined)
+- Confirm error handling is complete
+- Validate assumptions about inputs/outputs
+- Check for off-by-one errors, null pointer issues
+- Verify loops and conditionals are correct
+
+### 3. **Check for Redundancies**
+
+- Look for duplicate code that could be extracted
+- Check for repeated patterns across files
+- Identify unnecessary re-fetching of data
+- Find redundant calculations or transformations
+
+### 4. **Check for Security Issues**
+
+- **Path traversal:** Validate all file paths, especially user input
+- **SQL injection:** Confirm all queries use prepared statements
+- **XSS/injection:** Validate any data passed to renderer
+- **Unsafe IPC:** Verify contextBridge properly isolates main/renderer
+- **Input validation:** Check all user inputs are validated
+- **Error messages:** Ensure no sensitive data in error messages
+- **File operations:** Verify no unintended writes/deletes
+
+### 5. **Fix All Errors and Warnings**
+
+- Address all TypeScript errors
+- Resolve ESLint warnings
+- Check for unused imports/variables
+- Verify no `any` types unless justified with comment
+- Run `get_errors` tool to verify
+
+### 6. **Final Simplification Pass**
+
+- Review with fresh eyes after fixes
+- Can any functions be shorter?
+- Are variable names clear and descriptive?
+- Can complex logic be extracted to well-named functions?
+- Is the code self-documenting?
+
+**Report findings explicitly:** State what you checked and what you found/fixed.
+
+**This is a simple app - keep code simple.** If a file exceeds 200 lines, consider splitting it.
+
 ## Implementation Phase
 
-Currently in **Phase 0** (Project Setup). See [plan.md](../plan.md) for 9-phase roadmap.
+Currently in **Phase 1** (Local File Scanning + EXIF). See [plan.md](../plan.md) for 9-phase roadmap.
 
 When in doubt, prioritize: **clarity > performance**, **safety > convenience**, **explicit > automatic**.
 

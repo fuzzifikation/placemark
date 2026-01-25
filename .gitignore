@@ -3,10 +3,18 @@ dist/
 dist-electron/
 release/
 *.log
+*.tsbuildinfo
 
 # Dependencies
 node_modules/
 .pnpm-store/
+
+# Database files (generated at runtime)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
 
 # IDE
 .vscode/
@@ -24,6 +32,14 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Testing
+coverage/
+.nyc_output/
+
 # Temporary
 *.tmp
 .cache/
+
+# Electron
+out/
+.webpack/

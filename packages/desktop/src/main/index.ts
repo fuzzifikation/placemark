@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import { join } from 'path';
+import { registerPhotoHandlers } from './ipc/photos';
+import { closeStorage } from './services/storage';
 
 let win: BrowserWindow | null;
 
@@ -31,6 +33,7 @@ function createWindow() {
 }
 
 app.on('window-all-closed', () => {
+  closeStorage();
   if (process.platform !== 'darwin') {
     app.quit();
     win = null;
@@ -43,4 +46,7 @@ app.on('activate', () => {
   }
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  registerPhotoHandlers();
+  createWindow();
+});
