@@ -1,6 +1,6 @@
 # Copilot Instructions for Placemark
 
-Placemark is a privacy-first, local-first photo organizer. Read [projectgoal.md](../projectgoal.md) for scope and [plan.md](../plan.md) for architecture.
+Placemark is a privacy-first, local-first photo organizer. Read [projectgoal.md](../projectgoal.md) for scope, [plan.md](../plan.md) for roadmap, and [technologydecisions.md](../technologydecisions.md) for architecture.
 
 ## Technology Stack
 
@@ -90,7 +90,7 @@ pnpm -C packages/desktop build    # Production build
 
 ## Implementation Phase
 
-Currently in **Phase 0-1** setup. See [plan.md](../plan.md) for 8-phase roadmap.
+Currently in **Phase 0** (Project Setup). See [plan.md](../plan.md) for 9-phase roadmap.
 
 When in doubt, prioritize: **clarity > performance**, **safety > convenience**, **explicit > automatic**.
 

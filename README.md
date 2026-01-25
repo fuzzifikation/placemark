@@ -8,4 +8,7 @@ Visualize photos on a map using EXIF GPS metadata, filter by date ranges, and or
 
 ## Documentation
 
-- [projectgoal.md](projectgoal.md) — project intent, goals, and constraints- [plan.md](plan.md) - implementation plan, technology decisions, and roadmap- [.github/copilot-instructions.md](.github/copilot-instructions.md) — guidance for AI-assisted development
+- [projectgoal.md](projectgoal.md) — project intent, goals, and constraints
+- [plan.md](plan.md) — implementation roadmap and phase tracking
+- [technologydecisions.md](technologydecisions.md) — architecture and technology choices
+- [.github/copilot-instructions.md](.github/copilot-instructions.md) — AI coding guidance
