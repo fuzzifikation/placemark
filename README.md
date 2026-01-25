@@ -6,6 +6,15 @@ Visualize photos on a map using EXIF GPS metadata, filter by date ranges, and or
 
 **Status:** Early development. Architecture and core concepts are being established.
 
+## Quick Start
+
+See [SETUP.md](SETUP.md) for detailed setup instructions.
+
+```bash
+pnpm install
+pnpm dev
+```
+
 ## Documentation
 
 - [projectgoal.md](projectgoal.md) — project intent, goals, and constraints
