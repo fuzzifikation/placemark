@@ -2,7 +2,7 @@
 
 Step-by-step roadmap for building Placemark. See [technologydecisions.md](technologydecisions.md) for architecture details and technology choices.
 
-**Current Status:** ✅ Phase 0 Complete | 🚧 Phase 1 - Local File Scanning + EXIF
+**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | 🚧 Phase 3 - Temporal Filtering
 
 ---
 
@@ -13,6 +13,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 **Goal:** Establish monorepo, build system, and basic Electron shell.
 
 **Tasks:**
+
 1. Initialize pnpm workspace
 2. Create `packages/core` with TypeScript config
 3. Create `packages/desktop` with Electron + Vite
@@ -20,6 +21,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 5. Create basic window with "Hello World"
 
 **Testing:**
+
 - [x] `pnpm install` works
 - [x] `pnpm dev` launches Electron window
 - [x] Hot reload works for renderer changes
@@ -29,11 +31,12 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 
 ---
 
-### Phase 1: Local File Scanning + EXIF
+### Phase 1: Local File Scanning + EXIF ✅ COMPLETE
 
 **Goal:** Scan a local folder, extract EXIF GPS + timestamps, store in SQLite.
 
 **Tasks:**
+
 1. Create SQLite schema (photos table)
 2. Implement `packages/core/src/models/Photo.ts`
 3. Implement `packages/desktop/src/main/services/storage.ts` (SQLite)
@@ -44,22 +47,24 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 8. Display count of photos found with GPS
 
 **Testing:**
-- [ ] Can select folder via native dialog
-- [ ] Scans recursively for JPG/PNG/HEIC files
-- [ ] Extracts GPS coordinates correctly (test with known photos)
-- [ ] Stores in SQLite with correct schema
-- [ ] UI shows count: "152 photos with location data"
-- [ ] Re-scanning same folder updates existing records (no duplicates)
 
-**Deliverable:** Can scan local folder and see count of geotagged photos.
+- [x] Can select folder via native dialog
+- [x] Scans recursively for JPG/PNG/HEIC files
+- [x] Extracts GPS coordinates correctly (test with known photos)
+- [x] Stores in SQLite with correct schema
+- [x] UI shows count: "152 photos with location data"
+- [x] Re-scanning same folder updates existing records (no duplicates)
+
+**Deliverable:** ✅ Can scan local folder and see count of geotagged photos.
 
 ---
 
-### Phase 2: Map Display
+### Phase 2: Map Display ✅ COMPLETE
 
 **Goal:** Display photos as markers on a map using MapLibre.
 
 **Tasks:**
+
 1. Add MapLibre GL JS to renderer
 2. Configure OpenStreetMap tile source
 3. Create `MapView.tsx` component
@@ -70,14 +75,15 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 8. Click marker → show photo thumbnail
 
 **Testing:**
-- [ ] Map loads with OpenStreetMap tiles
-- [ ] Photo markers appear in correct locations
-- [ ] Clicking marker shows photo preview
-- [ ] Panning/zooming updates visible markers
-- [ ] Performance: 10,000 photos render without lag (use clustering)
-- [ ] Works offline with cached tiles
 
-**Deliverable:** Interactive map showing photos as markers.
+- [x] Map loads with OpenStreetMap tiles
+- [x] Photo markers appear in correct locations
+- [x] Clicking marker shows photo preview
+- [x] Panning/zooming updates visible markers
+- [ ] Performance: 10,000 photos render without lag (use clustering) - defer to Phase 8
+- [ ] Works offline with cached tiles - defer to Phase 8
+
+**Deliverable:** ✅ Interactive map showing photos as markers with info modal.
 
 ---
 
@@ -86,6 +92,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 **Goal:** Add date range slider to filter photos by time.
 
 **Tasks:**
+
 1. Implement `packages/core/src/filters/temporal.ts`
 2. Create `DateRangeSlider.tsx` component
 3. Query SQLite for min/max timestamps
@@ -95,6 +102,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 7. Show selection summary: "87 photos (Jan 2023 - Mar 2023, Paris area)"
 
 **Testing:**
+
 - [ ] Slider shows correct date range from data
 - [ ] Moving slider filters photos in real-time
 - [ ] Combining map bounds + date range works correctly
@@ -110,6 +118,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 **Goal:** Preview copy/move operations without executing.
 
 **Tasks:**
+
 1. Create `OperationsPanel.tsx` component
 2. Implement `packages/core/src/operations/dryrun.ts`
 3. Add UI: destination folder picker, operation type (copy/move)
@@ -119,6 +128,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 7. Add "Execute" and "Cancel" buttons (Execute disabled for now)
 
 **Testing:**
+
 - [ ] Preview shows correct source → destination mappings
 - [ ] Detects filename conflicts
 - [ ] Warns if destination has insufficient space
@@ -135,6 +145,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 **Goal:** Actually copy/move files with progress tracking.
 
 **Tasks:**
+
 1. Implement `packages/core/src/operations/engine.ts`
 2. Add operation_log table to database
 3. Create progress bar UI with cancel button
@@ -144,6 +155,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 7. Transaction support: mark operations as pending/completed/failed
 
 **Testing:**
+
 - [ ] Copy operation creates files in destination
 - [ ] Move operation removes source files
 - [ ] Progress bar updates smoothly
@@ -161,6 +173,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 **Goal:** Support network-mounted folders (e.g., NAS).
 
 **Tasks:**
+
 1. Add "Network Share" source type
 2. Handle UNC paths on Windows (\\server\share)
 3. Handle SMB/NFS mounts on macOS/Linux
@@ -169,6 +182,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 6. Cache scanned metadata (don't re-scan network on every launch)
 
 **Testing:**
+
 - [ ] Can scan network share via UNC path
 - [ ] Handles network disconnection gracefully
 - [ ] Performance acceptable on slow networks
@@ -183,6 +197,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 **Goal:** Scan OneDrive photos via Microsoft Graph API.
 
 **Tasks:**
+
 1. Register app in Azure AD Portal
 2. Implement OAuth flow with localhost redirect
 3. Implement `packages/desktop/src/main/services/oauth.ts`
@@ -194,6 +209,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 9. Refresh token handling
 
 **Testing:**
+
 - [ ] OAuth flow completes successfully
 - [ ] Can list OneDrive photos
 - [ ] EXIF data extracted without downloading full files
@@ -210,6 +226,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 **Goal:** Production-ready quality.
 
 **Tasks:**
+
 1. Virtual scrolling for photo grid (handle 100k+ photos)
 2. Map marker clustering (performance)
 3. Incremental folder scanning (only new files)
@@ -220,6 +237,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 8. Packaging with electron-builder (Windows .exe, macOS .dmg)
 
 **Testing:**
+
 - [ ] Performance with 100,000 photos
 - [ ] Memory usage stays reasonable (<500MB)
 - [ ] App launches in <3 seconds
@@ -235,6 +253,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 **Goal:** Port core logic to React Native, basic photo display.
 
 **Tasks:**
+
 1. Create `packages/mobile` with React Native
 2. Implement mobile storage service (react-native-sqlite-storage)
 3. Implement photo library access (expo-media-library)
@@ -243,6 +262,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 6. OneDrive OAuth via deep links
 
 **Key Differences from Desktop:**
+
 - No direct filesystem access (must use photo library APIs)
 - All I/O is asynchronous
 - Limited file operations (can't copy to arbitrary folders)
@@ -251,6 +271,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 - No network share support
 
 **Testing:**
+
 - [ ] Can access device photo library
 - [ ] EXIF extraction works on iOS and Android
 - [ ] Map displays with device photos
@@ -284,46 +305,53 @@ pnpm -r test                           # Test all
 ## Testing Strategy
 
 **Unit Tests (Vitest):**
+
 - Core package: filter logic, query builders, validation
 - Run fast (<1s), no I/O
 
 **Integration Tests:**
+
 - EXIF extraction with sample photos
 - SQLite queries with test database
 - File operations in temp directory
 
 **E2E Tests (Playwright):**
+
 - Full app workflow: scan → filter → preview → execute
 - OneDrive OAuth flow (mock Graph API)
 
 **Manual Testing:**
+
 - Test with user's actual photo library (performance)
 - Network disconnection scenarios
 - Cross-platform (Windows, macOS)
 
 ## Risk Mitigation
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| OneDrive API rate limits | High | Medium | Cache metadata locally, batch requests |
-| Large photo libraries (100k+) | Medium | High | Virtual scrolling, incremental scans, indexing |
-| EXIF parsing errors | Medium | Medium | Graceful fallback, log errors, continue scan |
-| File operation failures | Medium | High | Transactional operations, dry-run preview |
-| Map tile availability | Low | Medium | Cache tiles locally, fallback tile source |
-| OAuth token expiry | High | Low | Auto-refresh, clear error messaging |
+| Risk                          | Likelihood | Impact | Mitigation                                     |
+| ----------------------------- | ---------- | ------ | ---------------------------------------------- |
+| OneDrive API rate limits      | High       | Medium | Cache metadata locally, batch requests         |
+| Large photo libraries (100k+) | Medium     | High   | Virtual scrolling, incremental scans, indexing |
+| EXIF parsing errors           | Medium     | Medium | Graceful fallback, log errors, continue scan   |
+| File operation failures       | Medium     | High   | Transactional operations, dry-run preview      |
+| Map tile availability         | Low        | Medium | Cache tiles locally, fallback tile source      |
+| OAuth token expiry            | High       | Low    | Auto-refresh, clear error messaging            |
 
 ## Success Metrics
 
 **Phase 1-3 (MVP):**
+
 - Scan 10,000 photos in <30 seconds
 - Map renders 10,000 markers with clustering
 - Filter 10,000 photos in <100ms
 
 **Phase 7 (OneDrive):**
+
 - Connect to OneDrive in <30 seconds
 - Scan 1,000 OneDrive photos in <2 minutes
 
 **Phase 8 (Production):**
+
 - Handle 100,000 photos without performance degradation
 - Package size <150MB
 - Cold start <3 seconds
