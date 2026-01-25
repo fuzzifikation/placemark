@@ -5,5 +5,7 @@ contextBridge.exposeInMainWorld('api', {
     scanFolder: () => ipcRenderer.invoke('photos:scanFolder'),
     getWithLocation: () => ipcRenderer.invoke('photos:getWithLocation'),
     getCountWithLocation: () => ipcRenderer.invoke('photos:getCountWithLocation'),
+    openInViewer: (path: string) => ipcRenderer.invoke('photos:openInViewer', path),
+    showInFolder: (path: string) => ipcRenderer.invoke('photos:showInFolder', path),
   },
 });

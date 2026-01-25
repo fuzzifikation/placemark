@@ -2,7 +2,7 @@
  * IPC handlers for photo operations
  */
 
-import { ipcMain, dialog } from 'electron';
+import { ipcMain, dialog, shell } from 'electron';
 import { scanDirectory } from '../services/filesystem';
 import { getPhotosWithLocation, getPhotoCountWithLocation } from '../services/storage';
 
@@ -38,5 +38,15 @@ export function registerPhotoHandlers(): void {
   // Get count of photos with location
   ipcMain.handle('photos:getCountWithLocation', async () => {
     return getPhotoCountWithLocation();
+  });
+
+  // Open photo in system default viewer
+  ipcMain.handle('photos:openInViewer', async (_event, path: string) => {
+    await shell.openPath(path);
+  });
+
+  // Show photo in file explorer
+  ipcMain.handle('photos:showInFolder', async (_event, path: string) => {
+    shell.showItemInFolder(path);
   });
 }

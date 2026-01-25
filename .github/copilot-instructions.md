@@ -84,6 +84,29 @@ pnpm -C packages/desktop build    # Production build
 - **Type everything:** No `any` types except for true external unknowns
 - **Error messages for users:** "Cannot access folder: permission denied" not "EACCES"
 
+## Build & Cache Management
+
+**CRITICAL:** Never apply "simple fixes" or workarounds for suspected cache/build issues.
+
+- **If you suspect stale cache:** Clear it properly with `Remove-Item` or rebuild
+- **If modules not found:** Reinstall dependencies with `pnpm install`
+- **If TypeScript errors seem stale:** Run `pnpm tsc --noEmit` to verify actual errors
+- **Never work around suspected benign errors** - fix the root cause
+- **Don't trust hunches** - verify with build tools (tsc, pnpm, etc.)
+
+**Proper fixes:**
+
+- Clear Vite cache: `Remove-Item -Recurse -Force packages/desktop/node_modules/.vite`
+- Clear build output: `Remove-Item -Recurse -Force packages/desktop/dist-electron`
+- Reinstall modules: `Remove-Item -Recurse -Force node_modules; pnpm install`
+- Rebuild native modules: `npx @electron/rebuild`
+
+**Never do:**
+
+- Add `// @ts-ignore` to bypass cache errors
+- Add explicit types to "fix" module resolution issues
+- Skip type checking because "it works in the browser"
+
 ## Testing
 
 - **Unit tests (Vitest):** Core package filters, validators, query builders
@@ -137,6 +160,12 @@ When user requests a commit or says "let's commit", you MUST perform this full r
 - Check for unused imports/variables
 - Verify no `any` types unless justified with comment
 - Run `get_errors` tool to verify
+- **Check for package/dependency warnings:**
+  - Review `pnpm install` or `pnpm update` output for warnings
+  - Replace deprecated packages with recommended alternatives
+  - Resolve peer dependency conflicts when possible
+  - Update packages using deprecated subdependencies
+  - Do not ignore warnings if they can reasonably be resolved
 
 ### 6. **Final Simplification Pass**
 
