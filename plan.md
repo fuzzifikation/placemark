@@ -2,13 +2,13 @@
 
 Step-by-step roadmap for building Placemark. See [technologydecisions.md](technologydecisions.md) for architecture details and technology choices.
 
-**Current Status:** 🚧 Phase 0 - Project Setup
+**Current Status:** ✅ Phase 0 Complete | 🚧 Phase 1 - Local File Scanning + EXIF
 
 ---
 
 ## Implementation Phases
 
-### Phase 0: Project Setup ⏳ IN PROGRESS
+### Phase 0: Project Setup ✅ COMPLETE
 
 **Goal:** Establish monorepo, build system, and basic Electron shell.
 
@@ -20,12 +20,12 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 5. Create basic window with "Hello World"
 
 **Testing:**
-- [ ] `pnpm install` works
-- [ ] `pnpm -C packages/desktop dev` launches Electron window
-- [ ] Hot reload works for renderer changes
-- [ ] TypeScript compilation succeeds
+- [x] `pnpm install` works
+- [x] `pnpm dev` launches Electron window
+- [x] Hot reload works for renderer changes
+- [x] TypeScript compilation succeeds
 
-**Deliverable:** Empty Electron app that opens a window.
+**Deliverable:** ✅ Empty Electron app that opens a window.
 
 ---
 
