@@ -92,6 +92,13 @@ export function getPhotosWithLocation(): Photo[] {
 }
 
 /**
+ * Clear all photos from database
+ */
+export function clearAllPhotos(): void {
+  getDb().prepare('DELETE FROM photos').run();
+}
+
+/**
  * Get count of photos with location data
  */
 export function getPhotoCountWithLocation(): number {

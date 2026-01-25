@@ -35,15 +35,17 @@ export interface ScanProgress {
 }
 
 /**
- * Scan a directory recursively for photos
+ * Scan a directory for photos
  * @param dirPath Absolute path to directory to scan
  * @param source Source type (local, network, etc.)
  * @param onProgress Optional callback for progress updates
+ * @param includeSubdirectories Whether to scan subdirectories recursively (default: true)
  */
 export async function scanDirectory(
   dirPath: string,
   source: PhotoSource,
-  onProgress?: (progress: ScanProgress) => void
+  onProgress?: (progress: ScanProgress) => void,
+  includeSubdirectories: boolean = true
 ): Promise<ScanResult> {
   const result: ScanResult = {
     totalFiles: 0,
@@ -52,8 +54,8 @@ export async function scanDirectory(
     errors: [],
   };
 
-  // Find all image files recursively
-  const imageFiles = await findImageFiles(dirPath);
+  // Find all image files
+  const imageFiles = await findImageFiles(dirPath, includeSubdirectories);
   result.totalFiles = imageFiles.length;
 
   console.log(`Found ${imageFiles.length} image files in ${dirPath}`);
@@ -82,12 +84,14 @@ export async function scanDirectory(
 }
 
 /**
- * Find all supported image files recursively in a directory
+ * Find all supported image files in a directory
+ * @param dirPath Directory to scan
+ * @param includeSubdirectories Whether to scan subdirectories recursively
  */
-async function findImageFiles(dirPath: string): Promise<string[]> {
+async function findImageFiles(dirPath: string, includeSubdirectories: boolean): Promise<string[]> {
   const imageFiles: string[] = [];
 
-  async function scanDir(currentPath: string): Promise<void> {
+  async function scanDir(currentPath: string, isRoot: boolean = true): Promise<void> {
     try {
       const entries = await fs.readdir(currentPath, { withFileTypes: true });
 
@@ -95,9 +99,13 @@ async function findImageFiles(dirPath: string): Promise<string[]> {
         const fullPath = path.join(currentPath, entry.name);
 
         if (entry.isDirectory()) {
-          // Skip hidden directories and common exclude patterns
-          if (!entry.name.startsWith('.') && !shouldSkipDirectory(entry.name)) {
-            await scanDir(fullPath);
+          // Only recurse if includeSubdirectories is true and not the root directory
+          if (
+            includeSubdirectories &&
+            !entry.name.startsWith('.') &&
+            !shouldSkipDirectory(entry.name)
+          ) {
+            await scanDir(fullPath, false);
           }
         } else if (entry.isFile()) {
           if (isSupportedImageFile(fullPath)) {
@@ -110,7 +118,7 @@ async function findImageFiles(dirPath: string): Promise<string[]> {
     }
   }
 
-  await scanDir(dirPath);
+  await scanDir(dirPath, true);
   return imageFiles;
 }
 

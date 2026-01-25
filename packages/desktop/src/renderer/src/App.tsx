@@ -6,11 +6,13 @@ declare global {
   interface Window {
     api: {
       photos: {
-        scanFolder: () => Promise<any>;
+        scanFolder: (includeSubdirectories: boolean) => Promise<any>;
         getWithLocation: () => Promise<Photo[]>;
         getCountWithLocation: () => Promise<number>;
         openInViewer: (path: string) => Promise<void>;
         showInFolder: (path: string) => Promise<void>;
+        clearDatabase: () => Promise<void>;
+        onScanProgress: (callback: (progress: any) => void) => () => void;
       };
     };
   }
@@ -22,6 +24,12 @@ function App() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [showMap, setShowMap] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [includeSubdirectories, setIncludeSubdirectories] = useState(true);
+  const [scanProgress, setScanProgress] = useState<{
+    currentFile: string;
+    processed: number;
+    total: number;
+  } | null>(null);
 
   // Load photos with location on mount
   useEffect(() => {
@@ -43,9 +51,15 @@ function App() {
   const handleScanFolder = async () => {
     setScanning(true);
     setResult(null);
+    setScanProgress(null);
+
+    // Set up progress listener
+    const removeListener = window.api.photos.onScanProgress((progress) => {
+      setScanProgress(progress);
+    });
 
     try {
-      const scanResult = await window.api.photos.scanFolder();
+      const scanResult = await window.api.photos.scanFolder(includeSubdirectories);
       setResult(scanResult);
 
       // Reload photos after scanning
@@ -56,7 +70,25 @@ function App() {
       console.error('Scan failed:', error);
       setResult({ error: String(error) });
     } finally {
+      removeListener();
+      setScanProgress(null);
       setScanning(false);
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    if (!confirm('Clear all photos from database? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await window.api.photos.clearDatabase();
+      setPhotos([]);
+      setShowMap(false);
+      setResult(null);
+    } catch (error) {
+      console.error('Failed to clear database:', error);
+      alert('Failed to clear database: ' + error);
     }
   };
 
@@ -80,21 +112,37 @@ function App() {
               {photos.length} photos with location
             </p>
           </div>
-          <button
-            onClick={handleScanFolder}
-            disabled={scanning}
-            style={{
-              padding: '0.5rem 1rem',
-              fontSize: '0.875rem',
-              backgroundColor: scanning ? '#ccc' : '#0066cc',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: scanning ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {scanning ? 'Scanning...' : 'Scan Folder'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={handleScanFolder}
+              disabled={scanning}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                backgroundColor: scanning ? '#ccc' : '#0066cc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: scanning ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {scanning ? 'Scanning...' : 'Scan Another Folder'}
+            </button>
+            <button
+              onClick={handleClearDatabase}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Clear Database
+            </button>
+          </div>
         </div>
 
         {/* Map */}
@@ -227,11 +275,29 @@ function App() {
       <h1>Placemark</h1>
       <p style={{ color: '#666' }}>Privacy-first, local-first photo organizer</p>
 
+      <label
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginTop: '1.5rem',
+          cursor: 'pointer',
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={includeSubdirectories}
+          onChange={(e) => setIncludeSubdirectories(e.target.checked)}
+          style={{ cursor: 'pointer' }}
+        />
+        <span>Include subdirectories</span>
+      </label>
+
       <button
         onClick={handleScanFolder}
         disabled={scanning}
         style={{
-          marginTop: '2rem',
+          marginTop: '1rem',
           padding: '0.75rem 1.5rem',
           fontSize: '1rem',
           backgroundColor: scanning ? '#ccc' : '#0066cc',
@@ -241,8 +307,41 @@ function App() {
           cursor: scanning ? 'not-allowed' : 'pointer',
         }}
       >
-        {scanning ? 'Scanning...' : 'Scan Folder'}
+        {scanning
+          ? scanProgress
+            ? `Scanning... ${scanProgress.processed}/${scanProgress.total}`
+            : 'Scanning...'
+          : 'Scan Folder'}
       </button>
+
+      {scanning && scanProgress && (
+        <div
+          style={{
+            marginTop: '1rem',
+            padding: '1rem',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '8px',
+            maxWidth: '600px',
+            width: '100%',
+            fontSize: '0.875rem',
+          }}
+        >
+          <p style={{ margin: '0.25rem 0', color: '#666' }}>
+            Processing: {scanProgress.processed} of {scanProgress.total} files
+          </p>
+          <p
+            style={{
+              margin: '0.25rem 0',
+              color: '#333',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Current: {scanProgress.currentFile}
+          </p>
+        </div>
+      )}
 
       {result && !result.canceled && (
         <div
