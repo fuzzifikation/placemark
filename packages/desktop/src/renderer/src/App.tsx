@@ -3,6 +3,7 @@ import { MapView } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { Settings, AppSettings } from './components/Settings';
 import type { Photo } from '@placemark/core';
+import { type Theme, getThemeColors } from './theme';
 
 declare global {
   interface Window {
@@ -50,6 +51,21 @@ function App() {
       ? JSON.parse(saved)
       : { clusterRadius: 30, clusterMaxZoom: 16, mapTransitionDuration: 200 };
   });
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('placemark-theme');
+    return (saved as Theme) || 'light';
+  });
+
+  const colors = getThemeColors(theme);
+
+  // Save theme preference
+  useEffect(() => {
+    localStorage.setItem('placemark-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   // Load photos with location on mount
   useEffect(() => {
@@ -150,21 +166,31 @@ function App() {
 
   if (showMap && photos.length > 0) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
+          backgroundColor: colors.background,
+          color: colors.textPrimary,
+          transition: 'background-color 0.2s ease, color 0.2s ease',
+        }}
+      >
         {/* Header */}
         <div
           style={{
             padding: '1rem',
-            backgroundColor: '#fff',
-            borderBottom: '1px solid #ddd',
+            backgroundColor: colors.surface,
+            borderBottom: `1px solid ${colors.border}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            transition: 'background-color 0.2s ease, border-color 0.2s ease',
           }}
         >
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Placemark</h1>
-            <p style={{ margin: 0, color: '#666', fontSize: '0.875rem' }}>
+            <h1 style={{ margin: 0, fontSize: '1.5rem', color: colors.textPrimary }}>Placemark</h1>
+            <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
               {photos.length} photos with location
             </p>
           </div>
@@ -174,12 +200,15 @@ function App() {
               style={{
                 padding: '0.5rem 1rem',
                 fontSize: '0.875rem',
-                backgroundColor: '#fff',
-                color: '#333',
-                border: '1px solid #ddd',
+                backgroundColor: colors.surface,
+                color: colors.textPrimary,
+                border: `1px solid ${colors.border}`,
                 borderRadius: '4px',
                 cursor: 'pointer',
+                transition: 'all 0.2s ease',
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
             >
               ⚙️ Settings
             </button>
@@ -189,11 +218,22 @@ function App() {
               style={{
                 padding: '0.5rem 1rem',
                 fontSize: '0.875rem',
-                backgroundColor: showTimeline ? '#0066cc' : '#fff',
-                color: showTimeline ? 'white' : '#333',
-                border: '1px solid #0066cc',
+                backgroundColor: showTimeline ? colors.primary : colors.surface,
+                color: showTimeline ? colors.buttonText : colors.textPrimary,
+                border: `1px solid ${showTimeline ? colors.primary : colors.border}`,
                 borderRadius: '4px',
                 cursor: dateRange ? 'pointer' : 'not-allowed',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (dateRange && !showTimeline) {
+                  e.currentTarget.style.backgroundColor = colors.surfaceHover;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!showTimeline) {
+                  e.currentTarget.style.backgroundColor = colors.surface;
+                }
               }}
             >
               📅 Timeline
@@ -204,11 +244,18 @@ function App() {
               style={{
                 padding: '0.5rem 1rem',
                 fontSize: '0.875rem',
-                backgroundColor: scanning ? '#ccc' : '#0066cc',
-                color: 'white',
+                backgroundColor: scanning ? colors.textMuted : colors.primary,
+                color: colors.buttonText,
                 border: 'none',
                 borderRadius: '4px',
                 cursor: scanning ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!scanning) e.currentTarget.style.backgroundColor = colors.primaryHover;
+              }}
+              onMouseLeave={(e) => {
+                if (!scanning) e.currentTarget.style.backgroundColor = colors.primary;
               }}
             >
               {scanning ? 'Scanning...' : 'Scan Another Folder'}
@@ -218,12 +265,15 @@ function App() {
               style={{
                 padding: '0.5rem 1rem',
                 fontSize: '0.875rem',
-                backgroundColor: '#dc3545',
-                color: 'white',
+                backgroundColor: colors.error,
+                color: colors.buttonText,
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
+                transition: 'all 0.2s ease',
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >
               Clear Database
             </button>
@@ -242,6 +292,8 @@ function App() {
               maxZoom={settings.mapMaxZoom}
               padding={settings.mapPadding}
               autoFit={showTimeline ? settings.autoZoomDuringPlay : true}
+              theme={theme}
+              showHeatmap={settings.showHeatmap}
             />
           </div>
           {showTimeline && dateRange && selectedDateRange && (
@@ -255,13 +307,19 @@ function App() {
               onRangeChange={handleDateRangeChange}
               onClose={handleTimelineClose}
               updateInterval={settings.timelineUpdateInterval}
+              theme={theme}
             />
           )}
         </div>
 
         {/* Settings Modal */}
         {showSettings && (
-          <Settings onClose={() => setShowSettings(false)} onSettingsChange={setSettings} />
+          <Settings
+            onClose={() => setShowSettings(false)}
+            onSettingsChange={setSettings}
+            theme={theme}
+            onThemeChange={toggleTheme}
+          />
         )}
 
         {/* Photo Preview Modal */}

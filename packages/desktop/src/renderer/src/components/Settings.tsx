@@ -3,10 +3,13 @@
  */
 
 import { useState, useEffect } from 'react';
+import { type Theme, getThemeColors } from '../theme';
 
 interface SettingsProps {
   onClose: () => void;
   onSettingsChange: (settings: AppSettings) => void;
+  theme: Theme;
+  onThemeChange: () => void;
 }
 
 export interface AppSettings {
@@ -18,6 +21,7 @@ export interface AppSettings {
   mapMaxZoom: number; // 10-20 - maximum zoom when auto-fitting
   mapPadding: number; // 20-100 pixels - padding around markers
   mapTransitionDuration: number; // 0-1000 milliseconds
+  showHeatmap: boolean; // whether to show heatmap overlay
 
   // Timeline
   timelineUpdateInterval: number; // 50-500 milliseconds - how often map updates during playback
@@ -33,13 +37,15 @@ const DEFAULT_SETTINGS: AppSettings = {
   mapMaxZoom: 15,
   mapPadding: 50,
   mapTransitionDuration: 200,
+  showHeatmap: false,
 
   // Timeline
   timelineUpdateInterval: 100,
   autoZoomDuringPlay: true,
 };
 
-export function Settings({ onClose, onSettingsChange }: SettingsProps) {
+export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: SettingsProps) {
+  const colors = getThemeColors(theme);
   const [settings, setSettings] = useState<AppSettings>(() => {
     // Load from localStorage or use defaults
     const saved = localStorage.getItem('placemark-settings');
@@ -78,7 +84,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: colors.overlay,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -88,12 +94,14 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
     >
       <div
         style={{
-          backgroundColor: 'white',
+          backgroundColor: colors.modalBackground,
+          color: colors.textPrimary,
           borderRadius: '8px',
           padding: '1.5rem',
           minWidth: '400px',
           maxWidth: '90%',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          transition: 'background-color 0.2s ease, color 0.2s ease',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -114,8 +122,11 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
               border: 'none',
               fontSize: '1.5rem',
               cursor: 'pointer',
-              color: '#666',
+              color: colors.textSecondary,
+              transition: 'color 0.2s ease',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = colors.textPrimary)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = colors.textSecondary)}
           >
             ×
           </button>
@@ -127,12 +138,54 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
             display: 'flex',
             flexDirection: 'column',
             gap: '1rem',
-            maxHeight: '60vh',
-            overflowY: 'auto',
           }}
         >
+          {/* Appearance */}
+          <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
+            <h3
+              style={{
+                margin: '0 0 1rem 0',
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: colors.textPrimary,
+              }}
+            >
+              Appearance
+            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <label
+                  style={{ fontSize: '0.875rem', color: colors.textSecondary, display: 'block' }}
+                >
+                  Theme
+                </label>
+                <div style={{ fontSize: '0.7rem', color: colors.textMuted, marginTop: '0.25rem' }}>
+                  Switch between light and dark mode
+                </div>
+              </div>
+              <button
+                onClick={onThemeChange}
+                style={{
+                  padding: '0.5rem 1rem',
+                  fontSize: '1.25rem',
+                  backgroundColor: colors.surface,
+                  color: colors.textPrimary,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
+                title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              >
+                {theme === 'light' ? '🌙' : '☀️'}
+              </button>
+            </div>
+          </section>
+
           {/* Map Clustering */}
-          <section style={{ borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
+          <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
             <h3
               onClick={() => toggleSection('clustering')}
               style={{
@@ -143,6 +196,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
+                color: colors.textPrimary,
               }}
             >
               <span>{expandedSections.clustering ? '▼' : '▶'}</span>
@@ -161,8 +215,12 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       marginBottom: '0.5rem',
                     }}
                   >
-                    <label style={{ fontSize: '0.875rem', color: '#666' }}>Cluster Radius</label>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                      Cluster Radius
+                    </label>
+                    <span
+                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
+                    >
                       {settings.clusterRadius}px
                     </span>
                   </div>
@@ -201,10 +259,12 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       marginBottom: '0.5rem',
                     }}
                   >
-                    <label style={{ fontSize: '0.875rem', color: '#666' }}>
+                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
                       Stop Clustering At Zoom
                     </label>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                    <span
+                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
+                    >
                       {settings.clusterMaxZoom}
                     </span>
                   </div>
@@ -224,7 +284,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       display: 'flex',
                       justifyContent: 'space-between',
                       fontSize: '0.7rem',
-                      color: '#999',
+                      color: colors.textMuted,
                       marginTop: '0.25rem',
                     }}
                   >
@@ -237,7 +297,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
           </section>
 
           {/* Map Display */}
-          <section style={{ borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
+          <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
             <h3
               onClick={() => toggleSection('display')}
               style={{
@@ -248,6 +308,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
+                color: colors.textPrimary,
               }}
             >
               <span>{expandedSections.display ? '▼' : '▶'}</span>
@@ -266,10 +327,12 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       marginBottom: '0.5rem',
                     }}
                   >
-                    <label style={{ fontSize: '0.875rem', color: '#666' }}>
+                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
                       Maximum Zoom Level
                     </label>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                    <span
+                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
+                    >
                       {settings.mapMaxZoom}
                     </span>
                   </div>
@@ -289,7 +352,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       display: 'flex',
                       justifyContent: 'space-between',
                       fontSize: '0.7rem',
-                      color: '#999',
+                      color: colors.textMuted,
                       marginTop: '0.25rem',
                     }}
                   >
@@ -308,8 +371,12 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       marginBottom: '0.5rem',
                     }}
                   >
-                    <label style={{ fontSize: '0.875rem', color: '#666' }}>Map Padding</label>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                      Map Padding
+                    </label>
+                    <span
+                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
+                    >
                       {settings.mapPadding}px
                     </span>
                   </div>
@@ -329,7 +396,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       display: 'flex',
                       justifyContent: 'space-between',
                       fontSize: '0.7rem',
-                      color: '#999',
+                      color: colors.textMuted,
                       marginTop: '0.25rem',
                     }}
                   >
@@ -348,8 +415,12 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       marginBottom: '0.5rem',
                     }}
                   >
-                    <label style={{ fontSize: '0.875rem', color: '#666' }}>Transition Speed</label>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                      Transition Speed
+                    </label>
+                    <span
+                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
+                    >
                       {settings.mapTransitionDuration}ms
                     </span>
                   </div>
@@ -369,12 +440,44 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       display: 'flex',
                       justifyContent: 'space-between',
                       fontSize: '0.7rem',
-                      color: '#999',
+                      color: colors.textMuted,
                       marginTop: '0.25rem',
                     }}
                   >
                     <span>Instant (0)</span>
                     <span>Slow (1000)</span>
+                  </div>
+                </div>
+
+                {/* Show Heatmap */}
+                <div style={{ marginTop: '1rem' }}>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.875rem',
+                      color: colors.textSecondary,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={settings.showHeatmap}
+                      onChange={(e) => setSettings({ ...settings, showHeatmap: e.target.checked })}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    Show heatmap overlay
+                  </label>
+                  <div
+                    style={{
+                      fontSize: '0.7rem',
+                      color: colors.textMuted,
+                      marginTop: '0.25rem',
+                      marginLeft: '1.5rem',
+                    }}
+                  >
+                    Display photo density as a colored heat map
                   </div>
                 </div>
               </div>
@@ -393,6 +496,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
+                color: colors.textPrimary,
               }}
             >
               <span>{expandedSections.timeline ? '▼' : '▶'}</span>
@@ -411,8 +515,12 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       marginBottom: '0.5rem',
                     }}
                   >
-                    <label style={{ fontSize: '0.875rem', color: '#666' }}>Update Frequency</label>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                      Update Frequency
+                    </label>
+                    <span
+                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
+                    >
                       {settings.timelineUpdateInterval}ms (
                       {Math.round(1000 / settings.timelineUpdateInterval)}/sec)
                     </span>
@@ -433,7 +541,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       display: 'flex',
                       justifyContent: 'space-between',
                       fontSize: '0.7rem',
-                      color: '#999',
+                      color: colors.textMuted,
                       marginTop: '0.25rem',
                     }}
                   >
@@ -450,7 +558,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                       alignItems: 'center',
                       gap: '0.5rem',
                       fontSize: '0.875rem',
-                      color: '#666',
+                      color: colors.textSecondary,
                       cursor: 'pointer',
                     }}
                   >
@@ -467,7 +575,7 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
                   <div
                     style={{
                       fontSize: '0.7rem',
-                      color: '#999',
+                      color: colors.textMuted,
                       marginTop: '0.25rem',
                       marginLeft: '1.5rem',
                     }}
@@ -494,12 +602,15 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
             style={{
               padding: '0.5rem 1rem',
               fontSize: '0.875rem',
-              backgroundColor: '#fff',
-              color: '#666',
-              border: '1px solid #ddd',
+              backgroundColor: colors.surface,
+              color: colors.textSecondary,
+              border: `1px solid ${colors.border}`,
               borderRadius: '4px',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
           >
             Reset to Defaults
           </button>
@@ -508,12 +619,15 @@ export function Settings({ onClose, onSettingsChange }: SettingsProps) {
             style={{
               padding: '0.5rem 1.5rem',
               fontSize: '0.875rem',
-              backgroundColor: '#0066cc',
-              color: 'white',
+              backgroundColor: colors.primary,
+              color: colors.buttonText,
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.primaryHover)}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.primary)}
           >
             Done
           </button>

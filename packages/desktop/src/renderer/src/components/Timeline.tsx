@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { type Theme, getThemeColors } from '../theme';
 
 // Timeline constants
 const MIN_RANGE_GAP_MS = 1000; // Minimum 1 second gap between start and end
@@ -18,6 +19,7 @@ interface TimelineProps {
   onRangeChange: (start: number, end: number) => void;
   onClose: () => void;
   updateInterval?: number; // milliseconds between map updates during playback
+  theme: Theme;
 }
 
 type PlaySpeed = 'week' | 'month' | 'sixMonths';
@@ -38,7 +40,9 @@ export function Timeline({
   onRangeChange,
   onClose,
   updateInterval = 100,
+  theme,
 }: TimelineProps) {
+  const colors = getThemeColors(theme);
   const [localStart, setLocalStart] = useState(startDate);
   const [localEnd, setLocalEnd] = useState(endDate);
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'range' | null>(null);
@@ -261,12 +265,13 @@ export function Timeline({
       style={{
         height: '15vh',
         minHeight: '120px',
-        backgroundColor: '#fff',
-        borderTop: '1px solid #ddd',
+        backgroundColor: colors.surface,
+        borderTop: `1px solid ${colors.border}`,
         padding: '1rem',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.75rem',
+        transition: 'background-color 0.2s ease',
       }}
     >
       {/* Header */}
@@ -277,7 +282,7 @@ export function Timeline({
           alignItems: 'center',
         }}
       >
-        <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>
+        <span style={{ fontSize: '0.875rem', fontWeight: 500, color: colors.textPrimary }}>
           Timeline: {filteredPhotos} of {totalPhotos} photos
         </span>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -287,10 +292,12 @@ export function Timeline({
             style={{
               padding: '0.25rem 0.5rem',
               fontSize: '0.75rem',
-              backgroundColor: isPlaying ? '#ccc' : '#fff',
-              border: '1px solid #ddd',
+              backgroundColor: isPlaying ? colors.surfaceHover : colors.surface,
+              color: colors.textPrimary,
+              border: `1px solid ${colors.border}`,
               borderRadius: '4px',
               cursor: isPlaying ? 'default' : 'pointer',
+              transition: 'all 0.2s ease',
             }}
             title="Cycle speed"
           >
@@ -301,12 +308,15 @@ export function Timeline({
             style={{
               padding: '0.25rem 0.75rem',
               fontSize: '0.875rem',
-              backgroundColor: '#0066cc',
-              color: 'white',
+              backgroundColor: colors.primary,
+              color: colors.buttonText,
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.primaryHover)}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.primary)}
           >
             {isPlaying ? '⏸ Pause' : '▶ Play'}
           </button>
@@ -315,11 +325,15 @@ export function Timeline({
             style={{
               padding: '0.25rem 0.5rem',
               fontSize: '0.875rem',
-              backgroundColor: '#fff',
-              border: '1px solid #ddd',
+              backgroundColor: colors.surface,
+              color: colors.textPrimary,
+              border: `1px solid ${colors.border}`,
               borderRadius: '4px',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
           >
             ×
           </button>
@@ -346,7 +360,7 @@ export function Timeline({
               left: 0,
               right: 0,
               height: '4px',
-              backgroundColor: '#e0e0e0',
+              backgroundColor: colors.borderLight,
               borderRadius: '2px',
             }}
           />
@@ -359,7 +373,7 @@ export function Timeline({
               left: `${startPosition * 100}%`,
               width: `${(endPosition - startPosition) * 100}%`,
               height: '12px',
-              backgroundColor: '#0066cc',
+              backgroundColor: colors.primary,
               borderRadius: '6px',
               cursor: isDragging === 'range' ? 'grabbing' : 'grab',
               touchAction: 'none',
@@ -375,12 +389,12 @@ export function Timeline({
               width: '4px',
               height: '28px',
               marginLeft: '-2px',
-              backgroundColor: '#0066cc',
+              backgroundColor: colors.primary,
               borderRadius: '2px',
               cursor: 'ew-resize',
               boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
               touchAction: 'none',
-              border: '1px solid white',
+              border: `1px solid ${colors.surface}`,
             }}
           />
           {/* End thumb - vertical bar */}
@@ -393,12 +407,12 @@ export function Timeline({
               width: '4px',
               height: '28px',
               marginLeft: '-2px',
-              backgroundColor: '#0066cc',
+              backgroundColor: colors.primary,
               borderRadius: '2px',
               cursor: 'ew-resize',
               boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
               touchAction: 'none',
-              border: '1px solid white',
+              border: `1px solid ${colors.surface}`,
             }}
           />
           {/* Start date label - moves with thumb */}
@@ -409,7 +423,7 @@ export function Timeline({
               top: '0px',
               transform: 'translateX(-50%)',
               fontSize: '0.75rem',
-              color: '#0066cc',
+              color: colors.primary,
               fontWeight: 600,
               whiteSpace: 'nowrap',
               pointerEvents: 'none',
@@ -425,7 +439,7 @@ export function Timeline({
               top: '0px',
               transform: 'translateX(-50%)',
               fontSize: '0.75rem',
-              color: '#0066cc',
+              color: colors.primary,
               fontWeight: 600,
               whiteSpace: 'nowrap',
               pointerEvents: 'none',
@@ -440,7 +454,7 @@ export function Timeline({
               left: 0,
               bottom: '0px',
               fontSize: '0.7rem',
-              color: '#999',
+              color: colors.textMuted,
             }}
           >
             {formatDate(minDate)}
@@ -451,7 +465,7 @@ export function Timeline({
               right: 0,
               bottom: '0px',
               fontSize: '0.7rem',
-              color: '#999',
+              color: colors.textMuted,
             }}
           >
             {formatDate(maxDate)}

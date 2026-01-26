@@ -6,14 +6,15 @@ This document contains the decision matrices and architecture details that infor
 
 ### 1. Application Framework
 
-| Framework | Filesystem Access | OAuth Support | Cross-Platform | SQLite | EXIF Libraries | Bundle Size | Mobile Path | Score |
-|-----------|------------------|---------------|----------------|--------|----------------|-------------|-------------|-------|
-| **Electron (Desktop)** | ✅ Full | ✅ localhost redirect | ✅ Win/Mac/Linux | ✅ better-sqlite3 | ✅ exifr | ⚠️ Large (~100MB) | ✅ + React Native | **9/10** |
-| Tauri | ✅ Full | ⚠️ Complex | ✅ Win/Mac/Linux | ✅ rusqlite | ⚠️ Limited | ✅ Small (~10MB) | ❌ No mobile | 6/10 |
-| Web (PWA) | ❌ File System API limited | ⚠️ Needs backend | ✅ Any browser | ❌ IndexedDB only | ⚠️ Limited | ✅ Tiny | ✅ Yes | 4/10 |
-| React Native | ⚠️ Limited desktop | ⚠️ Complex | ⚠️ Mobile-first | ⚠️ SQLite plugins | ⚠️ Limited | ✅ Small | ✅ Native | 5/10 |
+| Framework              | Filesystem Access          | OAuth Support         | Cross-Platform   | SQLite            | EXIF Libraries | Bundle Size       | Mobile Path       | Score    |
+| ---------------------- | -------------------------- | --------------------- | ---------------- | ----------------- | -------------- | ----------------- | ----------------- | -------- |
+| **Electron (Desktop)** | ✅ Full                    | ✅ localhost redirect | ✅ Win/Mac/Linux | ✅ better-sqlite3 | ✅ exifr       | ⚠️ Large (~100MB) | ✅ + React Native | **9/10** |
+| Tauri                  | ✅ Full                    | ⚠️ Complex            | ✅ Win/Mac/Linux | ✅ rusqlite       | ⚠️ Limited     | ✅ Small (~10MB)  | ❌ No mobile      | 6/10     |
+| Web (PWA)              | ❌ File System API limited | ⚠️ Needs backend      | ✅ Any browser   | ❌ IndexedDB only | ⚠️ Limited     | ✅ Tiny           | ✅ Yes            | 4/10     |
+| React Native           | ⚠️ Limited desktop         | ⚠️ Complex            | ⚠️ Mobile-first  | ⚠️ SQLite plugins | ⚠️ Limited     | ✅ Small          | ✅ Native         | 5/10     |
 
 **Decision: Electron for Desktop, React Native for Mobile (future)**
+
 - Reason: Full filesystem access is non-negotiable for local/network folders on desktop
 - OAuth can work via localhost redirect (no backend needed) on desktop
 - Mature ecosystem for photo/EXIF processing
@@ -23,14 +24,15 @@ This document contains the decision matrices and architecture details that infor
 
 ### 2. Map Library
 
-| Library | Open Source | Offline Capable | Performance | Vector Tiles | License | Monthly Cost | Score |
-|---------|------------|-----------------|-------------|--------------|---------|--------------|-------|
-| **MapLibre GL JS** | ✅ Yes | ✅ Yes | ✅ Excellent | ✅ Yes | ✅ BSD | ✅ $0 | **10/10** |
-| Leaflet | ✅ Yes | ✅ Yes | ⚠️ Good | ❌ Raster only | ✅ BSD | ✅ $0 | 7/10 |
-| Google Maps | ❌ No | ❌ No | ✅ Excellent | ✅ Yes | ❌ Proprietary | ❌ $200+ | 3/10 |
-| Mapbox GL JS | ⚠️ Proprietary v2+ | ✅ Yes | ✅ Excellent | ✅ Yes | ❌ Proprietary | ❌ $50+ | 5/10 |
+| Library            | Open Source        | Offline Capable | Performance  | Vector Tiles   | License        | Monthly Cost | Score     |
+| ------------------ | ------------------ | --------------- | ------------ | -------------- | -------------- | ------------ | --------- |
+| **MapLibre GL JS** | ✅ Yes             | ✅ Yes          | ✅ Excellent | ✅ Yes         | ✅ BSD         | ✅ $0        | **10/10** |
+| Leaflet            | ✅ Yes             | ✅ Yes          | ⚠️ Good      | ❌ Raster only | ✅ BSD         | ✅ $0        | 7/10      |
+| Google Maps        | ❌ No              | ❌ No           | ✅ Excellent | ✅ Yes         | ❌ Proprietary | ❌ $200+     | 3/10      |
+| Mapbox GL JS       | ⚠️ Proprietary v2+ | ✅ Yes          | ✅ Excellent | ✅ Yes         | ❌ Proprietary | ❌ $50+      | 5/10      |
 
 **Decision: MapLibre GL JS**
+
 - Reason: Open source fork of Mapbox (pre-proprietary)
 - Free OpenStreetMap tiles available
 - Can cache tiles locally (privacy + offline)
@@ -39,14 +41,15 @@ This document contains the decision matrices and architecture details that infor
 
 ### 3. EXIF Processing Library
 
-| Library | Speed | Format Support | Streaming | Bundle Size | GPS Parsing | TypeScript | Score |
-|---------|-------|----------------|-----------|-------------|-------------|------------|-------|
-| **exifr** | ✅ Very fast | ✅ All common | ✅ Yes | ✅ 50KB | ✅ Yes | ✅ Native | **10/10** |
-| exif-parser | ⚠️ Moderate | ⚠️ Limited | ❌ No | ✅ 30KB | ✅ Yes | ⚠️ .d.ts only | 6/10 |
-| exiftool (CLI) | ✅ Fast | ✅ Everything | ❌ No | ❌ 12MB Perl | ✅ Yes | ❌ No | 5/10 |
-| piexifjs | ⚠️ Slow | ⚠️ Basic | ❌ No | ✅ 40KB | ⚠️ Manual | ❌ No | 4/10 |
+| Library        | Speed        | Format Support | Streaming | Bundle Size  | GPS Parsing | TypeScript    | Score     |
+| -------------- | ------------ | -------------- | --------- | ------------ | ----------- | ------------- | --------- |
+| **exifr**      | ✅ Very fast | ✅ All common  | ✅ Yes    | ✅ 50KB      | ✅ Yes      | ✅ Native     | **10/10** |
+| exif-parser    | ⚠️ Moderate  | ⚠️ Limited     | ❌ No     | ✅ 30KB      | ✅ Yes      | ⚠️ .d.ts only | 6/10      |
+| exiftool (CLI) | ✅ Fast      | ✅ Everything  | ❌ No     | ❌ 12MB Perl | ✅ Yes      | ❌ No         | 5/10      |
+| piexifjs       | ⚠️ Slow      | ⚠️ Basic       | ❌ No     | ✅ 40KB      | ⚠️ Manual   | ❌ No         | 4/10      |
 
 **Decision: exifr**
+
 - Reason: Best performance + TypeScript native
 - Streaming support for large files
 - Pick specific fields (GPS + DateTimeOriginal only)
@@ -54,32 +57,34 @@ This document contains the decision matrices and architecture details that infor
 
 ### 4. Local Storage/Database
 
-| Solution | Performance | Query Capability | Transactions | Electron Support | Mobile Support | Cross-Platform | Score |
-|----------|-------------|------------------|-------------|------------------|----------------|----------------|-------|
-| **SQLite** | ✅ Excellent | ✅ SQL | ✅ Yes | ✅ better-sqlite3 | ✅ react-native-sqlite | ✅ Yes | **10/10** |
-| SQLite (sql.js) | ⚠️ Good | ✅ SQL | ✅ Yes | ✅ WASM | ⚠️ Limited | ✅ Yes | 7/10 |
-| IndexedDB | ⚠️ Moderate | ⚠️ Limited | ⚠️ Complex | ✅ Yes | ❌ No | ❌ Web only | 4/10 |
-| JSON files | ❌ Poor | ❌ Manual | ❌ No | ✅ Yes | ✅ Yes | ✅ Yes | 3/10 |
+| Solution        | Performance  | Query Capability | Transactions | Electron Support  | Mobile Support         | Cross-Platform | Score     |
+| --------------- | ------------ | ---------------- | ------------ | ----------------- | ---------------------- | -------------- | --------- |
+| **SQLite**      | ✅ Excellent | ✅ SQL           | ✅ Yes       | ✅ better-sqlite3 | ✅ react-native-sqlite | ✅ Yes         | **10/10** |
+| SQLite (sql.js) | ⚠️ Good      | ✅ SQL           | ✅ Yes       | ✅ WASM           | ⚠️ Limited             | ✅ Yes         | 7/10      |
+| IndexedDB       | ⚠️ Moderate  | ⚠️ Limited       | ⚠️ Complex   | ✅ Yes            | ❌ No                  | ❌ Web only    | 4/10      |
+| JSON files      | ❌ Poor      | ❌ Manual        | ❌ No        | ✅ Yes            | ✅ Yes                 | ✅ Yes         | 3/10      |
 
 **Decision: SQLite with platform-specific drivers**
+
 - Desktop: `better-sqlite3` (native Node.js module, sync I/O)
 - Mobile (future): `react-native-sqlite-storage` or `expo-sqlite`
 - Reason: Spatial queries (lat/lon ranges) are fast
 - Transactions ensure consistency
 - Proven at scale (millions of records)
-- Can use R*Tree index for geographic queries
+- Can use R\*Tree index for geographic queries
 - **Critical:** Core package defines storage interface, platform packages implement it
 
 ### 5. UI Framework
 
-| Framework | TypeScript | Component Ecosystem | Learning Curve | Desktop Patterns | Size | Score |
-|-----------|-----------|---------------------|----------------|------------------|------|-------|
-| **React** | ✅ Excellent | ✅ Vast | ✅ Moderate | ✅ Good | ⚠️ Medium | **9/10** |
-| Svelte | ✅ Good | ⚠️ Growing | ✅ Easy | ⚠️ Limited | ✅ Small | 7/10 |
-| Vue | ✅ Good | ✅ Large | ✅ Easy | ⚠️ Limited | ⚠️ Medium | 7/10 |
-| Vanilla TS | ✅ Perfect | ❌ None | ⚠️ Hard | ⚠️ Manual | ✅ Tiny | 5/10 |
+| Framework  | TypeScript   | Component Ecosystem | Learning Curve | Desktop Patterns | Size      | Score    |
+| ---------- | ------------ | ------------------- | -------------- | ---------------- | --------- | -------- |
+| **React**  | ✅ Excellent | ✅ Vast             | ✅ Moderate    | ✅ Good          | ⚠️ Medium | **9/10** |
+| Svelte     | ✅ Good      | ⚠️ Growing          | ✅ Easy        | ⚠️ Limited       | ✅ Small  | 7/10     |
+| Vue        | ✅ Good      | ✅ Large            | ✅ Easy        | ⚠️ Limited       | ⚠️ Medium | 7/10     |
+| Vanilla TS | ✅ Perfect   | ❌ None             | ⚠️ Hard        | ⚠️ Manual        | ✅ Tiny   | 5/10     |
 
 **Decision: React + Tailwind CSS**
+
 - Reason: MapLibre has React wrappers (react-map-gl)
 - Large component ecosystem for common patterns
 - Team familiarity likely
@@ -87,13 +92,14 @@ This document contains the decision matrices and architecture details that infor
 
 ### 6. Package Manager
 
-| Manager | Speed | Workspaces | Disk Efficiency | Lockfile | Electron Compatible | Score |
-|---------|-------|------------|-----------------|----------|---------------------|-------|
-| **pnpm** | ✅ Fastest | ✅ Yes | ✅ Excellent (hardlinks) | ✅ Yes | ✅ Yes | **10/10** |
-| npm | ⚠️ Slow | ✅ Yes | ⚠️ Moderate | ✅ Yes | ✅ Yes | 6/10 |
-| yarn | ✅ Fast | ✅ Yes | ⚠️ Moderate | ✅ Yes | ✅ Yes | 7/10 |
+| Manager  | Speed      | Workspaces | Disk Efficiency          | Lockfile | Electron Compatible | Score     |
+| -------- | ---------- | ---------- | ------------------------ | -------- | ------------------- | --------- |
+| **pnpm** | ✅ Fastest | ✅ Yes     | ✅ Excellent (hardlinks) | ✅ Yes   | ✅ Yes              | **10/10** |
+| npm      | ⚠️ Slow    | ✅ Yes     | ⚠️ Moderate              | ✅ Yes   | ✅ Yes              | 6/10      |
+| yarn     | ✅ Fast    | ✅ Yes     | ⚠️ Moderate              | ✅ Yes   | ✅ Yes              | 7/10      |
 
 **Decision: pnpm**
+
 - Reason: Fast installs, efficient disk usage
 - Native workspace support for monorepo
 - Strict dependency resolution (no phantom deps)
@@ -113,12 +119,14 @@ This document contains the decision matrices and architecture details that infor
 **Mobile Considerations:**
 
 **Desktop (Electron) has:**
+
 - Full filesystem access (local folders, network shares, UNC paths)
 - Synchronous SQLite (better-sqlite3)
 - OAuth via localhost redirect
 - Direct file operations (copy/move)
 
 **Mobile (React Native) will have:**
+
 - Sandboxed filesystem (user must grant access per folder/photo)
 - Async SQLite (react-native-sqlite-storage)
 - OAuth via deep links or embedded webview
@@ -126,6 +134,7 @@ This document contains the decision matrices and architecture details that infor
 - OneDrive likely the primary source (not local folders)
 
 **Shared core handles:**
+
 - Data models (Photo, Source, Filter, Operation)
 - Filter logic (geographic bounds, date ranges, combinations)
 - Operation planning (dry-run, validation, conflict detection)
@@ -141,7 +150,7 @@ graph TB
     App -->|OAuth + API| OneDrive[OneDrive/Graph API]
     App -->|stores metadata| SQLite[(SQLite DB)]
     App -->|loads tiles| OSM[OpenStreetMap Tiles]
-    
+
     style App fill:#4a9eff
     style SQLite fill:#ffa500
     style LocalFiles fill:#90EE90
@@ -161,7 +170,7 @@ graph TB
         EXIF[EXIF Service<br/>exifr]
         FileOps[File Operations<br/>copy/move]
     end
-    
+
     subgraph "Electron Renderer Process"
         UI[React App]
         Map[MapLibre Component]
@@ -169,27 +178,27 @@ graph TB
         Filters[Date/Geo Filters]
         OpsPanel[Operations Panel]
     end
-    
+
     subgraph "Core Package (Pure TypeScript)"
         Models[Data Models]
         FilterLogic[Filter Logic]
         StorageInterface[Storage Interface]
         OpEngine[Operation Engine<br/>dry-run]
     end
-    
+
     UI -->|IPC| Main
     Main --> Storage
     Main --> FS
     Main --> OAuth
     Main --> EXIF
     Main --> FileOps
-    
+
     Storage -.implements.- StorageInterface
     FilterLogic -.uses.- Models
     OpEngine -.uses.- StorageInterface
-    
+
     Main -.depends on.- Core
-    
+
     style Core fill:#e1f5ff
     style Main fill:#fff4e1
     style UI fill:#f0f0f0
@@ -211,7 +220,7 @@ erDiagram
         int file_size "bytes"
         string mime_type "image/jpeg etc"
     }
-    
+
     SOURCE {
         int id PK
         string type "local|onedrive|network"
@@ -220,7 +229,7 @@ erDiagram
         int last_scan "Unix epoch"
         boolean enabled
     }
-    
+
     OPERATION_LOG {
         int id PK
         string operation "copy|move"
@@ -230,7 +239,7 @@ erDiagram
         string status "pending|completed|failed"
         string error "nullable"
     }
-    
+
     SOURCE ||--o{ PHOTO : contains
     PHOTO ||--o{ OPERATION_LOG : "involved in"
 ```
@@ -397,9 +406,55 @@ export function buildBoundsQuery(bounds: BoundingBox): {
 } {
   return {
     sql: 'WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?',
-    params: [bounds.south, bounds.north, bounds.west, bounds.east]
+    params: [bounds.south, bounds.north, bounds.west, bounds.east],
   };
 }
 ```
 
 This works on desktop (Electron), mobile (React Native), and even web (future).
+
+### 7. Thumbnail Display Strategy
+
+**Decision Date:** January 2026  
+**Status:** Decided  
+**Context:** Phase 3.5 - Need photo thumbnails for modal preview and future hover tooltips.
+
+#### Decision: Single 400px Thumbnail Database
+
+Store 400px JPEG thumbnails (~35KB each) in separate SQLite database with user-configurable size limit (default 500MB = ~14,000 photos) and LRU eviction.
+
+**Why 400px:**
+
+- Sharp for modal preview (native size)
+- Sharp for hover tooltips (CSS downscale to 150px is instant and high quality)
+- Mobile-compatible (no hover needed, same database works everywhere)
+- OneDrive optimization: download full photo once, cache thumbnail forever
+
+**Storage:** Separate `thumbnails.db` (can clear independently from metadata)
+
+**Size estimates:** 1K photos = 35MB, 5K = 175MB, 14K = 500MB (default limit)
+
+**Implementation:**
+
+```typescript
+const THUMBNAIL_CONFIG = {
+  size: 400, // Single size for all contexts
+  quality: 80, // JPEG, ~35KB per thumbnail
+  maxSizeMB: 500, // User-configurable (Settings)
+  autoEvict: true, // LRU eviction when limit reached
+};
+```
+
+**Benefits:**
+
+- ✅ OneDrive bandwidth optimization (critical for network photos)
+- ✅ Cross-platform (desktop + mobile use same cache)
+- ✅ Simple (one size, one pipeline)
+- ✅ User control (configurable cache size, clear button)
+- ✅ Persistent (thumbnails survive app restart)
+
+**Tradeoffs:**
+
+- Requires `sharp` library (+8MB bundle)
+- Requires LRU eviction logic
+- Uses disk space (user-configurable)

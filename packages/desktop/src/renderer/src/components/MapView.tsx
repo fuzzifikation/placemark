@@ -8,6 +8,7 @@ import type { MapLayerMouseEvent } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Photo } from '@placemark/core';
 import type * as GeoJSON from 'geojson';
+import type { Theme } from '../theme';
 
 // Cluster styling constants
 const CLUSTER_THRESHOLDS = {
@@ -35,9 +36,47 @@ const UNCLUSTERED_STYLE = {
   STROKE_COLOR: '#fff',
 };
 
+// Helper function to add heatmap layer to map
+function addHeatmapLayer(map: maplibregl.Map) {
+  map.addLayer({
+    id: 'photos-heatmap',
+    type: 'heatmap',
+    source: 'photos-heatmap-source',
+    maxzoom: 22, // Show heatmap at all zoom levels
+    paint: {
+      // Increase weight as diameter increases
+      'heatmap-weight': ['interpolate', ['linear'], ['zoom'], 0, 1, 22, 1],
+      // Increase intensity as zoom level increases
+      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 22, 5],
+      // Color ramp for heatmap - blue to red
+      'heatmap-color': [
+        'interpolate',
+        ['linear'],
+        ['heatmap-density'],
+        0,
+        'rgba(33,102,172,0)',
+        0.2,
+        'rgb(103,169,207)',
+        0.4,
+        'rgb(209,229,240)',
+        0.6,
+        'rgb(253,219,199)',
+        0.8,
+        'rgb(239,138,98)',
+        1,
+        'rgb(178,24,43)',
+      ],
+      // Adjust radius by zoom level
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 3, 9, 25, 22, 50],
+      // Keep opacity high at all zoom levels
+      'heatmap-opacity': 0.8,
+    },
+  });
+}
+
 // Helper function to add cluster layers to map
-function addClusterLayers(map: maplibregl.Map) {
-  // Layer for cluster circles
+function addClusterLayers(map: maplibregl.Map, showHeatmap: boolean = false) {
+  // Layer for cluster circles (hidden when heatmap is active)
   map.addLayer({
     id: 'clusters',
     type: 'circle',
@@ -91,6 +130,12 @@ function addClusterLayers(map: maplibregl.Map) {
       'circle-stroke-color': UNCLUSTERED_STYLE.STROKE_COLOR,
     },
   });
+
+  // Hide cluster layers if heatmap is active
+  if (showHeatmap) {
+    map.setLayoutProperty('clusters', 'visibility', 'none');
+    map.setLayoutProperty('cluster-count', 'visibility', 'none');
+  }
 }
 
 interface MapViewProps {
@@ -102,6 +147,8 @@ interface MapViewProps {
   maxZoom?: number;
   padding?: number;
   autoFit?: boolean;
+  theme?: Theme;
+  showHeatmap?: boolean;
 }
 
 export function MapView({
@@ -113,6 +160,8 @@ export function MapView({
   maxZoom = 15,
   padding = 50,
   autoFit = true,
+  theme = 'light',
+  showHeatmap = false,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -122,6 +171,18 @@ export function MapView({
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
+    // Reset map loaded state when reinitializing
+    setMapLoaded(false);
+
+    // Use different tile sources for light and dark themes
+    const isDark = theme === 'dark';
+    const tileUrl = isDark
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const attribution = isDark
+      ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: {
@@ -129,10 +190,13 @@ export function MapView({
         sources: {
           'osm-tiles': {
             type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tiles: [
+              tileUrl.replace('{s}', 'a'),
+              tileUrl.replace('{s}', 'b'),
+              tileUrl.replace('{s}', 'c'),
+            ],
             tileSize: 256,
-            attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            attribution,
           },
         },
         layers: [
@@ -215,8 +279,9 @@ export function MapView({
     return () => {
       map.current?.remove();
       map.current = null;
+      setMapLoaded(false);
     };
-  }, [onPhotoClick]);
+  }, [onPhotoClick, theme]);
 
   // Update photo data source when photos change
   useEffect(() => {
@@ -227,10 +292,14 @@ export function MapView({
     if (photosWithLocation.length === 0) {
       // Remove source if no photos
       if (map.current.getSource('photos')) {
+        if (map.current.getLayer('photos-heatmap')) map.current.removeLayer('photos-heatmap');
         if (map.current.getLayer('clusters')) map.current.removeLayer('clusters');
         if (map.current.getLayer('cluster-count')) map.current.removeLayer('cluster-count');
         if (map.current.getLayer('unclustered-point')) map.current.removeLayer('unclustered-point');
         map.current.removeSource('photos');
+        if (map.current.getSource('photos-heatmap-source')) {
+          map.current.removeSource('photos-heatmap-source');
+        }
       }
       return;
     }
@@ -260,7 +329,7 @@ export function MapView({
     };
 
     if (!map.current.getSource('photos')) {
-      // Add source with clustering enabled
+      // Add source with clustering enabled for markers
       map.current.addSource('photos', {
         type: 'geojson',
         data: geojson,
@@ -269,12 +338,29 @@ export function MapView({
         clusterRadius: clusterRadius,
       });
 
-      // Add all cluster layers
-      addClusterLayers(map.current);
+      // Add separate unclustered source for heatmap
+      if (showHeatmap) {
+        map.current.addSource('photos-heatmap-source', {
+          type: 'geojson',
+          data: geojson,
+        });
+        addHeatmapLayer(map.current);
+      }
+
+      // Add all cluster layers on top
+      addClusterLayers(map.current, showHeatmap);
     } else {
       // Update existing source data
       const source = map.current.getSource('photos') as maplibregl.GeoJSONSource;
       source.setData(geojson);
+
+      // Update heatmap source if it exists
+      const heatmapSource = map.current.getSource(
+        'photos-heatmap-source'
+      ) as maplibregl.GeoJSONSource;
+      if (heatmapSource) {
+        heatmapSource.setData(geojson);
+      }
 
       // If cluster settings changed, we need to recreate the source
       // Check if we need to update cluster settings by removing and re-adding
@@ -285,11 +371,15 @@ export function MapView({
           currentSource._options.clusterMaxZoom !== clusterMaxZoom)
       ) {
         // Remove layers
+        if (map.current.getLayer('photos-heatmap')) map.current.removeLayer('photos-heatmap');
         if (map.current.getLayer('clusters')) map.current.removeLayer('clusters');
         if (map.current.getLayer('cluster-count')) map.current.removeLayer('cluster-count');
         if (map.current.getLayer('unclustered-point')) map.current.removeLayer('unclustered-point');
         // Remove source
         map.current.removeSource('photos');
+        if (map.current.getSource('photos-heatmap-source')) {
+          map.current.removeSource('photos-heatmap-source');
+        }
 
         // Re-add with new settings
         map.current.addSource('photos', {
@@ -300,8 +390,17 @@ export function MapView({
           clusterRadius: clusterRadius,
         });
 
+        // Re-add heatmap source and layer if enabled
+        if (showHeatmap) {
+          map.current.addSource('photos-heatmap-source', {
+            type: 'geojson',
+            data: geojson,
+          });
+          addHeatmapLayer(map.current);
+        }
+
         // Re-add all cluster layers
-        addClusterLayers(map.current);
+        addClusterLayers(map.current, showHeatmap);
       }
     }
 
@@ -322,7 +421,62 @@ export function MapView({
     maxZoom,
     padding,
     autoFit,
+    showHeatmap,
   ]);
+
+  // Toggle heatmap visibility when showHeatmap prop changes
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const hasHeatmapLayer = map.current.getLayer('photos-heatmap');
+    const hasHeatmapSource = map.current.getSource('photos-heatmap-source');
+    const hasClustersLayer = map.current.getLayer('clusters');
+    const hasClusterCountLayer = map.current.getLayer('cluster-count');
+    const photosSource = map.current.getSource('photos') as maplibregl.GeoJSONSource;
+
+    if (showHeatmap && !hasHeatmapLayer && photosSource) {
+      // Get the current data from photos source
+      const currentData = (photosSource as any)._data;
+
+      // Add heatmap source if it doesn't exist
+      if (!hasHeatmapSource) {
+        map.current.addSource('photos-heatmap-source', {
+          type: 'geojson',
+          data: currentData,
+        });
+      }
+
+      // Add heatmap layer (before cluster layers so it renders below)
+      addHeatmapLayer(map.current);
+
+      // Move heatmap layer below clusters
+      if (hasClustersLayer) {
+        map.current.moveLayer('photos-heatmap', 'clusters');
+      }
+
+      // Hide cluster layers
+      if (hasClustersLayer) {
+        map.current.setLayoutProperty('clusters', 'visibility', 'none');
+      }
+      if (hasClusterCountLayer) {
+        map.current.setLayoutProperty('cluster-count', 'visibility', 'none');
+      }
+    } else if (!showHeatmap && hasHeatmapLayer) {
+      // Remove heatmap layer and source
+      map.current.removeLayer('photos-heatmap');
+      if (hasHeatmapSource) {
+        map.current.removeSource('photos-heatmap-source');
+      }
+
+      // Show cluster layers
+      if (hasClustersLayer) {
+        map.current.setLayoutProperty('clusters', 'visibility', 'visible');
+      }
+      if (hasClusterCountLayer) {
+        map.current.setLayoutProperty('cluster-count', 'visibility', 'visible');
+      }
+    }
+  }, [showHeatmap, mapLoaded]);
 
   return (
     <div
