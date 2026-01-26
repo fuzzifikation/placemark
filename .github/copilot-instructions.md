@@ -167,7 +167,17 @@ When user requests a commit or says "let's commit", you MUST perform this full r
   - Update packages using deprecated subdependencies
   - Do not ignore warnings if they can reasonably be resolved
 
-### 6. **Final Simplification Pass**
+### 6. **Check for Maintainability and Structure Improvements**
+
+- **Magic numbers:** Extract hardcoded values into named constants with clear intent
+- **Duplicate code:** Look for repeated blocks that could become helper functions
+- **Function purpose:** Each function should have a single clear responsibility
+- **Constants organization:** Group related constants together with comments
+- **Helper extraction:** Identify reusable logic that appears in multiple places
+- **Code structure:** Related functionality should be grouped and clearly separated
+- **Documentation:** Constants and helpers should explain "why" not just "what"
+
+### 7. **Final Simplification Pass**
 
 - Review with fresh eyes after fixes
 - Can any functions be shorter?

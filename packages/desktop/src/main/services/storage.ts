@@ -99,6 +99,51 @@ export function clearAllPhotos(): void {
 }
 
 /**
+ * Get date range of photos (min and max timestamps)
+ */
+export function getPhotoDateRange(): { minDate: number | null; maxDate: number | null } {
+  const result = getDb()
+    .prepare(
+      `SELECT 
+        MIN(timestamp) as minDate, 
+        MAX(timestamp) as maxDate 
+      FROM photos 
+      WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND timestamp IS NOT NULL`
+    )
+    .get() as { minDate: number | null; maxDate: number | null };
+  return result;
+}
+
+/**
+ * Get photos with location data filtered by date range
+ * @param startTimestamp Start of range (Unix milliseconds) or null for no lower bound
+ * @param endTimestamp End of range (Unix milliseconds) or null for no upper bound
+ */
+export function getPhotosWithLocationInDateRange(
+  startTimestamp: number | null,
+  endTimestamp: number | null
+): Photo[] {
+  let query = 'SELECT * FROM photos WHERE latitude IS NOT NULL AND longitude IS NOT NULL';
+  const params: number[] = [];
+
+  if (startTimestamp !== null) {
+    query += ' AND timestamp >= ?';
+    params.push(startTimestamp);
+  }
+  if (endTimestamp !== null) {
+    query += ' AND timestamp <= ?';
+    params.push(endTimestamp);
+  }
+
+  query += ' ORDER BY timestamp ASC';
+
+  const rows = getDb()
+    .prepare(query)
+    .all(...params);
+  return rows.map(rowToPhoto);
+}
+
+/**
  * Get count of photos with location data
  */
 export function getPhotoCountWithLocation(): number {

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapView } from './components/MapView';
+import { Timeline } from './components/Timeline';
+import { Settings, AppSettings } from './components/Settings';
 import type { Photo } from '@placemark/core';
 
 declare global {
@@ -8,6 +10,11 @@ declare global {
       photos: {
         scanFolder: (includeSubdirectories: boolean) => Promise<any>;
         getWithLocation: () => Promise<Photo[]>;
+        getWithLocationInDateRange: (
+          startTimestamp: number | null,
+          endTimestamp: number | null
+        ) => Promise<Photo[]>;
+        getDateRange: () => Promise<{ minDate: number | null; maxDate: number | null }>;
         getCountWithLocation: () => Promise<number>;
         openInViewer: (path: string) => Promise<void>;
         showInFolder: (path: string) => Promise<void>;
@@ -22,6 +29,7 @@ function App() {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [allPhotos, setAllPhotos] = useState<Photo[]>([]); // Unfiltered photos
   const [showMap, setShowMap] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [includeSubdirectories, setIncludeSubdirectories] = useState(true);
@@ -30,6 +38,18 @@ function App() {
     processed: number;
     total: number;
   } | null>(null);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [dateRange, setDateRange] = useState<{ min: number; max: number } | null>(null);
+  const [selectedDateRange, setSelectedDateRange] = useState<{ start: number; end: number } | null>(
+    null
+  );
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const saved = localStorage.getItem('placemark-settings');
+    return saved
+      ? JSON.parse(saved)
+      : { clusterRadius: 30, clusterMaxZoom: 16, mapTransitionDuration: 200 };
+  });
 
   // Load photos with location on mount
   useEffect(() => {
@@ -39,9 +59,18 @@ function App() {
   const loadPhotos = async () => {
     try {
       const photosWithLocation = await window.api.photos.getWithLocation();
+      setAllPhotos(photosWithLocation);
       setPhotos(photosWithLocation);
+
       if (photosWithLocation.length > 0) {
         setShowMap(true);
+
+        // Load date range
+        const range = await window.api.photos.getDateRange();
+        if (range.minDate && range.maxDate) {
+          setDateRange({ min: range.minDate, max: range.maxDate });
+          setSelectedDateRange({ start: range.minDate, end: range.maxDate });
+        }
       }
     } catch (error) {
       console.error('Failed to load photos:', error);
@@ -84,11 +113,38 @@ function App() {
     try {
       await window.api.photos.clearDatabase();
       setPhotos([]);
+      setAllPhotos([]);
       setShowMap(false);
       setResult(null);
+      setShowTimeline(false);
+      setDateRange(null);
+      setSelectedDateRange(null);
     } catch (error) {
       console.error('Failed to clear database:', error);
       alert('Failed to clear database: ' + error);
+    }
+  };
+
+  const handleTimelineToggle = () => {
+    setShowTimeline(!showTimeline);
+  };
+
+  const handleDateRangeChange = async (start: number, end: number) => {
+    setSelectedDateRange({ start, end });
+    try {
+      const filtered = await window.api.photos.getWithLocationInDateRange(start, end);
+      setPhotos(filtered);
+    } catch (error) {
+      console.error('Failed to filter photos by date:', error);
+    }
+  };
+
+  const handleTimelineClose = () => {
+    setShowTimeline(false);
+    // Reset to show all photos
+    if (dateRange) {
+      setSelectedDateRange({ start: dateRange.min, end: dateRange.max });
+      setPhotos(allPhotos);
     }
   };
 
@@ -113,6 +169,35 @@ function App() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setShowSettings(true)}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                backgroundColor: '#fff',
+                color: '#333',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              ⚙️ Settings
+            </button>
+            <button
+              onClick={handleTimelineToggle}
+              disabled={!dateRange}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                backgroundColor: showTimeline ? '#0066cc' : '#fff',
+                color: showTimeline ? 'white' : '#333',
+                border: '1px solid #0066cc',
+                borderRadius: '4px',
+                cursor: dateRange ? 'pointer' : 'not-allowed',
+              }}
+            >
+              📅 Timeline
+            </button>
             <button
               onClick={handleScanFolder}
               disabled={scanning}
@@ -146,9 +231,38 @@ function App() {
         </div>
 
         {/* Map */}
-        <div style={{ flex: 1 }}>
-          <MapView photos={photos} onPhotoClick={setSelectedPhoto} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <MapView
+              photos={photos}
+              onPhotoClick={setSelectedPhoto}
+              clusterRadius={settings.clusterRadius}
+              clusterMaxZoom={settings.clusterMaxZoom}
+              transitionDuration={settings.mapTransitionDuration}
+              maxZoom={settings.mapMaxZoom}
+              padding={settings.mapPadding}
+              autoFit={showTimeline ? settings.autoZoomDuringPlay : true}
+            />
+          </div>
+          {showTimeline && dateRange && selectedDateRange && (
+            <Timeline
+              minDate={dateRange.min}
+              maxDate={dateRange.max}
+              startDate={selectedDateRange.start}
+              endDate={selectedDateRange.end}
+              totalPhotos={allPhotos.length}
+              filteredPhotos={photos.length}
+              onRangeChange={handleDateRangeChange}
+              onClose={handleTimelineClose}
+              updateInterval={settings.timelineUpdateInterval}
+            />
+          )}
         </div>
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <Settings onClose={() => setShowSettings(false)} onSettingsChange={setSettings} />
+        )}
 
         {/* Photo Preview Modal */}
         {selectedPhoto && (

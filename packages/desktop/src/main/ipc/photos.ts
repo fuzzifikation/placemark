@@ -8,6 +8,8 @@ import {
   getPhotosWithLocation,
   getPhotoCountWithLocation,
   clearAllPhotos,
+  getPhotoDateRange,
+  getPhotosWithLocationInDateRange,
 } from '../services/storage';
 
 export function registerPhotoHandlers(): void {
@@ -45,6 +47,19 @@ export function registerPhotoHandlers(): void {
   // Get all photos with location
   ipcMain.handle('photos:getWithLocation', async () => {
     return getPhotosWithLocation();
+  });
+
+  // Get photos with location in date range
+  ipcMain.handle(
+    'photos:getWithLocationInDateRange',
+    async (_event, startTimestamp: number | null, endTimestamp: number | null) => {
+      return getPhotosWithLocationInDateRange(startTimestamp, endTimestamp);
+    }
+  );
+
+  // Get date range of photos
+  ipcMain.handle('photos:getDateRange', async () => {
+    return getPhotoDateRange();
   });
 
   // Get count of photos with location
