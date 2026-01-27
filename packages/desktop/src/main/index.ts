@@ -3,6 +3,17 @@ import { join } from 'path';
 import { registerPhotoHandlers, closeThumbnailService } from './ipc/photos';
 import { closeStorage } from './services/storage';
 
+// Override userData path for portable mode
+// In portable builds, databases live next to the .exe
+// In dev mode, use standard AppData location
+const portableDir = process.env.PORTABLE_EXECUTABLE_DIR;
+if (portableDir) {
+  app.setPath('userData', portableDir);
+} else if (!app.isPackaged) {
+  // Dev mode: use default AppData location
+  // (no change needed, but keeping this explicit for clarity)
+}
+
 let win: BrowserWindow | null;
 
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];

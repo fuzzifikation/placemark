@@ -302,6 +302,7 @@ function App() {
             <MapView
               photos={photos}
               onPhotoClick={setSelectedPhoto}
+              clusteringEnabled={settings.clusteringEnabled}
               clusterRadius={settings.clusterRadius}
               clusterMaxZoom={settings.clusterMaxZoom}
               transitionDuration={settings.mapTransitionDuration}

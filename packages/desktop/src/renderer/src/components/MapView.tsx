@@ -36,62 +36,6 @@ const UNCLUSTERED_STYLE = {
   STROKE_COLOR: '#fff',
 };
 
-// Offset distance for overlapping points (in degrees, ~10 meters at equator)
-const OVERLAP_OFFSET_DEGREES = 0.0001;
-
-// Helper function to offset overlapping coordinates
-function offsetOverlappingPoints(photos: Photo[]): Photo[] {
-  // Group photos by coordinates
-  const coordGroups = new Map<string, Photo[]>();
-
-  photos.forEach((photo) => {
-    if (photo.latitude === null || photo.longitude === null) return;
-
-    // Round to 6 decimal places (~0.11m precision) to group nearby points
-    const key = `${photo.latitude.toFixed(6)},${photo.longitude.toFixed(6)}`;
-
-    if (!coordGroups.has(key)) {
-      coordGroups.set(key, []);
-    }
-    coordGroups.get(key)!.push(photo);
-  });
-
-  // Create new array with offset coordinates for overlapping points
-  const result: Photo[] = [];
-
-  coordGroups.forEach((group) => {
-    if (group.length === 1) {
-      // No overlap, keep original coordinates
-      result.push(group[0]);
-    } else {
-      // Multiple photos at same location - arrange in circle
-      const basePhoto = group[0];
-      const baseLat = basePhoto.latitude!;
-      const baseLng = basePhoto.longitude!;
-
-      group.forEach((photo, index) => {
-        if (index === 0) {
-          // Keep first photo at original position
-          result.push(photo);
-        } else {
-          // Offset others in a circle around the center
-          const angle = (2 * Math.PI * index) / group.length;
-          const offsetLat = baseLat + OVERLAP_OFFSET_DEGREES * Math.cos(angle);
-          const offsetLng = baseLng + OVERLAP_OFFSET_DEGREES * Math.sin(angle);
-
-          result.push({
-            ...photo,
-            latitude: offsetLat,
-            longitude: offsetLng,
-          });
-        }
-      });
-    }
-  });
-
-  return result;
-}
-
 // Helper function to add heatmap layer to map
 function addHeatmapLayer(map: maplibregl.Map) {
   map.addLayer({
@@ -197,6 +141,7 @@ function addClusterLayers(map: maplibregl.Map, showHeatmap: boolean = false) {
 interface MapViewProps {
   photos: Photo[];
   onPhotoClick: (photo: Photo) => void;
+  clusteringEnabled?: boolean;
   clusterRadius?: number;
   clusterMaxZoom?: number;
   transitionDuration?: number;
@@ -210,6 +155,7 @@ interface MapViewProps {
 export function MapView({
   photos,
   onPhotoClick,
+  clusteringEnabled = true,
   clusterRadius = 30,
   clusterMaxZoom = 16,
   transitionDuration = 200,
@@ -222,6 +168,7 @@ export function MapView({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState<number>(0);
   const [hoveredPhoto, setHoveredPhoto] = useState<Photo | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
   const [hoverThumbnailUrl, setHoverThumbnailUrl] = useState<string | null>(null);
@@ -275,12 +222,22 @@ export function MapView({
       },
       center: [0, 0],
       zoom: 2,
+      maxZoom: 19, // Match tile source max zoom to prevent zooming beyond available tiles
     });
 
     map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
     map.current.on('load', () => {
       setMapLoaded(true);
+      if (map.current) {
+        setCurrentZoom(map.current.getZoom());
+      }
+    });
+
+    map.current.on('zoom', () => {
+      if (map.current) {
+        setCurrentZoom(map.current.getZoom());
+      }
     });
 
     // Click handler for clusters - zoom in to expand
@@ -302,30 +259,6 @@ export function MapView({
       });
     });
 
-    // Click handler for individual points
-    map.current.on('click', 'unclustered-point', (e: MapLayerMouseEvent) => {
-      if (!map.current) return;
-      const features = map.current.queryRenderedFeatures(e.point, {
-        layers: ['unclustered-point'],
-      });
-      if (features.length === 0) return;
-
-      const props = features[0].properties;
-      const photo: Photo = {
-        id: props.id,
-        path: props.path,
-        latitude: props.latitude,
-        longitude: props.longitude,
-        timestamp: props.timestamp || null,
-        source: props.source,
-        fileSize: props.fileSize,
-        mimeType: props.mimeType,
-        scannedAt: props.scannedAt,
-        fileHash: props.fileHash || null,
-      };
-      onPhotoClick(photo);
-    });
-
     // Change cursor on hover
     map.current.on('mouseenter', 'clusters', () => {
       if (map.current) map.current.getCanvas().style.cursor = 'pointer';
@@ -335,9 +268,6 @@ export function MapView({
     });
     map.current.on('mouseenter', 'unclustered-point', () => {
       if (map.current) map.current.getCanvas().style.cursor = 'pointer';
-    });
-    map.current.on('mouseleave', 'unclustered-point', () => {
-      if (map.current) map.current.getCanvas().style.cursor = '';
     });
 
     // Hover preview for individual photos
@@ -425,6 +355,32 @@ export function MapView({
         URL.revokeObjectURL(hoverThumbnailUrl);
         setHoverThumbnailUrl(null);
       }
+      // Reset cursor
+      if (map.current) map.current.getCanvas().style.cursor = '';
+    });
+
+    // Click handler for individual points
+    map.current.on('click', 'unclustered-point', (e: MapLayerMouseEvent) => {
+      if (!map.current) return;
+      const features = map.current.queryRenderedFeatures(e.point, {
+        layers: ['unclustered-point'],
+      });
+      if (features.length === 0) return;
+
+      const props = features[0].properties;
+      const photo: Photo = {
+        id: props.id,
+        path: props.path,
+        latitude: props.latitude,
+        longitude: props.longitude,
+        timestamp: props.timestamp || null,
+        source: props.source,
+        fileSize: props.fileSize,
+        mimeType: props.mimeType,
+        scannedAt: props.scannedAt,
+        fileHash: props.fileHash || null,
+      };
+      onPhotoClick(photo);
     });
 
     return () => {
@@ -462,13 +418,10 @@ export function MapView({
       return;
     }
 
-    // Offset overlapping points to make them all clickable
-    const offsetPhotos = offsetOverlappingPoints(photosWithLocation);
-
     // Convert photos to GeoJSON
     const geojson: GeoJSON.FeatureCollection<GeoJSON.Point> = {
       type: 'FeatureCollection',
-      features: offsetPhotos.map((photo) => ({
+      features: photosWithLocation.map((photo) => ({
         type: 'Feature',
         geometry: {
           type: 'Point',
@@ -494,7 +447,7 @@ export function MapView({
       map.current.addSource('photos', {
         type: 'geojson',
         data: geojson,
-        cluster: true,
+        cluster: clusteringEnabled,
         clusterMaxZoom: clusterMaxZoom,
         clusterRadius: clusterRadius,
       });
@@ -523,13 +476,18 @@ export function MapView({
         heatmapSource.setData(geojson);
       }
 
-      // If cluster settings changed, we need to recreate the source
+      // If cluster settings or heatmap visibility changed, we need to recreate the source
       // Check if we need to update cluster settings by removing and re-adding
       const currentSource = map.current.getSource('photos') as any;
+      const hasHeatmapLayer = map.current.getLayer('photos-heatmap') !== undefined;
+      const heatmapNeedsUpdate = showHeatmap !== hasHeatmapLayer;
+
       if (
         currentSource._data &&
-        (currentSource._options.clusterRadius !== clusterRadius ||
-          currentSource._options.clusterMaxZoom !== clusterMaxZoom)
+        (currentSource._options.cluster !== clusteringEnabled ||
+          currentSource._options.clusterRadius !== clusterRadius ||
+          currentSource._options.clusterMaxZoom !== clusterMaxZoom ||
+          heatmapNeedsUpdate)
       ) {
         // Remove layers
         if (map.current.getLayer('photos-heatmap')) map.current.removeLayer('photos-heatmap');
@@ -546,7 +504,7 @@ export function MapView({
         map.current.addSource('photos', {
           type: 'geojson',
           data: geojson,
-          cluster: true,
+          cluster: clusteringEnabled,
           clusterMaxZoom: clusterMaxZoom,
           clusterRadius: clusterRadius,
         });
@@ -576,6 +534,7 @@ export function MapView({
   }, [
     photos,
     mapLoaded,
+    clusteringEnabled,
     clusterRadius,
     clusterMaxZoom,
     transitionDuration,
@@ -649,6 +608,24 @@ export function MapView({
           position: 'relative',
         }}
       />
+      {/* Debug: Show current zoom level */}
+      <div
+        style={{
+          position: 'fixed',
+          top: '60px',
+          right: '10px',
+          background: 'rgba(0, 0, 0, 0.7)',
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          fontFamily: 'monospace',
+          pointerEvents: 'none',
+          zIndex: 1000,
+        }}
+      >
+        Zoom: {currentZoom.toFixed(2)}
+      </div>
       {/* Hover Tooltip */}
       {hoveredPhoto && hoverPosition && (
         <div
@@ -728,7 +705,7 @@ export function MapView({
             </div>
             {hoveredPhoto.timestamp && (
               <div style={{ color: theme === 'dark' ? '#aaa' : '#666', marginTop: '0.25rem' }}>
-                {new Date(hoveredPhoto.timestamp * 1000).toLocaleDateString()}
+                {new Date(hoveredPhoto.timestamp).toLocaleDateString()}
               </div>
             )}
           </div>

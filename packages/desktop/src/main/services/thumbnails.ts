@@ -73,7 +73,9 @@ export class ThumbnailService {
       }
 
       // Generate thumbnail using sharp
-      const thumbnailBuffer = await sharp(photoPath)
+      const thumbnailBuffer = await sharp(photoPath, {
+        failOnError: false,
+      })
         .rotate() // Auto-orient based on EXIF Orientation tag
         .resize(THUMBNAIL_CONFIG.size, THUMBNAIL_CONFIG.size, {
           fit: 'inside',

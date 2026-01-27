@@ -14,6 +14,7 @@ interface SettingsProps {
 
 export interface AppSettings {
   // Map Clustering
+  clusteringEnabled: boolean; // whether clustering is enabled
   clusterRadius: number; // 10-100 pixels
   clusterMaxZoom: number; // 10-20 zoom level
 
@@ -30,11 +31,12 @@ export interface AppSettings {
 
 const DEFAULT_SETTINGS: AppSettings = {
   // Map Clustering
+  clusteringEnabled: true,
   clusterRadius: 30,
-  clusterMaxZoom: 14,
+  clusterMaxZoom: 14, // Must be < mapMaxZoom to avoid warning
 
   // Map Display
-  mapMaxZoom: 15,
+  mapMaxZoom: 18, // Increased to allow deeper zoom
   mapPadding: 50,
   mapTransitionDuration: 200,
   showHeatmap: false,
@@ -291,91 +293,211 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
 
             {expandedSections.clustering && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {/* Cluster Radius */}
+                {/* Enable/Disable Clustering */}
                 <div>
-                  <div
+                  <label
                     style={{
                       display: 'flex',
-                      justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginBottom: '0.5rem',
+                      gap: '0.75rem',
+                      fontSize: '0.875rem',
+                      color: colors.textSecondary,
+                      cursor: 'pointer',
                     }}
                   >
-                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                      Cluster Radius
-                    </label>
-                    <span
-                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
+                    <div
+                      onClick={() =>
+                        setSettings({ ...settings, clusteringEnabled: !settings.clusteringEnabled })
+                      }
+                      style={{
+                        position: 'relative',
+                        width: '44px',
+                        height: '24px',
+                        backgroundColor: settings.clusteringEnabled ? '#4a9eff' : '#444',
+                        borderRadius: '12px',
+                        transition: 'background-color 0.2s',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
                     >
-                      {settings.clusterRadius}px
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    step="5"
-                    value={settings.clusterRadius}
-                    onChange={(e) =>
-                      setSettings({ ...settings, clusterRadius: parseInt(e.target.value) })
-                    }
-                    style={{ width: '100%' }}
-                  />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          left: settings.clusteringEnabled ? '22px' : '2px',
+                          width: '20px',
+                          height: '20px',
+                          backgroundColor: 'white',
+                          borderRadius: '50%',
+                          transition: 'left 0.2s',
+                        }}
+                      />
+                    </div>
+                    Enable marker clustering
+                  </label>
                   <div
                     style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: '0.7rem',
-                      color: '#999',
-                      marginTop: '0.25rem',
-                    }}
-                  >
-                    <span>More markers (10)</span>
-                    <span>Fewer markers (100)</span>
-                  </div>
-                </div>
-
-                {/* Cluster Max Zoom */}
-                <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                      Stop Clustering At Zoom
-                    </label>
-                    <span
-                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
-                    >
-                      {settings.clusterMaxZoom}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="20"
-                    step="1"
-                    value={settings.clusterMaxZoom}
-                    onChange={(e) =>
-                      setSettings({ ...settings, clusterMaxZoom: parseInt(e.target.value) })
-                    }
-                    style={{ width: '100%' }}
-                  />
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
                       fontSize: '0.7rem',
                       color: colors.textMuted,
                       marginTop: '0.25rem',
+                      marginLeft: '1.5rem',
                     }}
                   >
-                    <span>Earlier (10)</span>
-                    <span>Later (20)</span>
+                    Group nearby photos into clusters to improve performance
+                  </div>
+                </div>
+
+                {settings.clusteringEnabled && (
+                  <>
+                    {/* Cluster Radius */}
+                    <div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '0.5rem',
+                        }}
+                      >
+                        <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                          Cluster Radius
+                        </label>
+                        <span
+                          style={{
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            color: colors.textPrimary,
+                          }}
+                        >
+                          {settings.clusterRadius}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        step="5"
+                        value={settings.clusterRadius}
+                        onChange={(e) =>
+                          setSettings({ ...settings, clusterRadius: parseInt(e.target.value) })
+                        }
+                        style={{ width: '100%' }}
+                      />
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontSize: '0.7rem',
+                          color: colors.textMuted,
+                          marginTop: '0.25rem',
+                        }}
+                      >
+                        <span>More markers (10)</span>
+                        <span>Fewer markers (100)</span>
+                      </div>
+                    </div>
+
+                    {/* Cluster Max Zoom */}
+                    <div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '0.5rem',
+                        }}
+                      >
+                        <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                          Stop Clustering At Zoom
+                        </label>
+                        <span
+                          style={{
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            color: colors.textPrimary,
+                          }}
+                        >
+                          {settings.clusterMaxZoom}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="10"
+                        max="20"
+                        step="1"
+                        value={settings.clusterMaxZoom}
+                        onChange={(e) =>
+                          setSettings({ ...settings, clusterMaxZoom: parseInt(e.target.value) })
+                        }
+                        style={{ width: '100%' }}
+                      />
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontSize: '0.7rem',
+                          color: colors.textMuted,
+                          marginTop: '0.25rem',
+                        }}
+                      >
+                        <span>Earlier (10)</span>
+                        <span>Later (20)</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Show Heatmap - moved here from Map Display */}
+                <div>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      fontSize: '0.875rem',
+                      color: colors.textSecondary,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div
+                      onClick={() =>
+                        setSettings({ ...settings, showHeatmap: !settings.showHeatmap })
+                      }
+                      style={{
+                        position: 'relative',
+                        width: '44px',
+                        height: '24px',
+                        backgroundColor: settings.showHeatmap ? '#4a9eff' : '#444',
+                        borderRadius: '12px',
+                        transition: 'background-color 0.2s',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          left: settings.showHeatmap ? '22px' : '2px',
+                          width: '20px',
+                          height: '20px',
+                          backgroundColor: 'white',
+                          borderRadius: '50%',
+                          transition: 'left 0.2s',
+                        }}
+                      />
+                    </div>
+                    Show heatmap overlay
+                  </label>
+                  <div
+                    style={{
+                      fontSize: '0.7rem',
+                      color: colors.textMuted,
+                      marginTop: '0.25rem',
+                      marginLeft: '1.5rem',
+                    }}
+                  >
+                    Display photo density as a colored heat map
                   </div>
                 </div>
               </div>
@@ -533,38 +655,6 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                     <span>Slow (1000)</span>
                   </div>
                 </div>
-
-                {/* Show Heatmap */}
-                <div style={{ marginTop: '1rem' }}>
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      fontSize: '0.875rem',
-                      color: colors.textSecondary,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={settings.showHeatmap}
-                      onChange={(e) => setSettings({ ...settings, showHeatmap: e.target.checked })}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    Show heatmap overlay
-                  </label>
-                  <div
-                    style={{
-                      fontSize: '0.7rem',
-                      color: colors.textMuted,
-                      marginTop: '0.25rem',
-                      marginLeft: '1.5rem',
-                    }}
-                  >
-                    Display photo density as a colored heat map
-                  </div>
-                </div>
               </div>
             )}
           </section>
@@ -640,20 +730,43 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
+                      gap: '0.75rem',
                       fontSize: '0.875rem',
                       color: colors.textSecondary,
                       cursor: 'pointer',
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={settings.autoZoomDuringPlay}
-                      onChange={(e) =>
-                        setSettings({ ...settings, autoZoomDuringPlay: e.target.checked })
+                    <div
+                      onClick={() =>
+                        setSettings({
+                          ...settings,
+                          autoZoomDuringPlay: !settings.autoZoomDuringPlay,
+                        })
                       }
-                      style={{ cursor: 'pointer' }}
-                    />
+                      style={{
+                        position: 'relative',
+                        width: '44px',
+                        height: '24px',
+                        backgroundColor: settings.autoZoomDuringPlay ? '#4a9eff' : '#444',
+                        borderRadius: '12px',
+                        transition: 'background-color 0.2s',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          left: settings.autoZoomDuringPlay ? '22px' : '2px',
+                          width: '20px',
+                          height: '20px',
+                          backgroundColor: 'white',
+                          borderRadius: '50%',
+                          transition: 'left 0.2s',
+                        }}
+                      />
+                    </div>
                     Auto-fit map during playback
                   </label>
                   <div
@@ -711,85 +824,11 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                         <strong>Photos Database:</strong> {databaseStats.photosDbSizeMB.toFixed(1)}{' '}
                         MB
                       </p>
-                      <p style={{ margin: '0.25rem 0' }}>
-                        <strong>Thumbnails Database:</strong>{' '}
-                        {databaseStats.thumbnailsDbSizeMB.toFixed(1)} MB
-                      </p>
-                      <p style={{ margin: '0.5rem 0 0 0', fontWeight: 600 }}>
-                        <strong>Total Size:</strong>{' '}
-                        {(databaseStats.photosDbSizeMB + databaseStats.thumbnailsDbSizeMB).toFixed(
-                          1
-                        )}{' '}
-                        MB
-                      </p>
                     </div>
                   </div>
                 )}
 
-                {/* Clear Buttons */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <button
-                    onClick={handleClearThumbnailCache}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      fontSize: '0.875rem',
-                      backgroundColor: colors.surface,
-                      color: colors.textSecondary,
-                      border: `1px solid ${colors.border}`,
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = colors.surfaceHover)
-                    }
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
-                  >
-                    Clear Thumbnail Cache
-                  </button>
-                  <button
-                    onClick={handleClearPhotosDatabase}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      fontSize: '0.875rem',
-                      backgroundColor: colors.error,
-                      color: colors.buttonText,
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                  >
-                    Clear All Photos (Reset Database)
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
-          {/* Thumbnail Cache Management */}
-          <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
-            <h3
-              onClick={() => toggleSection('thumbnails')}
-              style={{
-                margin: '0 0 1rem 0',
-                fontSize: '1rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                color: colors.textPrimary,
-              }}
-            >
-              <span>{expandedSections.thumbnails ? '▼' : '▶'}</span>
-              Thumbnail Cache
-            </h3>
-
-            {expandedSections.thumbnails && (
-              <div>
-                {/* Cache Statistics */}
+                {/* Thumbnail Cache Statistics and Settings */}
                 {thumbnailStats && (
                   <div
                     style={{
@@ -801,21 +840,19 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                     }}
                   >
                     <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                      <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>Thumbnail Cache</p>
                       <p style={{ margin: '0.25rem 0' }}>
                         <strong>Cached Thumbnails:</strong> {thumbnailStats.thumbnailCount}
                       </p>
                       <p style={{ margin: '0.25rem 0' }}>
                         <strong>Cache Size:</strong> {thumbnailStats.totalSizeMB.toFixed(1)} MB /{' '}
-                        {thumbnailStats.maxSizeMB} MB
-                      </p>
-                      <p style={{ margin: '0.25rem 0' }}>
-                        <strong>Usage:</strong> {thumbnailStats.usagePercent.toFixed(1)}%
+                        {thumbnailStats.maxSizeMB} MB ({thumbnailStats.usagePercent.toFixed(1)}%)
                       </p>
                     </div>
                     {/* Progress bar */}
                     <div
                       style={{
-                        marginTop: '0.5rem',
+                        marginTop: '0.75rem',
                         height: '8px',
                         backgroundColor: colors.border,
                         borderRadius: '4px',
@@ -836,70 +873,106 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                         }}
                       />
                     </div>
+
+                    {/* Max Cache Size Slider - inside the box */}
+                    <div style={{ marginTop: '1rem' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '0.5rem',
+                        }}
+                      >
+                        <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                          Maximum Size
+                        </label>
+                        <span
+                          style={{
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            color: colors.textPrimary,
+                          }}
+                        >
+                          {thumbnailStats.maxSizeMB} MB
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="100"
+                        max="2000"
+                        step="100"
+                        value={thumbnailStats.maxSizeMB}
+                        onChange={(e) => handleSetMaxCacheSize(parseInt(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontSize: '0.7rem',
+                          color: colors.textMuted,
+                          marginTop: '0.25rem',
+                        }}
+                      >
+                        <span>100 MB (~2.8K photos)</span>
+                        <span>2000 MB (~57K photos)</span>
+                      </div>
+                      <p
+                        style={{
+                          fontSize: '0.75rem',
+                          color: colors.textMuted,
+                          margin: '0.5rem 0 0 0',
+                        }}
+                      >
+                        Thumbnails stored at 400px (~35KB each). Least recently used thumbnails are
+                        automatically removed when limit is reached.
+                      </p>
+                    </div>
+
+                    {/* Clear Thumbnail Cache button - inside the box */}
+                    <button
+                      onClick={handleClearThumbnailCache}
+                      style={{
+                        marginTop: '1rem',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.875rem',
+                        backgroundColor: colors.surface,
+                        color: colors.textSecondary,
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        width: '100%',
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = colors.surfaceHover)
+                      }
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
+                    >
+                      Clear Thumbnail Cache
+                    </button>
                   </div>
                 )}
 
-                {/* Max Cache Size */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                      Maximum Cache Size
-                    </label>
-                    <span
-                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
-                    >
-                      {thumbnailStats?.maxSizeMB || 500} MB
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="100"
-                    max="2000"
-                    step="100"
-                    value={thumbnailStats?.maxSizeMB || 500}
-                    onChange={(e) => handleSetMaxCacheSize(parseInt(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: '0.7rem',
-                      color: colors.textMuted,
-                      marginTop: '0.25rem',
-                    }}
-                  >
-                    <span>100 MB (~2.8K photos)</span>
-                    <span>2000 MB (~57K photos)</span>
-                  </div>
-                  <p
-                    style={{
-                      fontSize: '0.75rem',
-                      color: colors.textMuted,
-                      margin: '0.5rem 0 0 0',
-                    }}
-                  >
-                    Thumbnails are stored at 400px with ~35KB per photo. Least recently used
-                    thumbnails are automatically removed when limit is reached.
-                  </p>
-                </div>
-
-                <p
+                {/* Clear All Photos Button */}
+                <button
+                  onClick={handleClearPhotosDatabase}
                   style={{
-                    fontSize: '0.75rem',
-                    color: colors.textMuted,
-                    margin: '0.5rem 0 0 0',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.875rem',
+                    backgroundColor: colors.error,
+                    color: colors.buttonText,
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
                   }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                 >
-                  Note: Use Database Management section above to clear thumbnail cache.
-                </p>
+                  Clear All Photos (Reset Database)
+                </button>
               </div>
             )}
           </section>{' '}
