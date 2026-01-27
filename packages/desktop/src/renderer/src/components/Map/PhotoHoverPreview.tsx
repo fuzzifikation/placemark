@@ -29,9 +29,7 @@ export function PhotoHoverPreview({
   const placeholderText = isDark ? '#888' : '#666';
 
   const filename = photo.path.split(/[\\/]/).pop();
-  const formattedDate = photo.timestamp
-    ? new Date(photo.timestamp).toLocaleDateString()
-    : null;
+  const formattedDate = photo.timestamp ? new Date(photo.timestamp).toLocaleDateString() : null;
 
   return (
     <div
