@@ -3,7 +3,9 @@ import { MapView } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { Settings, AppSettings } from './components/Settings';
 import type { Photo } from '@placemark/core';
-import { type Theme, getThemeColors } from './theme';
+import { usePhotoData } from './hooks/usePhotoData';
+import { useTheme } from './hooks/useTheme';
+import { useFolderScan } from './hooks/useFolderScan';
 
 declare global {
   interface Window {
@@ -44,25 +46,16 @@ declare global {
 }
 
 function App() {
-  const [scanning, setScanning] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [photos, setPhotos] = useState<Photo[]>([]);
-  const [allPhotos, setAllPhotos] = useState<Photo[]>([]); // Unfiltered photos
-  const [showMap, setShowMap] = useState(false);
+  // Custom hooks
+  const photoData = usePhotoData();
+  const { theme, colors, toggleTheme } = useTheme();
+  const folderScan = useFolderScan();
+
+  // Component state
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [loadingThumbnail, setLoadingThumbnail] = useState(false);
-  const [includeSubdirectories, setIncludeSubdirectories] = useState(true);
-  const [scanProgress, setScanProgress] = useState<{
-    currentFile: string;
-    processed: number;
-    total: number;
-  } | null>(null);
   const [showTimeline, setShowTimeline] = useState(false);
-  const [dateRange, setDateRange] = useState<{ min: number; max: number } | null>(null);
-  const [selectedDateRange, setSelectedDateRange] = useState<{ start: number; end: number } | null>(
-    null
-  );
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('placemark-settings');
@@ -70,21 +63,6 @@ function App() {
       ? JSON.parse(saved)
       : { clusterRadius: 30, clusterMaxZoom: 16, mapTransitionDuration: 200 };
   });
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('placemark-theme');
-    return (saved as Theme) || 'light';
-  });
-
-  const colors = getThemeColors(theme);
-
-  // Save theme preference
-  useEffect(() => {
-    localStorage.setItem('placemark-theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
 
   // Load thumbnail when photo is selected
   useEffect(() => {
@@ -120,58 +98,8 @@ function App() {
     }
   }, [selectedPhoto]);
 
-  // Load photos with location on mount
-  useEffect(() => {
-    loadPhotos();
-  }, []);
-
-  const loadPhotos = async () => {
-    try {
-      const photosWithLocation = await window.api.photos.getWithLocation();
-      setAllPhotos(photosWithLocation);
-      setPhotos(photosWithLocation);
-
-      if (photosWithLocation.length > 0) {
-        setShowMap(true);
-
-        // Load date range
-        const range = await window.api.photos.getDateRange();
-        if (range.minDate && range.maxDate) {
-          setDateRange({ min: range.minDate, max: range.maxDate });
-          setSelectedDateRange({ start: range.minDate, end: range.maxDate });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load photos:', error);
-    }
-  };
-
   const handleScanFolder = async () => {
-    setScanning(true);
-    setResult(null);
-    setScanProgress(null);
-
-    // Set up progress listener
-    const removeListener = window.api.photos.onScanProgress((progress) => {
-      setScanProgress(progress);
-    });
-
-    try {
-      const scanResult = await window.api.photos.scanFolder(includeSubdirectories);
-      setResult(scanResult);
-
-      // Reload photos after scanning
-      if (!scanResult.canceled) {
-        await loadPhotos();
-      }
-    } catch (error) {
-      console.error('Scan failed:', error);
-      setResult({ error: String(error) });
-    } finally {
-      removeListener();
-      setScanProgress(null);
-      setScanning(false);
-    }
+    await folderScan.scanFolder(photoData.loadPhotos);
   };
 
   const handleTimelineToggle = () => {
@@ -179,25 +107,15 @@ function App() {
   };
 
   const handleDateRangeChange = async (start: number, end: number) => {
-    setSelectedDateRange({ start, end });
-    try {
-      const filtered = await window.api.photos.getWithLocationInDateRange(start, end);
-      setPhotos(filtered);
-    } catch (error) {
-      console.error('Failed to filter photos by date:', error);
-    }
+    await photoData.filterByDateRange(start, end);
   };
 
   const handleTimelineClose = () => {
     setShowTimeline(false);
-    // Reset to show all photos
-    if (dateRange) {
-      setSelectedDateRange({ start: dateRange.min, end: dateRange.max });
-      setPhotos(allPhotos);
-    }
+    photoData.resetDateFilter();
   };
 
-  if (showMap && allPhotos.length > 0) {
+  if (photoData.showMap && photoData.allPhotos.length > 0) {
     return (
       <div
         style={{
@@ -224,7 +142,7 @@ function App() {
           <div>
             <h1 style={{ margin: 0, fontSize: '1.5rem', color: colors.textPrimary }}>Placemark</h1>
             <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
-              {photos.length} photos with location
+              {photoData.photos.length} photos with location
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -247,7 +165,7 @@ function App() {
             </button>
             <button
               onClick={handleTimelineToggle}
-              disabled={!dateRange}
+              disabled={!photoData.dateRange}
               style={{
                 padding: '0.5rem 1rem',
                 fontSize: '0.875rem',
@@ -255,11 +173,11 @@ function App() {
                 color: showTimeline ? colors.buttonText : colors.textPrimary,
                 border: `1px solid ${showTimeline ? colors.primary : colors.border}`,
                 borderRadius: '4px',
-                cursor: dateRange ? 'pointer' : 'not-allowed',
+                cursor: photoData.dateRange ? 'pointer' : 'not-allowed',
                 transition: 'all 0.2s ease',
               }}
               onMouseEnter={(e) => {
-                if (dateRange && !showTimeline) {
+                if (photoData.dateRange && !showTimeline) {
                   e.currentTarget.style.backgroundColor = colors.surfaceHover;
                 }
               }}
@@ -273,25 +191,26 @@ function App() {
             </button>
             <button
               onClick={handleScanFolder}
-              disabled={scanning}
+              disabled={folderScan.scanning}
               style={{
                 padding: '0.5rem 1rem',
                 fontSize: '0.875rem',
-                backgroundColor: scanning ? colors.textMuted : colors.primary,
+                backgroundColor: folderScan.scanning ? colors.textMuted : colors.primary,
                 color: colors.buttonText,
                 border: 'none',
                 borderRadius: '4px',
-                cursor: scanning ? 'not-allowed' : 'pointer',
+                cursor: folderScan.scanning ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
               }}
               onMouseEnter={(e) => {
-                if (!scanning) e.currentTarget.style.backgroundColor = colors.primaryHover;
+                if (!folderScan.scanning)
+                  e.currentTarget.style.backgroundColor = colors.primaryHover;
               }}
               onMouseLeave={(e) => {
-                if (!scanning) e.currentTarget.style.backgroundColor = colors.primary;
+                if (!folderScan.scanning) e.currentTarget.style.backgroundColor = colors.primary;
               }}
             >
-              {scanning ? 'Scanning...' : 'Scan Another Folder'}
+              {folderScan.scanning ? 'Scanning...' : 'Scan Another Folder'}
             </button>
           </div>
         </div>
@@ -300,7 +219,7 @@ function App() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1 }}>
             <MapView
-              photos={photos}
+              photos={photoData.photos}
               onPhotoClick={setSelectedPhoto}
               clusteringEnabled={settings.clusteringEnabled}
               clusterRadius={settings.clusterRadius}
@@ -313,14 +232,14 @@ function App() {
               showHeatmap={settings.showHeatmap}
             />
           </div>
-          {showTimeline && dateRange && selectedDateRange && (
+          {showTimeline && photoData.dateRange && photoData.selectedDateRange && (
             <Timeline
-              minDate={dateRange.min}
-              maxDate={dateRange.max}
-              startDate={selectedDateRange.start}
-              endDate={selectedDateRange.end}
-              totalPhotos={allPhotos.length}
-              filteredPhotos={photos.length}
+              minDate={photoData.dateRange.min}
+              maxDate={photoData.dateRange.max}
+              startDate={photoData.selectedDateRange.start}
+              endDate={photoData.selectedDateRange.end}
+              totalPhotos={photoData.allPhotos.length}
+              filteredPhotos={photoData.photos.length}
               onRangeChange={handleDateRangeChange}
               onClose={handleTimelineClose}
               updateInterval={settings.timelineUpdateInterval}
@@ -515,8 +434,8 @@ function App() {
       >
         <input
           type="checkbox"
-          checked={includeSubdirectories}
-          onChange={(e) => setIncludeSubdirectories(e.target.checked)}
+          checked={folderScan.includeSubdirectories}
+          onChange={(e) => folderScan.setIncludeSubdirectories(e.target.checked)}
           style={{ cursor: 'pointer' }}
         />
         <span>Include subdirectories</span>
@@ -524,26 +443,26 @@ function App() {
 
       <button
         onClick={handleScanFolder}
-        disabled={scanning}
+        disabled={folderScan.scanning}
         style={{
           marginTop: '1rem',
           padding: '0.75rem 1.5rem',
           fontSize: '1rem',
-          backgroundColor: scanning ? '#ccc' : '#0066cc',
+          backgroundColor: folderScan.scanning ? '#ccc' : '#0066cc',
           color: 'white',
           border: 'none',
           borderRadius: '4px',
-          cursor: scanning ? 'not-allowed' : 'pointer',
+          cursor: folderScan.scanning ? 'not-allowed' : 'pointer',
         }}
       >
-        {scanning
-          ? scanProgress
-            ? `Scanning... ${scanProgress.processed}/${scanProgress.total}`
+        {folderScan.scanning
+          ? folderScan.scanProgress
+            ? `Scanning... ${folderScan.scanProgress.processed}/${folderScan.scanProgress.total}`
             : 'Scanning...'
           : 'Scan Folder'}
       </button>
 
-      {scanning && scanProgress && (
+      {folderScan.scanning && folderScan.scanProgress && (
         <div
           style={{
             marginTop: '1rem',
@@ -556,7 +475,7 @@ function App() {
           }}
         >
           <p style={{ margin: '0.25rem 0', color: '#666' }}>
-            Processing: {scanProgress.processed} of {scanProgress.total} files
+            Processing: {folderScan.scanProgress.processed} of {folderScan.scanProgress.total} files
           </p>
           <p
             style={{
@@ -567,12 +486,12 @@ function App() {
               whiteSpace: 'nowrap',
             }}
           >
-            Current: {scanProgress.currentFile}
+            Current: {folderScan.scanProgress.currentFile}
           </p>
         </div>
       )}
 
-      {result && !result.canceled && (
+      {folderScan.result && !folderScan.result.canceled && (
         <div
           style={{
             marginTop: '2rem',
@@ -584,18 +503,18 @@ function App() {
           }}
         >
           <h3 style={{ marginTop: 0 }}>Scan Results</h3>
-          {result.error ? (
-            <p style={{ color: 'red' }}>{result.error}</p>
+          {folderScan.result.error ? (
+            <p style={{ color: 'red' }}>{folderScan.result.error}</p>
           ) : (
             <>
               <p>
-                <strong>Folder:</strong> {result.folderPath}
+                <strong>Folder:</strong> {folderScan.result.folderPath}
               </p>
               <p>
-                <strong>Total files scanned:</strong> {result.totalFiles}
+                <strong>Total files scanned:</strong> {folderScan.result.totalFiles}
               </p>
               <p>
-                <strong>Photos processed:</strong> {result.processedFiles}
+                <strong>Photos processed:</strong> {folderScan.result.processedFiles}
               </p>
               <p
                 style={{
@@ -604,13 +523,15 @@ function App() {
                   fontWeight: 'bold',
                 }}
               >
-                Photos with location: {result.photosWithLocation}
+                Photos with location: {folderScan.result.photosWithLocation}
               </p>
-              {result.errors?.length > 0 && (
+              {folderScan.result.errors?.length > 0 && (
                 <details style={{ marginTop: '1rem' }}>
-                  <summary style={{ cursor: 'pointer' }}>{result.errors.length} errors</summary>
+                  <summary style={{ cursor: 'pointer' }}>
+                    {folderScan.result.errors.length} errors
+                  </summary>
                   <ul style={{ fontSize: '0.875rem', color: '#666' }}>
-                    {result.errors.map((err: string, i: number) => (
+                    {folderScan.result.errors.map((err: string, i: number) => (
                       <li key={i}>{err}</li>
                     ))}
                   </ul>
