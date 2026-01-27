@@ -22,6 +22,18 @@ declare global {
         clearDatabase: () => Promise<void>;
         onScanProgress: (callback: (progress: any) => void) => () => void;
       };
+      thumbnails: {
+        get: (photoId: number, photoPath: string) => Promise<Buffer | null>;
+        getStats: () => Promise<{
+          totalSizeBytes: number;
+          totalSizeMB: number;
+          thumbnailCount: number;
+          maxSizeMB: number;
+          usagePercent: number;
+        }>;
+        clearCache: () => Promise<void>;
+        setMaxSize: (sizeMB: number) => Promise<void>;
+      };
     };
   }
 }
@@ -33,6 +45,8 @@ function App() {
   const [allPhotos, setAllPhotos] = useState<Photo[]>([]); // Unfiltered photos
   const [showMap, setShowMap] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [loadingThumbnail, setLoadingThumbnail] = useState(false);
   const [includeSubdirectories, setIncludeSubdirectories] = useState(true);
   const [scanProgress, setScanProgress] = useState<{
     currentFile: string;
@@ -66,6 +80,40 @@ function App() {
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
+
+  // Load thumbnail when photo is selected
+  useEffect(() => {
+    if (selectedPhoto) {
+      setLoadingThumbnail(true);
+      setThumbnailUrl(null);
+
+      window.api.thumbnails
+        .get(selectedPhoto.id, selectedPhoto.path)
+        .then((thumbnailBuffer) => {
+          if (thumbnailBuffer) {
+            // Convert Buffer to Blob and create URL
+            // Cast through unknown to handle Buffer type from IPC
+            const uint8Array = new Uint8Array(thumbnailBuffer as unknown as ArrayBuffer);
+            const blob = new Blob([uint8Array], { type: 'image/jpeg' });
+            const url = URL.createObjectURL(blob);
+            setThumbnailUrl(url);
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load thumbnail:', error);
+        })
+        .finally(() => {
+          setLoadingThumbnail(false);
+        });
+
+      // Cleanup URL on unmount or photo change
+      return () => {
+        if (thumbnailUrl) {
+          URL.revokeObjectURL(thumbnailUrl);
+        }
+      };
+    }
+  }, [selectedPhoto]);
 
   // Load photos with location on mount
   useEffect(() => {
@@ -370,6 +418,47 @@ function App() {
                   ×
                 </button>
               </div>
+              {/* Thumbnail Display */}
+              {loadingThumbnail && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '400px',
+                    backgroundColor: '#f0f0f0',
+                    borderRadius: '4px',
+                  }}
+                >
+                  <p style={{ color: '#666' }}>Loading thumbnail...</p>
+                </div>
+              )}
+              {!loadingThumbnail && thumbnailUrl && (
+                <img
+                  src={thumbnailUrl}
+                  alt={selectedPhoto.path.split(/[\\/]/).pop()}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '400px',
+                    objectFit: 'contain',
+                    borderRadius: '4px',
+                  }}
+                />
+              )}
+              {!loadingThumbnail && !thumbnailUrl && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '400px',
+                    backgroundColor: '#f0f0f0',
+                    borderRadius: '4px',
+                  }}
+                >
+                  <p style={{ color: '#666' }}>Thumbnail not available</p>
+                </div>
+              )}
               <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#666' }}>
                 <p style={{ margin: '0.25rem 0' }}>
                   <strong>Path:</strong> {selectedPhoto.path}

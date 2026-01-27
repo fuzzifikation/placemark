@@ -166,6 +166,11 @@ export function MapView({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [hoveredPhoto, setHoveredPhoto] = useState<Photo | null>(null);
+  const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+  const [hoverThumbnailUrl, setHoverThumbnailUrl] = useState<string | null>(null);
+  const [loadingHoverThumbnail, setLoadingHoverThumbnail] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize map
   useEffect(() => {
@@ -276,7 +281,89 @@ export function MapView({
       if (map.current) map.current.getCanvas().style.cursor = '';
     });
 
+    // Hover preview for individual photos
+    map.current.on('mousemove', 'unclustered-point', (e: MapLayerMouseEvent) => {
+      if (!e.features || e.features.length === 0) return;
+
+      const feature = e.features[0];
+      const props = feature.properties;
+      if (!props) return;
+
+      const photo: Photo = {
+        id: props.id,
+        path: props.path,
+        latitude: props.latitude,
+        longitude: props.longitude,
+        timestamp: props.timestamp || null,
+        source: props.source,
+        fileSize: props.fileSize,
+        mimeType: props.mimeType,
+        scannedAt: props.scannedAt,
+        fileHash: props.fileHash || null,
+      };
+
+      // Update hover position
+      setHoverPosition({ x: e.originalEvent.clientX, y: e.originalEvent.clientY });
+
+      // Only load thumbnail if photo changed
+      if (!hoveredPhoto || hoveredPhoto.id !== photo.id) {
+        setHoveredPhoto(photo);
+
+        // Clear existing timeout
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current);
+        }
+
+        // Immediately clear old thumbnail and show loading state
+        if (hoverThumbnailUrl) {
+          URL.revokeObjectURL(hoverThumbnailUrl);
+        }
+        setHoverThumbnailUrl(null);
+        setLoadingHoverThumbnail(true);
+
+        // Load thumbnail after 200ms delay (debounce)
+        hoverTimeoutRef.current = setTimeout(() => {
+          (window as any).api.thumbnails
+            .get(photo.id, photo.path)
+            .then((thumbnailBuffer: Buffer | null) => {
+              if (thumbnailBuffer) {
+                const uint8Array = new Uint8Array(thumbnailBuffer as unknown as ArrayBuffer);
+                const blob = new Blob([uint8Array], { type: 'image/jpeg' });
+                const url = URL.createObjectURL(blob);
+                setHoverThumbnailUrl(url);
+              }
+            })
+            .catch((error: Error) => {
+              console.error('Failed to load hover thumbnail:', error);
+            })
+            .finally(() => {
+              setLoadingHoverThumbnail(false);
+            });
+        }, 200);
+      }
+    });
+
+    map.current.on('mouseleave', 'unclustered-point', () => {
+      // Clear hover state
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+      setHoveredPhoto(null);
+      setHoverPosition(null);
+      if (hoverThumbnailUrl) {
+        URL.revokeObjectURL(hoverThumbnailUrl);
+        setHoverThumbnailUrl(null);
+      }
+    });
+
     return () => {
+      // Cleanup
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+      if (hoverThumbnailUrl) {
+        URL.revokeObjectURL(hoverThumbnailUrl);
+      }
       map.current?.remove();
       map.current = null;
       setMapLoaded(false);
@@ -479,13 +566,100 @@ export function MapView({
   }, [showHeatmap, mapLoaded]);
 
   return (
-    <div
-      ref={mapContainer}
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-      }}
-    />
+    <>
+      <div
+        ref={mapContainer}
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+        }}
+      />
+      {/* Hover Tooltip */}
+      {hoveredPhoto && hoverPosition && (
+        <div
+          style={{
+            position: 'fixed',
+            left: hoverPosition.x + 15,
+            top: hoverPosition.y + 15,
+            backgroundColor:
+              theme === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+            color: theme === 'dark' ? '#ffffff' : '#000000',
+            border: `1px solid ${theme === 'dark' ? '#444' : '#ccc'}`,
+            borderRadius: '4px',
+            padding: '0.5rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            pointerEvents: 'none',
+            zIndex: 999,
+            maxWidth: '180px',
+          }}
+        >
+          {loadingHoverThumbnail && (
+            <div
+              style={{
+                width: '150px',
+                height: '150px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: theme === 'dark' ? '#222' : '#f0f0f0',
+                borderRadius: '4px',
+              }}
+            >
+              <span style={{ fontSize: '0.75rem', color: theme === 'dark' ? '#888' : '#666' }}>
+                Loading...
+              </span>
+            </div>
+          )}
+          {!loadingHoverThumbnail && hoverThumbnailUrl && (
+            <img
+              src={hoverThumbnailUrl}
+              alt="Preview"
+              style={{
+                width: '150px',
+                height: '150px',
+                objectFit: 'cover',
+                borderRadius: '4px',
+                display: 'block',
+              }}
+            />
+          )}
+          {!loadingHoverThumbnail && !hoverThumbnailUrl && (
+            <div
+              style={{
+                width: '150px',
+                height: '150px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: theme === 'dark' ? '#222' : '#f0f0f0',
+                borderRadius: '4px',
+              }}
+            >
+              <span style={{ fontSize: '0.75rem', color: theme === 'dark' ? '#888' : '#666' }}>
+                No preview
+              </span>
+            </div>
+          )}
+          <div style={{ marginTop: '0.5rem', fontSize: '0.75rem' }}>
+            <div
+              style={{
+                fontWeight: 600,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {hoveredPhoto.path.split(/[\\/]/).pop()}
+            </div>
+            {hoveredPhoto.timestamp && (
+              <div style={{ color: theme === 'dark' ? '#aaa' : '#666', marginTop: '0.25rem' }}>
+                {new Date(hoveredPhoto.timestamp * 1000).toLocaleDateString()}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

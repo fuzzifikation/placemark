@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import { join } from 'path';
-import { registerPhotoHandlers } from './ipc/photos';
+import { registerPhotoHandlers, closeThumbnailService } from './ipc/photos';
 import { closeStorage } from './services/storage';
 
 let win: BrowserWindow | null;
@@ -34,6 +34,7 @@ function createWindow() {
 
 app.on('window-all-closed', () => {
   closeStorage();
+  closeThumbnailService();
   if (process.platform !== 'darwin') {
     app.quit();
     win = null;

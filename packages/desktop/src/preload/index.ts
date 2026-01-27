@@ -18,4 +18,11 @@ contextBridge.exposeInMainWorld('api', {
       return () => ipcRenderer.removeListener('photos:scanProgress', listener);
     },
   },
+  thumbnails: {
+    get: (photoId: number, photoPath: string) =>
+      ipcRenderer.invoke('thumbnails:get', photoId, photoPath),
+    getStats: () => ipcRenderer.invoke('thumbnails:getStats'),
+    clearCache: () => ipcRenderer.invoke('thumbnails:clearCache'),
+    setMaxSize: (sizeMB: number) => ipcRenderer.invoke('thumbnails:setMaxSize', sizeMB),
+  },
 });

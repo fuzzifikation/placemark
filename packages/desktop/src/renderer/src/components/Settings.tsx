@@ -56,11 +56,57 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
     clustering: boolean;
     display: boolean;
     timeline: boolean;
+    thumbnails: boolean;
   }>({
     clustering: true,
     display: true,
     timeline: true,
+    thumbnails: true,
   });
+
+  const [thumbnailStats, setThumbnailStats] = useState<{
+    totalSizeMB: number;
+    thumbnailCount: number;
+    maxSizeMB: number;
+    usagePercent: number;
+  } | null>(null);
+
+  // Load thumbnail cache stats
+  useEffect(() => {
+    loadThumbnailStats();
+  }, []);
+
+  const loadThumbnailStats = async () => {
+    try {
+      const stats = await (window as any).api.thumbnails.getStats();
+      setThumbnailStats(stats);
+    } catch (error) {
+      console.error('Failed to load thumbnail stats:', error);
+    }
+  };
+
+  const handleClearThumbnailCache = async () => {
+    if (!confirm('Clear thumbnail cache? Thumbnails will be regenerated as needed.')) {
+      return;
+    }
+    try {
+      await (window as any).api.thumbnails.clearCache();
+      await loadThumbnailStats();
+      alert('Thumbnail cache cleared successfully.');
+    } catch (error) {
+      console.error('Failed to clear thumbnail cache:', error);
+      alert('Failed to clear cache: ' + error);
+    }
+  };
+
+  const handleSetMaxCacheSize = async (sizeMB: number) => {
+    try {
+      await (window as any).api.thumbnails.setMaxSize(sizeMB);
+      await loadThumbnailStats();
+    } catch (error) {
+      console.error('Failed to set cache size:', error);
+    }
+  };
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -183,7 +229,6 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               </button>
             </div>
           </section>
-
           {/* Map Clustering */}
           <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
             <h3
@@ -295,7 +340,6 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               </div>
             )}
           </section>
-
           {/* Map Display */}
           <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
             <h3
@@ -483,7 +527,6 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               </div>
             )}
           </section>
-
           {/* Timeline */}
           <section>
             <h3
@@ -586,6 +629,153 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               </div>
             )}
           </section>
+          {/* Thumbnail Cache Management */}
+          <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
+            <h3
+              onClick={() => toggleSection('thumbnails')}
+              style={{
+                margin: '0 0 1rem 0',
+                fontSize: '1rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                color: colors.textPrimary,
+              }}
+            >
+              <span>{expandedSections.thumbnails ? '▼' : '▶'}</span>
+              Thumbnail Cache
+            </h3>
+
+            {expandedSections.thumbnails && (
+              <div>
+                {/* Cache Statistics */}
+                {thumbnailStats && (
+                  <div
+                    style={{
+                      backgroundColor: colors.surface,
+                      padding: '1rem',
+                      borderRadius: '4px',
+                      marginBottom: '1rem',
+                      border: `1px solid ${colors.border}`,
+                    }}
+                  >
+                    <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>Cached Thumbnails:</strong> {thumbnailStats.thumbnailCount}
+                      </p>
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>Cache Size:</strong> {thumbnailStats.totalSizeMB.toFixed(1)} MB /{' '}
+                        {thumbnailStats.maxSizeMB} MB
+                      </p>
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>Usage:</strong> {thumbnailStats.usagePercent.toFixed(1)}%
+                      </p>
+                    </div>
+                    {/* Progress bar */}
+                    <div
+                      style={{
+                        marginTop: '0.5rem',
+                        height: '8px',
+                        backgroundColor: colors.border,
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${Math.min(thumbnailStats.usagePercent, 100)}%`,
+                          backgroundColor:
+                            thumbnailStats.usagePercent > 90
+                              ? '#f28cb1'
+                              : thumbnailStats.usagePercent > 75
+                                ? '#f1f075'
+                                : '#51bbd6',
+                          transition: 'width 0.3s ease',
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Max Cache Size */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                      Maximum Cache Size
+                    </label>
+                    <span
+                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
+                    >
+                      {thumbnailStats?.maxSizeMB || 500} MB
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="100"
+                    max="2000"
+                    step="100"
+                    value={thumbnailStats?.maxSizeMB || 500}
+                    onChange={(e) => handleSetMaxCacheSize(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: '0.7rem',
+                      color: colors.textMuted,
+                      marginTop: '0.25rem',
+                    }}
+                  >
+                    <span>100 MB (~2.8K photos)</span>
+                    <span>2000 MB (~57K photos)</span>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: '0.75rem',
+                      color: colors.textMuted,
+                      margin: '0.5rem 0 0 0',
+                    }}
+                  >
+                    Thumbnails are stored at 400px with ~35KB per photo. Least recently used
+                    thumbnails are automatically removed when limit is reached.
+                  </p>
+                </div>
+
+                {/* Clear Cache Button */}
+                <button
+                  onClick={handleClearThumbnailCache}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.875rem',
+                    backgroundColor: colors.surface,
+                    color: colors.textSecondary,
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    width: '100%',
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = colors.surfaceHover)
+                  }
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
+                >
+                  Clear Thumbnail Cache
+                </button>
+              </div>
+            )}
+          </section>{' '}
         </div>
 
         {/* Footer */}
