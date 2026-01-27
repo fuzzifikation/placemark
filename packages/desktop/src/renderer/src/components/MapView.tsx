@@ -9,32 +9,14 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Photo } from '@placemark/core';
 import type * as GeoJSON from 'geojson';
 import type { Theme } from '../theme';
-
-// Cluster styling constants
-const CLUSTER_THRESHOLDS = {
-  SMALL: 100, // < 100 points
-  MEDIUM: 750, // 100-750 points
-  // > 750 points (large)
-};
-
-const CLUSTER_COLORS = {
-  SMALL: '#51bbd6', // Blue
-  MEDIUM: '#f1f075', // Yellow
-  LARGE: '#f28cb1', // Pink
-};
-
-const CLUSTER_RADII = {
-  SMALL: 20,
-  MEDIUM: 30,
-  LARGE: 40,
-};
-
-const UNCLUSTERED_STYLE = {
-  COLOR: '#0066cc',
-  RADIUS: 6,
-  STROKE_WIDTH: 2,
-  STROKE_COLOR: '#fff',
-};
+import {
+  CLUSTER_THRESHOLDS,
+  CLUSTER_COLORS,
+  CLUSTER_RADII,
+  UNCLUSTERED_STYLE,
+  HEATMAP_CONFIG,
+} from './Map/mapStyles';
+import { PhotoHoverPreview } from './Map/PhotoHoverPreview';
 
 // Helper function to add heatmap layer to map
 function addHeatmapLayer(map: maplibregl.Map) {
@@ -42,34 +24,29 @@ function addHeatmapLayer(map: maplibregl.Map) {
     id: 'photos-heatmap',
     type: 'heatmap',
     source: 'photos-heatmap-source',
-    maxzoom: 22, // Show heatmap at all zoom levels
+    maxzoom: HEATMAP_CONFIG.MAX_ZOOM,
     paint: {
-      // Increase weight as diameter increases
-      'heatmap-weight': ['interpolate', ['linear'], ['zoom'], 0, 1, 22, 1],
-      // Increase intensity as zoom level increases
-      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 22, 5],
-      // Color ramp for heatmap - vibrant colors that work on both light and dark backgrounds
+      'heatmap-weight': ['interpolate', ['linear'], ['zoom'], 0, 1, HEATMAP_CONFIG.MAX_ZOOM, 1],
+      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, HEATMAP_CONFIG.MAX_ZOOM, 5],
       'heatmap-color': [
         'interpolate',
         ['linear'],
         ['heatmap-density'],
         0,
-        'rgba(0,0,255,0)', // Transparent at zero density
+        HEATMAP_CONFIG.COLORS.TRANSPARENT,
         0.2,
-        'rgb(65,105,225)', // Royal blue
+        HEATMAP_CONFIG.COLORS.BLUE,
         0.4,
-        'rgb(0,191,255)', // Deep sky blue
+        HEATMAP_CONFIG.COLORS.SKY_BLUE,
         0.6,
-        'rgb(255,255,0)', // Yellow
+        HEATMAP_CONFIG.COLORS.YELLOW,
         0.8,
-        'rgb(255,140,0)', // Dark orange
+        HEATMAP_CONFIG.COLORS.ORANGE,
         1,
-        'rgb(220,20,60)', // Crimson red
+        HEATMAP_CONFIG.COLORS.RED,
       ],
-      // Adjust radius by zoom level
-      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 3, 9, 25, 22, 50],
-      // Keep opacity high at all zoom levels
-      'heatmap-opacity': 0.8,
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 3, 9, 25, HEATMAP_CONFIG.MAX_ZOOM, 50],
+      'heatmap-opacity': HEATMAP_CONFIG.OPACITY,
     },
   });
 }
@@ -628,88 +605,13 @@ export function MapView({
       </div>
       {/* Hover Tooltip */}
       {hoveredPhoto && hoverPosition && (
-        <div
-          style={{
-            position: 'fixed',
-            left: hoverPosition.x + 15,
-            top: hoverPosition.y + 15,
-            backgroundColor:
-              theme === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-            color: theme === 'dark' ? '#ffffff' : '#000000',
-            border: `1px solid ${theme === 'dark' ? '#444' : '#ccc'}`,
-            borderRadius: '4px',
-            padding: '0.5rem',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-            pointerEvents: 'none',
-            zIndex: 999,
-            maxWidth: '180px',
-          }}
-        >
-          {loadingHoverThumbnail && (
-            <div
-              style={{
-                width: '150px',
-                height: '150px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: theme === 'dark' ? '#222' : '#f0f0f0',
-                borderRadius: '4px',
-              }}
-            >
-              <span style={{ fontSize: '0.75rem', color: theme === 'dark' ? '#888' : '#666' }}>
-                Loading...
-              </span>
-            </div>
-          )}
-          {!loadingHoverThumbnail && hoverThumbnailUrl && (
-            <img
-              src={hoverThumbnailUrl}
-              alt="Preview"
-              style={{
-                width: '150px',
-                height: '150px',
-                objectFit: 'cover',
-                borderRadius: '4px',
-                display: 'block',
-              }}
-            />
-          )}
-          {!loadingHoverThumbnail && !hoverThumbnailUrl && (
-            <div
-              style={{
-                width: '150px',
-                height: '150px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: theme === 'dark' ? '#222' : '#f0f0f0',
-                borderRadius: '4px',
-              }}
-            >
-              <span style={{ fontSize: '0.75rem', color: theme === 'dark' ? '#888' : '#666' }}>
-                No preview
-              </span>
-            </div>
-          )}
-          <div style={{ marginTop: '0.5rem', fontSize: '0.75rem' }}>
-            <div
-              style={{
-                fontWeight: 600,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {hoveredPhoto.path.split(/[\\/]/).pop()}
-            </div>
-            {hoveredPhoto.timestamp && (
-              <div style={{ color: theme === 'dark' ? '#aaa' : '#666', marginTop: '0.25rem' }}>
-                {new Date(hoveredPhoto.timestamp).toLocaleDateString()}
-              </div>
-            )}
-          </div>
-        </div>
+        <PhotoHoverPreview
+          photo={hoveredPhoto}
+          position={hoverPosition}
+          thumbnailUrl={hoverThumbnailUrl}
+          loading={loadingHoverThumbnail}
+          theme={theme}
+        />
       )}
     </>
   );
