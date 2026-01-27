@@ -300,25 +300,34 @@ placemark/
 │   │   │   │   │   ├── components/
 │   │   │   │   │   │   ├── Map/
 │   │   │   │   │   │   │   ├── MapView.tsx
-│   │   │   │   │   │   │   ├── PhotoMarkers.tsx
-│   │   │   │   │   │   │   └── SelectionBox.tsx
-│   │   │   │   │   │   ├── PhotoGrid/
-│   │   │   │   │   │   │   ├── PhotoGrid.tsx
-│   │   │   │   │   │   │   ├── PhotoCard.tsx
-│   │   │   │   │   │   │   └── VirtualScroller.tsx
-│   │   │   │   │   │   ├── Filters/
-│   │   │   │   │   │   │   ├── DateRangeSlider.tsx
-│   │   │   │   │   │   │   ├── SourceSelector.tsx
-│   │   │   │   │   │   │   └── SelectionSummary.tsx
+│   │   │   │   │   │   │   ├── mapStyles.ts          # Style constants
+│   │   │   │   │   │   │   ├── mapLayers.ts          # Layer setup functions
+│   │   │   │   │   │   │   └── PhotoHoverPreview.tsx # Hover tooltip
+│   │   │   │   │   │   ├── Settings/
+│   │   │   │   │   │   │   ├── Settings.tsx
+│   │   │   │   │   │   │   ├── SettingsSlider.tsx    # Reusable slider
+│   │   │   │   │   │   │   ├── SettingsToggle.tsx    # Reusable toggle
+│   │   │   │   │   │   │   └── SettingsSection.tsx   # Collapsible section
+│   │   │   │   │   │   ├── Timeline/
+│   │   │   │   │   │   │   ├── Timeline.tsx
+│   │   │   │   │   │   │   ├── TimelineControls.tsx  # Play/pause controls
+│   │   │   │   │   │   │   ├── TimelineSlider.tsx    # Range slider
+│   │   │   │   │   │   │   ├── useTimelineDrag.ts    # Drag logic hook
+│   │   │   │   │   │   │   ├── useTimelinePlayback.ts # Animation hook
+│   │   │   │   │   │   │   └── timelineUtils.ts      # Date formatting
 │   │   │   │   │   │   ├── Operations/
 │   │   │   │   │   │   │   ├── OperationsPanel.tsx
 │   │   │   │   │   │   │   ├── DryRunPreview.tsx
 │   │   │   │   │   │   │   └── ProgressBar.tsx
-│   │   │   │   │   │   └── Settings/
-│   │   │   │   │   │       ├── SourcesManager.tsx
-│   │   │   │   │   │       └── OneDriveAuth.tsx
+│   │   │   │   │   │   └── PhotoGrid/
+│   │   │   │   │   │       ├── PhotoGrid.tsx
+│   │   │   │   │   │       ├── PhotoCard.tsx
+│   │   │   │   │   │       └── VirtualScroller.tsx
 │   │   │   │   │   ├── hooks/
-│   │   │   │   │   │   ├── usePhotos.ts
+│   │   │   │   │   │   ├── usePhotoData.ts           # Photo state management
+│   │   │   │   │   │   ├── useTheme.ts               # Theme management
+│   │   │   │   │   │   └── useFolderScan.ts          # Folder scanning
+│   │   │   │   │   ├── styles/
 │   │   │   │   │   │   ├── useFilters.ts
 │   │   │   │   │   │   └── useIPC.ts
 │   │   │   │   │   └── styles/

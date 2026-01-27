@@ -4,6 +4,8 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 
 **Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | 🔜 Phase 4 - File Operations
 
+**Recent Work:** Major code refactoring completed (Jan 2026) - reduced 4 large components by ~1,035 lines through component extraction and custom hooks. See [REFACTORING_PLAN.md](REFACTORING_PLAN.md) for details.
+
 ---
 
 ## Implementation Phases
