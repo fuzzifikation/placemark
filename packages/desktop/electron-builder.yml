@@ -11,6 +11,11 @@ win:
   target:
     - nsis
   signAndEditExecutable: false
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  include: build/uninstaller.nsh
 mac:
   target:
     - dmg

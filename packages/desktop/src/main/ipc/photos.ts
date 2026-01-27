@@ -2,7 +2,7 @@
  * IPC handlers for photo operations
  */
 
-import { ipcMain, dialog, shell } from 'electron';
+import { ipcMain, dialog, shell, app } from 'electron';
 import { scanDirectory } from '../services/filesystem';
 import {
   getPhotosWithLocation,
@@ -12,6 +12,8 @@ import {
   getPhotosWithLocationInDateRange,
 } from '../services/storage';
 import { ThumbnailService } from '../services/thumbnails';
+import * as fs from 'fs';
+import * as path from 'path';
 
 let thumbnailService: ThumbnailService;
 
@@ -81,6 +83,28 @@ export function registerPhotoHandlers(): void {
   // Show photo in file explorer
   ipcMain.handle('photos:showInFolder', async (_event, path: string) => {
     shell.showItemInFolder(path);
+  });
+
+  // Get database statistics
+  ipcMain.handle('photos:getDatabaseStats', async () => {
+    const userDataPath = app.getPath('userData');
+    const photosDbPath = path.join(userDataPath, 'placemark.db');
+    const thumbnailsDbPath = path.join(userDataPath, 'thumbnails.db');
+
+    const getFileSize = (filePath: string): number => {
+      try {
+        const stats = fs.statSync(filePath);
+        return stats.size / (1024 * 1024); // Convert to MB
+      } catch {
+        return 0;
+      }
+    };
+
+    return {
+      photosDbSizeMB: getFileSize(photosDbPath),
+      thumbnailsDbSizeMB: getFileSize(thumbnailsDbPath),
+      totalPhotoCount: getPhotoCountWithLocation(),
+    };
   });
 
   // Clear all photos from database

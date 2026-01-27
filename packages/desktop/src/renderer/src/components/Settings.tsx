@@ -31,7 +31,7 @@ export interface AppSettings {
 const DEFAULT_SETTINGS: AppSettings = {
   // Map Clustering
   clusterRadius: 30,
-  clusterMaxZoom: 16,
+  clusterMaxZoom: 14,
 
   // Map Display
   mapMaxZoom: 15,
@@ -57,11 +57,13 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
     display: boolean;
     timeline: boolean;
     thumbnails: boolean;
+    database: boolean;
   }>({
     clustering: true,
     display: true,
     timeline: true,
     thumbnails: true,
+    database: true,
   });
 
   const [thumbnailStats, setThumbnailStats] = useState<{
@@ -71,9 +73,16 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
     usagePercent: number;
   } | null>(null);
 
-  // Load thumbnail cache stats
+  const [databaseStats, setDatabaseStats] = useState<{
+    photosDbSizeMB: number;
+    thumbnailsDbSizeMB: number;
+    totalPhotoCount: number;
+  } | null>(null);
+
+  // Load stats on mount
   useEffect(() => {
     loadThumbnailStats();
+    loadDatabaseStats();
   }, []);
 
   const loadThumbnailStats = async () => {
@@ -85,6 +94,15 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
     }
   };
 
+  const loadDatabaseStats = async () => {
+    try {
+      const stats = await (window as any).api.photos.getDatabaseStats();
+      setDatabaseStats(stats);
+    } catch (error) {
+      console.error('Failed to load database stats:', error);
+    }
+  };
+
   const handleClearThumbnailCache = async () => {
     if (!confirm('Clear thumbnail cache? Thumbnails will be regenerated as needed.')) {
       return;
@@ -92,10 +110,31 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
     try {
       await (window as any).api.thumbnails.clearCache();
       await loadThumbnailStats();
+      await loadDatabaseStats();
       alert('Thumbnail cache cleared successfully.');
     } catch (error) {
       console.error('Failed to clear thumbnail cache:', error);
       alert('Failed to clear cache: ' + error);
+    }
+  };
+
+  const handleClearPhotosDatabase = async () => {
+    if (
+      !confirm(
+        'Clear all photos from database? This cannot be undone. You will need to re-scan your folders.'
+      )
+    ) {
+      return;
+    }
+    try {
+      await (window as any).api.photos.clearDatabase();
+      await loadDatabaseStats();
+      alert('Photos database cleared successfully.');
+      // Notify parent to refresh UI
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to clear photos database:', error);
+      alert('Failed to clear database: ' + error);
     }
   };
 
@@ -146,6 +185,8 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
           padding: '1.5rem',
           minWidth: '400px',
           maxWidth: '90%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
           transition: 'background-color 0.2s ease, color 0.2s ease',
         }}
@@ -628,6 +669,104 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                 </div>
               </div>
             )}
+          </section>{' '}
+          {/* Database Management */}
+          <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
+            <h3
+              onClick={() => toggleSection('database')}
+              style={{
+                margin: '0 0 1rem 0',
+                fontSize: '1rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                color: colors.textPrimary,
+              }}
+            >
+              <span>{expandedSections.database ? '▼' : '▶'}</span>
+              Database Management
+            </h3>
+
+            {expandedSections.database && (
+              <div>
+                {/* Database Statistics */}
+                {databaseStats && (
+                  <div
+                    style={{
+                      backgroundColor: colors.surface,
+                      padding: '1rem',
+                      borderRadius: '4px',
+                      marginBottom: '1rem',
+                      border: `1px solid ${colors.border}`,
+                    }}
+                  >
+                    <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>Total Photos:</strong>{' '}
+                        {databaseStats.totalPhotoCount.toLocaleString()}
+                      </p>
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>Photos Database:</strong> {databaseStats.photosDbSizeMB.toFixed(1)}{' '}
+                        MB
+                      </p>
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>Thumbnails Database:</strong>{' '}
+                        {databaseStats.thumbnailsDbSizeMB.toFixed(1)} MB
+                      </p>
+                      <p style={{ margin: '0.5rem 0 0 0', fontWeight: 600 }}>
+                        <strong>Total Size:</strong>{' '}
+                        {(databaseStats.photosDbSizeMB + databaseStats.thumbnailsDbSizeMB).toFixed(
+                          1
+                        )}{' '}
+                        MB
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Clear Buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <button
+                    onClick={handleClearThumbnailCache}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.875rem',
+                      backgroundColor: colors.surface,
+                      color: colors.textSecondary,
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = colors.surfaceHover)
+                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
+                  >
+                    Clear Thumbnail Cache
+                  </button>
+                  <button
+                    onClick={handleClearPhotosDatabase}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.875rem',
+                      backgroundColor: colors.error,
+                      color: colors.buttonText,
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+                  >
+                    Clear All Photos (Reset Database)
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
           {/* Thumbnail Cache Management */}
           <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
@@ -752,27 +891,15 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                   </p>
                 </div>
 
-                {/* Clear Cache Button */}
-                <button
-                  onClick={handleClearThumbnailCache}
+                <p
                   style={{
-                    padding: '0.5rem 1rem',
-                    fontSize: '0.875rem',
-                    backgroundColor: colors.surface,
-                    color: colors.textSecondary,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    width: '100%',
+                    fontSize: '0.75rem',
+                    color: colors.textMuted,
+                    margin: '0.5rem 0 0 0',
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = colors.surfaceHover)
-                  }
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
                 >
-                  Clear Thumbnail Cache
-                </button>
+                  Note: Use Database Management section above to clear thumbnail cache.
+                </p>
               </div>
             )}
           </section>{' '}

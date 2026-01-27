@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('api', {
     getCountWithLocation: () => ipcRenderer.invoke('photos:getCountWithLocation'),
     openInViewer: (path: string) => ipcRenderer.invoke('photos:openInViewer', path),
     showInFolder: (path: string) => ipcRenderer.invoke('photos:showInFolder', path),
+    getDatabaseStats: () => ipcRenderer.invoke('photos:getDatabaseStats'),
     clearDatabase: () => ipcRenderer.invoke('photos:clearDatabase'),
     onScanProgress: (callback: (progress: any) => void) => {
       const listener = (_event: any, progress: any) => callback(progress);

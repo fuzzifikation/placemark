@@ -19,6 +19,11 @@ declare global {
         getCountWithLocation: () => Promise<number>;
         openInViewer: (path: string) => Promise<void>;
         showInFolder: (path: string) => Promise<void>;
+        getDatabaseStats: () => Promise<{
+          photosDbSizeMB: number;
+          thumbnailsDbSizeMB: number;
+          totalPhotoCount: number;
+        }>;
         clearDatabase: () => Promise<void>;
         onScanProgress: (callback: (progress: any) => void) => () => void;
       };
@@ -169,26 +174,6 @@ function App() {
     }
   };
 
-  const handleClearDatabase = async () => {
-    if (!confirm('Clear all photos from database? This cannot be undone.')) {
-      return;
-    }
-
-    try {
-      await window.api.photos.clearDatabase();
-      setPhotos([]);
-      setAllPhotos([]);
-      setShowMap(false);
-      setResult(null);
-      setShowTimeline(false);
-      setDateRange(null);
-      setSelectedDateRange(null);
-    } catch (error) {
-      console.error('Failed to clear database:', error);
-      alert('Failed to clear database: ' + error);
-    }
-  };
-
   const handleTimelineToggle = () => {
     setShowTimeline(!showTimeline);
   };
@@ -212,7 +197,7 @@ function App() {
     }
   };
 
-  if (showMap && photos.length > 0) {
+  if (showMap && allPhotos.length > 0) {
     return (
       <div
         style={{
@@ -307,23 +292,6 @@ function App() {
               }}
             >
               {scanning ? 'Scanning...' : 'Scan Another Folder'}
-            </button>
-            <button
-              onClick={handleClearDatabase}
-              style={{
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                backgroundColor: colors.error,
-                color: colors.buttonText,
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-            >
-              Clear Database
             </button>
           </div>
         </div>
@@ -469,8 +437,7 @@ function App() {
                 </p>
                 {selectedPhoto.timestamp && (
                   <p style={{ margin: '0.25rem 0' }}>
-                    <strong>Date:</strong>{' '}
-                    {new Date(selectedPhoto.timestamp * 1000).toLocaleString()}
+                    <strong>Date:</strong> {new Date(selectedPhoto.timestamp).toLocaleString()}
                   </p>
                 )}
                 <p style={{ margin: '0.25rem 0' }}>

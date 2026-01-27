@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import sharp from 'sharp';
 import path from 'path';
+import fs from 'fs/promises';
 import { app } from 'electron';
 
 const THUMBNAIL_CONFIG = {
@@ -63,8 +64,17 @@ export class ThumbnailService {
         return existing;
       }
 
+      // Check if file exists and is readable before attempting thumbnail generation
+      try {
+        await fs.access(photoPath, fs.constants.R_OK);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Photo file not accessible: ${photoPath} (${errorMessage})`);
+      }
+
       // Generate thumbnail using sharp
       const thumbnailBuffer = await sharp(photoPath)
+        .rotate() // Auto-orient based on EXIF Orientation tag
         .resize(THUMBNAIL_CONFIG.size, THUMBNAIL_CONFIG.size, {
           fit: 'inside',
           withoutEnlargement: true,
@@ -77,7 +87,11 @@ export class ThumbnailService {
 
       return thumbnailBuffer;
     } catch (error) {
-      console.error(`Failed to generate thumbnail for photo ${photoId}:`, error);
+      // Silently fail for corrupted files, log others
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('VipsJpeg') && !errorMessage.includes('Invalid SOS parameters')) {
+        console.error(`Failed to generate thumbnail for photo ${photoId}:`, error);
+      }
       throw error;
     }
   }

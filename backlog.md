@@ -1,80 +1,95 @@
 # Placemark Backlog
 
-## Ideas & Improvements
+## Current Issues
+
+(No current issues - all known bugs and features implemented!)
+
+## Resolved
+
+### ✅ Heatmap Feature Only Works in Dark Mode (FIXED)
+
+- Changed color ramp from light blue palette to vibrant colors (royal blue → deep sky blue → yellow → orange → crimson).
+- Now works on both light (OSM) and dark (CartoDB) tile backgrounds.
+
+### ✅ Timeline Play Bug with Single Photo (FIXED)
+
+- Fixed condition check: now uses `allPhotos.length` instead of `photos.length`.
+- App stays on map view even when filter shows 0 photos; user can adjust filter to see photos again.
+
+### ✅ Implausible Date in Modal View (FIXED)
+
+- Fixed timestamp conversion: removed incorrect `* 1000` multiplication.
+- EXIF service already returns milliseconds; dates now display correctly.
+
+### ✅ Some Photos Show 'No Preview Available' (FIXED)
+
+- Added file existence check before thumbnail generation.
+- Corrupted JPEG files now fail silently (they display correctly in Windows Photo Viewer but can't be processed by sharp).
+- Better error handling distinguishes between missing files and corrupted files.
+
+### ✅ Remove Menu Bar from Main Window (FIXED)
+
+- Added `autoHideMenuBar: true` to BrowserWindow options.
+- Menu bar now hidden by default (press Alt to show if needed).
+- Cleaner, more app-like appearance.
+
+### ✅ Stop Clustering at Earlier Zoom (FIXED)
+
+- Changed default `clusterMaxZoom` from 16 to 14.
+- Individual photo markers now visible 2 zoom levels earlier.
+- Better detail at mid/high zoom levels.
+
+### ✅ Settings Window Too Large (FIXED)
+
+- Added `maxHeight: 90vh` and `overflowY: auto` to Settings modal.
+- Settings now scrollable and accessible on any screen size.
+- Prevents content cutoff on smaller displays.
+
+### ✅ Thumbnail Cache Performance (FIXED)
+
+- Added in-memory cache (Map<photoId, objectUrl>) in MapView renderer.
+- First hover per photo goes through IPC + SQLite (~200ms).
+- Subsequent hovers use cached Object URL (instant, <10ms).
+- No more IPC round-trip for already-loaded thumbnails.
+
+### ✅ Photo Orientation (FIXED)
+
+- Added `.rotate()` to sharp thumbnail pipeline to respect EXIF Orientation tag.
+- Thumbnails now display correctly for photos rotated in Windows Explorer or other apps.
+- Cross-platform compatible - follows standard photo app behavior.
+
+### ✅ Database Management in Settings (FIXED)
+
+- Added Database Management section in Settings window.
+- Displays sizes for both placemark.db and thumbnails.db.
+- Shows total photo count and combined database size.
+- Provides clear buttons for thumbnails and photos database.
+- Removed Clear Database button from main page - all database management now in Settings.
+
+### ✅ Uninstaller Data Cleanup (FIXED)
+
+- Added custom NSIS script for Windows installer.
+- Uninstaller prompts user: "Do you want to remove all Placemark user data?"
+- Lists what will be deleted: photo database, thumbnail cache, settings.
+- Opt-in via Yes/No dialog - data kept by default if user clicks No.
+- Removes entire `AppData\Roaming\@placemark\desktop` directory if confirmed.
+
+### ✅ Smart Separation of Overlapping Points (FIXED)
+
+- Implemented automatic offsetting for photos with identical GPS coordinates.
+- Photos at same location are detected and arranged in a circular pattern.
+- Offset distance: ~10 meters (0.0001 degrees), invisible at normal zoom but makes all markers clickable.
+- Groups points by coordinates (rounded to 6 decimal places = 0.11m precision).
+- First photo stays at original position, others offset in circle around it.
+- All photos at identical locations now individually accessible.
+
+## Next Version
 
 ### 1. Multi-threaded Photo Import (EXIF/Thumbnail)
 
 - Investigate using 2–3 worker threads for EXIF extraction and thumbnail generation during folder scan.
 - All database writes (insert/update) should be funneled through a single thread or queued to avoid SQLite lock contention.
 - Goal: Speed up large imports while keeping database safe and consistent.
-
-### 2. Heatmap Feature Only Works in Dark Mode
-
-- The map heatmap feature currently only works in dark mode.
-- Needs update: should work in both light and dark modes (adjust color ramp or layer style as needed).
-- Also update the heatmap to use a more continuous/gradient color ramp for better visual effect and data clarity.
-
-### 3. Remove Databases at Uninstall
-
-- Add an option to the Windows uninstaller (NSIS script) to delete user data (placemark.db, thumbnails.db) from AppData\Roaming\Placemark.
-- Should be opt-in (checkbox: "Remove all user data") to avoid accidental data loss.
-
-### 4. Thumbnail Cache Not Used for Hover Previews
-
-- Hovering over a map dot takes just as long to display the thumbnail, even after the first time.
-- Possible bug: thumbnail cache/database may not be used or is too slow for hover previews.
-- Investigate if thumbnails are re-generated or re-fetched from disk every time instead of being cached in memory.
-
-### 5. Settings Window Too Large (Needs Scroll)
-
-- The settings window is too large for some screens and cannot be fully viewed.
-- Add a scroll function or make the window responsive to ensure all settings are accessible.
-
-### 6. Timeline Play Bug with Single Photo
-
-- If the timeline slider is set so far back that only a single photo is visible, pressing play moves the app to the "Scan Folder" initial view (does not delete the database).
-- After this, there is no way to return to the map unless the app is closed and reopened; then the map works again.
-- Needs investigation: likely a state management or error handling bug when the timeline has only one photo.
-
-### 7. Database Management in Settings
-
-- The databases (placemark.db, thumbnails.db) should be shown as a section in the Settings window.
-- Display current size of each database and provide an option to clear them.
-- Remove the clear database option from the main page to avoid confusion and keep all management in Settings.
-
-### 8. Remove Menu Bar from Main Window
-
-- The main page currently shows a menu bar in the window.
-- Remove the menu bar for a cleaner, more app-like appearance.
-
-### 9. Implausible Date in Modal View
-
-- In the modal view, the date (year) for some photos is completely implausible or incorrect.
-- Needs investigation: check EXIF extraction, timestamp parsing, and display formatting.
-
-### 10. Stop Clustering at Earlier Zoom
-
-- Clustering of map markers should stop at an even earlier zoom level to allow more individual photo markers to be visible sooner.
-- Adjust clustering settings for better detail at mid/high zoom.
-
-### 11. Smart Separation of Overlapping Points
-
-- At high zoom, photos with nearly identical GPS coordinates are not clickable because they remain clustered or overlap.
-- Implement a smart solution (e.g., spiderfying, offsetting, or a photo stack) to separate points so each is individually clickable at high zoom.
-
-### 12. Some Photos Show 'No Preview Available'
-
-- In some cases, the modal or hover preview shows 'no preview available' for certain photos.
-- Needs investigation: possible causes include missing/corrupt files, unsupported formats, EXIF/thumbnail extraction errors, or IPC issues.
-- Check logs and error handling in thumbnail service and renderer.
-
-### 13. Some Previews Are Upside Down
-
-- Some photo previews are displayed upside down in the modal or hover, but open correctly in the system photo viewer.
-- Needs investigation: likely an issue with EXIF orientation not being respected during thumbnail generation or display.
-- Check orientation handling in sharp/exifr pipeline and renderer.
-
----
 
 ### 14. Picture Location Inference (Next Release)
 

@@ -36,6 +36,62 @@ const UNCLUSTERED_STYLE = {
   STROKE_COLOR: '#fff',
 };
 
+// Offset distance for overlapping points (in degrees, ~10 meters at equator)
+const OVERLAP_OFFSET_DEGREES = 0.0001;
+
+// Helper function to offset overlapping coordinates
+function offsetOverlappingPoints(photos: Photo[]): Photo[] {
+  // Group photos by coordinates
+  const coordGroups = new Map<string, Photo[]>();
+
+  photos.forEach((photo) => {
+    if (photo.latitude === null || photo.longitude === null) return;
+
+    // Round to 6 decimal places (~0.11m precision) to group nearby points
+    const key = `${photo.latitude.toFixed(6)},${photo.longitude.toFixed(6)}`;
+
+    if (!coordGroups.has(key)) {
+      coordGroups.set(key, []);
+    }
+    coordGroups.get(key)!.push(photo);
+  });
+
+  // Create new array with offset coordinates for overlapping points
+  const result: Photo[] = [];
+
+  coordGroups.forEach((group) => {
+    if (group.length === 1) {
+      // No overlap, keep original coordinates
+      result.push(group[0]);
+    } else {
+      // Multiple photos at same location - arrange in circle
+      const basePhoto = group[0];
+      const baseLat = basePhoto.latitude!;
+      const baseLng = basePhoto.longitude!;
+
+      group.forEach((photo, index) => {
+        if (index === 0) {
+          // Keep first photo at original position
+          result.push(photo);
+        } else {
+          // Offset others in a circle around the center
+          const angle = (2 * Math.PI * index) / group.length;
+          const offsetLat = baseLat + OVERLAP_OFFSET_DEGREES * Math.cos(angle);
+          const offsetLng = baseLng + OVERLAP_OFFSET_DEGREES * Math.sin(angle);
+
+          result.push({
+            ...photo,
+            latitude: offsetLat,
+            longitude: offsetLng,
+          });
+        }
+      });
+    }
+  });
+
+  return result;
+}
+
 // Helper function to add heatmap layer to map
 function addHeatmapLayer(map: maplibregl.Map) {
   map.addLayer({
@@ -48,23 +104,23 @@ function addHeatmapLayer(map: maplibregl.Map) {
       'heatmap-weight': ['interpolate', ['linear'], ['zoom'], 0, 1, 22, 1],
       // Increase intensity as zoom level increases
       'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 22, 5],
-      // Color ramp for heatmap - blue to red
+      // Color ramp for heatmap - vibrant colors that work on both light and dark backgrounds
       'heatmap-color': [
         'interpolate',
         ['linear'],
         ['heatmap-density'],
         0,
-        'rgba(33,102,172,0)',
+        'rgba(0,0,255,0)', // Transparent at zero density
         0.2,
-        'rgb(103,169,207)',
+        'rgb(65,105,225)', // Royal blue
         0.4,
-        'rgb(209,229,240)',
+        'rgb(0,191,255)', // Deep sky blue
         0.6,
-        'rgb(253,219,199)',
+        'rgb(255,255,0)', // Yellow
         0.8,
-        'rgb(239,138,98)',
+        'rgb(255,140,0)', // Dark orange
         1,
-        'rgb(178,24,43)',
+        'rgb(220,20,60)', // Crimson red
       ],
       // Adjust radius by zoom level
       'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 3, 9, 25, 22, 50],
@@ -171,6 +227,9 @@ export function MapView({
   const [hoverThumbnailUrl, setHoverThumbnailUrl] = useState<string | null>(null);
   const [loadingHoverThumbnail, setLoadingHoverThumbnail] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // In-memory cache for loaded thumbnails (Object URLs)
+  const thumbnailCacheRef = useRef<Map<number, string>>(new Map());
 
   // Initialize map
   useEffect(() => {
@@ -314,6 +373,15 @@ export function MapView({
           clearTimeout(hoverTimeoutRef.current);
         }
 
+        // Check in-memory cache first
+        const cachedUrl = thumbnailCacheRef.current.get(photo.id);
+        if (cachedUrl) {
+          // Use cached thumbnail immediately
+          setHoverThumbnailUrl(cachedUrl);
+          setLoadingHoverThumbnail(false);
+          return;
+        }
+
         // Immediately clear old thumbnail and show loading state
         if (hoverThumbnailUrl) {
           URL.revokeObjectURL(hoverThumbnailUrl);
@@ -330,6 +398,9 @@ export function MapView({
                 const uint8Array = new Uint8Array(thumbnailBuffer as unknown as ArrayBuffer);
                 const blob = new Blob([uint8Array], { type: 'image/jpeg' });
                 const url = URL.createObjectURL(blob);
+
+                // Store in cache
+                thumbnailCacheRef.current.set(photo.id, url);
                 setHoverThumbnailUrl(url);
               }
             })
@@ -391,10 +462,13 @@ export function MapView({
       return;
     }
 
+    // Offset overlapping points to make them all clickable
+    const offsetPhotos = offsetOverlappingPoints(photosWithLocation);
+
     // Convert photos to GeoJSON
     const geojson: GeoJSON.FeatureCollection<GeoJSON.Point> = {
       type: 'FeatureCollection',
-      features: photosWithLocation.map((photo) => ({
+      features: offsetPhotos.map((photo) => ({
         type: 'Feature',
         geometry: {
           type: 'Point',
