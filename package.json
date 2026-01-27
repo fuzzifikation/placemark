@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "description": "Privacy-first, local-first photo organizer",
+  "author": "Placemark",
+  "homepage": "https://github.com/fuzzifikation/placemark",
+  "license": "MIT",
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",

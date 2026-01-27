@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Placemark desktop application built with Electron",
+  "author": "Placemark",
+  "homepage": "https://github.com/fuzzifikation/placemark",
+  "license": "MIT",
   "main": "dist-electron/main/index.js",
   "scripts": {
     "dev": "vite",
