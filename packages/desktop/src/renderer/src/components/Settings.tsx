@@ -140,6 +140,23 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
     }
   };
 
+  const handleClearAllAppData = async () => {
+    if (
+      !confirm(
+        'Clear ALL app data? This will delete databases, thumbnails, caches, and settings. The app will restart. This cannot be undone.'
+      )
+    ) {
+      return;
+    }
+    try {
+      await (window as any).api.system.clearAllAppData();
+      // App will restart automatically
+    } catch (error) {
+      console.error('Failed to clear app data:', error);
+      alert('Failed to clear app data: ' + error);
+    }
+  };
+
   const handleSetMaxCacheSize = async (sizeMB: number) => {
     try {
       await (window as any).api.thumbnails.setMaxSize(sizeMB);
@@ -972,6 +989,26 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                   onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                 >
                   Clear All Photos (Reset Database)
+                </button>
+
+                {/* Clear All App Data Button */}
+                <button
+                  onClick={handleClearAllAppData}
+                  style={{
+                    marginTop: '1rem',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.875rem',
+                    backgroundColor: '#b91c1c',
+                    color: colors.buttonText,
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+                >
+                  ⚠️ Clear All App Data & Restart
                 </button>
               </div>
             )}

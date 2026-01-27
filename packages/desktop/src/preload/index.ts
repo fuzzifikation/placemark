@@ -26,4 +26,7 @@ contextBridge.exposeInMainWorld('api', {
     clearCache: () => ipcRenderer.invoke('thumbnails:clearCache'),
     setMaxSize: (sizeMB: number) => ipcRenderer.invoke('thumbnails:setMaxSize', sizeMB),
   },
+  system: {
+    clearAllAppData: () => ipcRenderer.invoke('system:clearAllAppData'),
+  },
 });

@@ -10,6 +10,7 @@ import {
   clearAllPhotos,
   getPhotoDateRange,
   getPhotosWithLocationInDateRange,
+  closeStorage,
 } from '../services/storage';
 import { ThumbnailService } from '../services/thumbnails';
 import * as fs from 'fs';
@@ -136,6 +137,34 @@ export function registerPhotoHandlers(): void {
   // Set maximum cache size
   ipcMain.handle('thumbnails:setMaxSize', async (_event, sizeMB: number) => {
     thumbnailService.setMaxSizeMB(sizeMB);
+  });
+
+  // Clear all app data and restart
+  ipcMain.handle('system:clearAllAppData', async () => {
+    const userDataPath = app.getPath('userData');
+
+    // Close databases first
+    if (thumbnailService) {
+      thumbnailService.close();
+    }
+
+    // Close main database
+    closeStorage();
+
+    // Wait a moment for file handles to close
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    try {
+      // Remove the entire userData directory
+      fs.rmSync(userDataPath, { recursive: true, force: true });
+
+      // Restart the app
+      app.relaunch();
+      app.exit(0);
+    } catch (error) {
+      console.error('Failed to clear app data:', error);
+      throw error;
+    }
   });
 }
 
