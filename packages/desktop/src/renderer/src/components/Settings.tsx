@@ -4,6 +4,9 @@
 
 import { useState, useEffect } from 'react';
 import { type Theme, getThemeColors } from '../theme';
+import { SettingsSlider } from './Settings/SettingsSlider';
+import { SettingsToggle } from './Settings/SettingsToggle';
+import { SettingsSection } from './Settings/SettingsSection';
 
 interface SettingsProps {
   onClose: () => void;
@@ -290,414 +293,234 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
             </div>
           </section>
           {/* Map Clustering */}
-          <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
-            <h3
-              onClick={() => toggleSection('clustering')}
-              style={{
-                margin: '0 0 1rem 0',
-                fontSize: '1rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                color: colors.textPrimary,
-              }}
-            >
-              <span>{expandedSections.clustering ? '▼' : '▶'}</span>
-              Map Clustering
-            </h3>
+          <SettingsSection
+            title="Map Clustering"
+            expanded={expandedSections.clustering}
+            onToggle={() => toggleSection('clustering')}
+            theme={theme}
+          >
+            <SettingsToggle
+              label="Enable marker clustering"
+              value={settings.clusteringEnabled}
+              description="Group nearby photos into clusters to improve performance"
+              onChange={(val) => setSettings({ ...settings, clusteringEnabled: val })}
+              theme={theme}
+            />
 
-            {expandedSections.clustering && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {/* Enable/Disable Clustering */}
-                <div>
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      fontSize: '0.875rem',
-                      color: colors.textSecondary,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div
-                      onClick={() =>
-                        setSettings({ ...settings, clusteringEnabled: !settings.clusteringEnabled })
-                      }
-                      style={{
-                        position: 'relative',
-                        width: '44px',
-                        height: '24px',
-                        backgroundColor: settings.clusteringEnabled ? '#4a9eff' : '#444',
-                        borderRadius: '12px',
-                        transition: 'background-color 0.2s',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '2px',
-                          left: settings.clusteringEnabled ? '22px' : '2px',
-                          width: '20px',
-                          height: '20px',
-                          backgroundColor: 'white',
-                          borderRadius: '50%',
-                          transition: 'left 0.2s',
-                        }}
-                      />
-                    </div>
-                    Enable marker clustering
-                  </label>
-                  <div
-                    style={{
-                      fontSize: '0.7rem',
-                      color: colors.textMuted,
-                      marginTop: '0.25rem',
-                      marginLeft: '1.5rem',
-                    }}
-                  >
-                    Group nearby photos into clusters to improve performance
-                  </div>
-                </div>
+            {settings.clusteringEnabled && (
+              <>
+                <SettingsSlider
+                  label="Cluster Radius"
+                  value={settings.clusterRadius}
+                  min={10}
+                  max={100}
+                  step={5}
+                  unit="px"
+                  minLabel="More markers (10)"
+                  maxLabel="Fewer markers (100)"
+                  onChange={(val) => setSettings({ ...settings, clusterRadius: val })}
+                  theme={theme}
+                />
 
-                {settings.clusteringEnabled && (
-                  <>
-                    {/* Cluster Radius */}
-                    <div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '0.5rem',
-                        }}
-                      >
-                        <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                          Cluster Radius
-                        </label>
-                        <span
-                          style={{
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                            color: colors.textPrimary,
-                          }}
-                        >
-                          {settings.clusterRadius}px
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="10"
-                        max="100"
-                        step="5"
-                        value={settings.clusterRadius}
-                        onChange={(e) =>
-                          setSettings({ ...settings, clusterRadius: parseInt(e.target.value) })
-                        }
-                        style={{ width: '100%' }}
-                      />
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontSize: '0.7rem',
-                          color: colors.textMuted,
-                          marginTop: '0.25rem',
-                        }}
-                      >
-                        <span>More markers (10)</span>
-                        <span>Fewer markers (100)</span>
-                      </div>
-                    </div>
-
-                    {/* Cluster Max Zoom */}
-                    <div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '0.5rem',
-                        }}
-                      >
-                        <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                          Stop Clustering At Zoom
-                        </label>
-                        <span
-                          style={{
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                            color: colors.textPrimary,
-                          }}
-                        >
-                          {settings.clusterMaxZoom}
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="10"
-                        max="20"
-                        step="1"
-                        value={settings.clusterMaxZoom}
-                        onChange={(e) =>
-                          setSettings({ ...settings, clusterMaxZoom: parseInt(e.target.value) })
-                        }
-                        style={{ width: '100%' }}
-                      />
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontSize: '0.7rem',
-                          color: colors.textMuted,
-                          marginTop: '0.25rem',
-                        }}
-                      >
-                        <span>Earlier (10)</span>
-                        <span>Later (20)</span>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Show Heatmap - moved here from Map Display */}
-                <div>
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      fontSize: '0.875rem',
-                      color: colors.textSecondary,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div
-                      onClick={() =>
-                        setSettings({ ...settings, showHeatmap: !settings.showHeatmap })
-                      }
-                      style={{
-                        position: 'relative',
-                        width: '44px',
-                        height: '24px',
-                        backgroundColor: settings.showHeatmap ? '#4a9eff' : '#444',
-                        borderRadius: '12px',
-                        transition: 'background-color 0.2s',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '2px',
-                          left: settings.showHeatmap ? '22px' : '2px',
-                          width: '20px',
-                          height: '20px',
-                          backgroundColor: 'white',
-                          borderRadius: '50%',
-                          transition: 'left 0.2s',
-                        }}
-                      />
-                    </div>
-                    Show heatmap overlay
-                  </label>
-                  <div
-                    style={{
-                      fontSize: '0.7rem',
-                      color: colors.textMuted,
-                      marginTop: '0.25rem',
-                      marginLeft: '1.5rem',
-                    }}
-                  >
-                    Display photo density as a colored heat map
-                  </div>
-                </div>
-              </div>
+                <SettingsSlider
+                  label="Stop Clustering At Zoom"
+                  value={settings.clusterMaxZoom}
+                  min={10}
+                  max={20}
+                  step={1}
+                  minLabel="Earlier (10)"
+                  maxLabel="Later (20)"
+                  onChange={(val) => setSettings({ ...settings, clusterMaxZoom: val })}
+                  theme={theme}
+                />
+              </>
             )}
-          </section>
+
+            <SettingsToggle
+              label="Show Heatmap"
+              value={settings.showHeatmap}
+              description="Display photo density as a colored heat map"
+              onChange={(val) => setSettings({ ...settings, showHeatmap: val })}
+              theme={theme}
+            />
+          </SettingsSection>
           {/* Map Display */}
-          <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
-            <h3
-              onClick={() => toggleSection('display')}
-              style={{
-                margin: '0 0 1rem 0',
-                fontSize: '1rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                color: colors.textPrimary,
-              }}
-            >
-              <span>{expandedSections.display ? '▼' : '▶'}</span>
-              Map Display
-            </h3>
+          <SettingsSection
+            title="Map Display"
+            expanded={expandedSections.display}
+            onToggle={() => toggleSection('display')}
+            theme={theme}
+          >
+            <SettingsSlider
+              label="Maximum Zoom Level"
+              value={settings.mapMaxZoom}
+              min={10}
+              max={20}
+              step={1}
+              minLabel="Zoomed out (10)"
+              maxLabel="Zoomed in (20)"
+              onChange={(val) => setSettings({ ...settings, mapMaxZoom: val })}
+              theme={theme}
+            />
 
-            {expandedSections.display && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {/* Max Zoom */}
-                <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                      Maximum Zoom Level
-                    </label>
-                    <span
-                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
-                    >
-                      {settings.mapMaxZoom}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="20"
-                    step="1"
-                    value={settings.mapMaxZoom}
-                    onChange={(e) =>
-                      setSettings({ ...settings, mapMaxZoom: parseInt(e.target.value) })
-                    }
-                    style={{ width: '100%' }}
-                  />
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: '0.7rem',
-                      color: colors.textMuted,
-                      marginTop: '0.25rem',
-                    }}
-                  >
-                    <span>Zoomed out (10)</span>
-                    <span>Zoomed in (20)</span>
-                  </div>
-                </div>
+            <SettingsSlider
+              label="Map Padding"
+              value={settings.mapPadding}
+              min={20}
+              max={100}
+              step={10}
+              unit="px"
+              minLabel="Tight (20)"
+              maxLabel="Loose (100)"
+              onChange={(val) => setSettings({ ...settings, mapPadding: val })}
+              theme={theme}
+            />
 
-                {/* Padding */}
-                <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                      Map Padding
-                    </label>
-                    <span
-                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
-                    >
-                      {settings.mapPadding}px
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="20"
-                    max="100"
-                    step="10"
-                    value={settings.mapPadding}
-                    onChange={(e) =>
-                      setSettings({ ...settings, mapPadding: parseInt(e.target.value) })
-                    }
-                    style={{ width: '100%' }}
-                  />
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: '0.7rem',
-                      color: colors.textMuted,
-                      marginTop: '0.25rem',
-                    }}
-                  >
-                    <span>Tight (20)</span>
-                    <span>Loose (100)</span>
-                  </div>
-                </div>
-
-                {/* Transition Duration */}
-                <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                      Transition Speed
-                    </label>
-                    <span
-                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
-                    >
-                      {settings.mapTransitionDuration}ms
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1000"
-                    step="50"
-                    value={settings.mapTransitionDuration}
-                    onChange={(e) =>
-                      setSettings({ ...settings, mapTransitionDuration: parseInt(e.target.value) })
-                    }
-                    style={{ width: '100%' }}
-                  />
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: '0.7rem',
-                      color: colors.textMuted,
-                      marginTop: '0.25rem',
-                    }}
-                  >
-                    <span>Instant (0)</span>
-                    <span>Slow (1000)</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
+            <SettingsSlider
+              label="Transition Speed"
+              value={settings.mapTransitionDuration}
+              min={0}
+              max={1000}
+              step={50}
+              unit="ms"
+              minLabel="Instant (0)"
+              maxLabel="Slow (1000)"
+              onChange={(val) => setSettings({ ...settings, mapTransitionDuration: val })}
+              theme={theme}
+            />
+          </SettingsSection>
           {/* Timeline */}
-          <section>
-            <h3
-              onClick={() => toggleSection('timeline')}
-              style={{
-                margin: '0 0 1rem 0',
-                fontSize: '1rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                color: colors.textPrimary,
-              }}
-            >
-              <span>{expandedSections.timeline ? '▼' : '▶'}</span>
-              Timeline
-            </h3>
+          <SettingsSection
+            title="Timeline"
+            expanded={expandedSections.timeline}
+            onToggle={() => toggleSection('timeline')}
+            theme={theme}
+          >
+            <div style={{ marginBottom: '1rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  marginBottom: '0.5rem',
+                  color: colors.textPrimary,
+                }}
+              >
+                Update Frequency:{' '}
+                <strong>
+                  {settings.timelineUpdateInterval}ms (
+                  {Math.round(1000 / settings.timelineUpdateInterval)}/sec)
+                </strong>
+              </label>
+              <input
+                type="range"
+                min={50}
+                max={500}
+                step={50}
+                value={settings.timelineUpdateInterval}
+                onChange={(e) =>
+                  setSettings({ ...settings, timelineUpdateInterval: parseInt(e.target.value) })
+                }
+                style={{ width: '100%' }}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '0.7rem',
+                  color: colors.textMuted,
+                  marginTop: '0.25rem',
+                }}
+              >
+                <span>Frequent/High CPU (50)</span>
+                <span>Infrequent/Low CPU (500)</span>
+              </div>
+            </div>
+            <SettingsToggle
+              label="Auto-fit map during playback"
+              value={settings.autoZoomDuringPlay}
+              description="Map will follow your journey as the timeline plays"
+              onChange={(value) => setSettings({ ...settings, autoZoomDuringPlay: value })}
+              theme={theme}
+            />
+          </SettingsSection>
+          {/* Database Management */}
+          <SettingsSection
+            title="Database Management"
+            expanded={expandedSections.database}
+            onToggle={() => toggleSection('database')}
+            theme={theme}
+          >
+            {/* Database Statistics */}
+            {databaseStats && (
+              <div
+                style={{
+                  backgroundColor: colors.surface,
+                  padding: '1rem',
+                  borderRadius: '4px',
+                  marginBottom: '1rem',
+                  border: `1px solid ${colors.border}`,
+                }}
+              >
+                <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                  <p style={{ margin: '0.25rem 0' }}>
+                    <strong>Total Photos:</strong> {databaseStats.totalPhotoCount.toLocaleString()}
+                  </p>
+                  <p style={{ margin: '0.25rem 0' }}>
+                    <strong>Photos Database:</strong> {databaseStats.photosDbSizeMB.toFixed(1)} MB
+                  </p>
+                </div>
+              </div>
+            )}
 
-            {expandedSections.timeline && (
-              <div>
-                {/* Update Interval */}
-                <div>
+            {/* Thumbnail Cache Statistics and Settings */}
+            {thumbnailStats && (
+              <div
+                style={{
+                  backgroundColor: colors.surface,
+                  padding: '1rem',
+                  borderRadius: '4px',
+                  marginBottom: '1rem',
+                  border: `1px solid ${colors.border}`,
+                }}
+              >
+                <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                  <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>Thumbnail Cache</p>
+                  <p style={{ margin: '0.25rem 0' }}>
+                    <strong>Cached Thumbnails:</strong> {thumbnailStats.thumbnailCount}
+                  </p>
+                  <p style={{ margin: '0.25rem 0' }}>
+                    <strong>Cache Size:</strong> {thumbnailStats.totalSizeMB.toFixed(1)} MB /{' '}
+                    {thumbnailStats.maxSizeMB} MB ({thumbnailStats.usagePercent.toFixed(1)}%)
+                  </p>
+                </div>
+                {/* Progress bar */}
+                <div
+                  style={{
+                    marginTop: '0.75rem',
+                    height: '8px',
+                    backgroundColor: colors.border,
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${Math.min(thumbnailStats.usagePercent, 100)}%`,
+                      backgroundColor:
+                        thumbnailStats.usagePercent > 90
+                          ? '#f28cb1'
+                          : thumbnailStats.usagePercent > 75
+                            ? '#f1f075'
+                            : '#51bbd6',
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
+                </div>
+
+                {/* Max Cache Size Slider */}
+                <div style={{ marginTop: '1rem' }}>
                   <div
                     style={{
                       display: 'flex',
@@ -707,24 +530,25 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                     }}
                   >
                     <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                      Update Frequency
+                      Maximum Size
                     </label>
                     <span
-                      style={{ fontSize: '0.875rem', fontWeight: 600, color: colors.textPrimary }}
+                      style={{
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        color: colors.textPrimary,
+                      }}
                     >
-                      {settings.timelineUpdateInterval}ms (
-                      {Math.round(1000 / settings.timelineUpdateInterval)}/sec)
+                      {thumbnailStats.maxSizeMB} MB
                     </span>
                   </div>
                   <input
                     type="range"
-                    min="50"
-                    max="500"
-                    step="50"
-                    value={settings.timelineUpdateInterval}
-                    onChange={(e) =>
-                      setSettings({ ...settings, timelineUpdateInterval: parseInt(e.target.value) })
-                    }
+                    min="100"
+                    max="2000"
+                    step="100"
+                    value={thumbnailStats.maxSizeMB}
+                    onChange={(e) => handleSetMaxCacheSize(parseInt(e.target.value))}
                     style={{ width: '100%' }}
                   />
                   <div
@@ -736,283 +560,85 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                       marginTop: '0.25rem',
                     }}
                   >
-                    <span>Frequent/High CPU (50)</span>
-                    <span>Infrequent/Low CPU (500)</span>
+                    <span>100 MB (~2.8K photos)</span>
+                    <span>2000 MB (~57K photos)</span>
                   </div>
-                </div>
-
-                {/* Auto Zoom During Play */}
-                <div style={{ marginTop: '1rem' }}>
-                  <label
+                  <p
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      fontSize: '0.875rem',
-                      color: colors.textSecondary,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div
-                      onClick={() =>
-                        setSettings({
-                          ...settings,
-                          autoZoomDuringPlay: !settings.autoZoomDuringPlay,
-                        })
-                      }
-                      style={{
-                        position: 'relative',
-                        width: '44px',
-                        height: '24px',
-                        backgroundColor: settings.autoZoomDuringPlay ? '#4a9eff' : '#444',
-                        borderRadius: '12px',
-                        transition: 'background-color 0.2s',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '2px',
-                          left: settings.autoZoomDuringPlay ? '22px' : '2px',
-                          width: '20px',
-                          height: '20px',
-                          backgroundColor: 'white',
-                          borderRadius: '50%',
-                          transition: 'left 0.2s',
-                        }}
-                      />
-                    </div>
-                    Auto-fit map during playback
-                  </label>
-                  <div
-                    style={{
-                      fontSize: '0.7rem',
+                      fontSize: '0.75rem',
                       color: colors.textMuted,
-                      marginTop: '0.25rem',
-                      marginLeft: '1.5rem',
+                      margin: '0.5rem 0 0 0',
                     }}
                   >
-                    Map will follow your journey as the timeline plays
-                  </div>
+                    Thumbnails stored at 400px (~35KB each). Least recently used thumbnails are
+                    automatically removed when limit is reached.
+                  </p>
                 </div>
-              </div>
-            )}
-          </section>{' '}
-          {/* Database Management */}
-          <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
-            <h3
-              onClick={() => toggleSection('database')}
-              style={{
-                margin: '0 0 1rem 0',
-                fontSize: '1rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                color: colors.textPrimary,
-              }}
-            >
-              <span>{expandedSections.database ? '▼' : '▶'}</span>
-              Database Management
-            </h3>
 
-            {expandedSections.database && (
-              <div>
-                {/* Database Statistics */}
-                {databaseStats && (
-                  <div
-                    style={{
-                      backgroundColor: colors.surface,
-                      padding: '1rem',
-                      borderRadius: '4px',
-                      marginBottom: '1rem',
-                      border: `1px solid ${colors.border}`,
-                    }}
-                  >
-                    <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                      <p style={{ margin: '0.25rem 0' }}>
-                        <strong>Total Photos:</strong>{' '}
-                        {databaseStats.totalPhotoCount.toLocaleString()}
-                      </p>
-                      <p style={{ margin: '0.25rem 0' }}>
-                        <strong>Photos Database:</strong> {databaseStats.photosDbSizeMB.toFixed(1)}{' '}
-                        MB
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Thumbnail Cache Statistics and Settings */}
-                {thumbnailStats && (
-                  <div
-                    style={{
-                      backgroundColor: colors.surface,
-                      padding: '1rem',
-                      borderRadius: '4px',
-                      marginBottom: '1rem',
-                      border: `1px solid ${colors.border}`,
-                    }}
-                  >
-                    <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                      <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>Thumbnail Cache</p>
-                      <p style={{ margin: '0.25rem 0' }}>
-                        <strong>Cached Thumbnails:</strong> {thumbnailStats.thumbnailCount}
-                      </p>
-                      <p style={{ margin: '0.25rem 0' }}>
-                        <strong>Cache Size:</strong> {thumbnailStats.totalSizeMB.toFixed(1)} MB /{' '}
-                        {thumbnailStats.maxSizeMB} MB ({thumbnailStats.usagePercent.toFixed(1)}%)
-                      </p>
-                    </div>
-                    {/* Progress bar */}
-                    <div
-                      style={{
-                        marginTop: '0.75rem',
-                        height: '8px',
-                        backgroundColor: colors.border,
-                        borderRadius: '4px',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: '100%',
-                          width: `${Math.min(thumbnailStats.usagePercent, 100)}%`,
-                          backgroundColor:
-                            thumbnailStats.usagePercent > 90
-                              ? '#f28cb1'
-                              : thumbnailStats.usagePercent > 75
-                                ? '#f1f075'
-                                : '#51bbd6',
-                          transition: 'width 0.3s ease',
-                        }}
-                      />
-                    </div>
-
-                    {/* Max Cache Size Slider - inside the box */}
-                    <div style={{ marginTop: '1rem' }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '0.5rem',
-                        }}
-                      >
-                        <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                          Maximum Size
-                        </label>
-                        <span
-                          style={{
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                            color: colors.textPrimary,
-                          }}
-                        >
-                          {thumbnailStats.maxSizeMB} MB
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="100"
-                        max="2000"
-                        step="100"
-                        value={thumbnailStats.maxSizeMB}
-                        onChange={(e) => handleSetMaxCacheSize(parseInt(e.target.value))}
-                        style={{ width: '100%' }}
-                      />
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontSize: '0.7rem',
-                          color: colors.textMuted,
-                          marginTop: '0.25rem',
-                        }}
-                      >
-                        <span>100 MB (~2.8K photos)</span>
-                        <span>2000 MB (~57K photos)</span>
-                      </div>
-                      <p
-                        style={{
-                          fontSize: '0.75rem',
-                          color: colors.textMuted,
-                          margin: '0.5rem 0 0 0',
-                        }}
-                      >
-                        Thumbnails stored at 400px (~35KB each). Least recently used thumbnails are
-                        automatically removed when limit is reached.
-                      </p>
-                    </div>
-
-                    {/* Clear Thumbnail Cache button - inside the box */}
-                    <button
-                      onClick={handleClearThumbnailCache}
-                      style={{
-                        marginTop: '1rem',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.875rem',
-                        backgroundColor: colors.surface,
-                        color: colors.textSecondary,
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        width: '100%',
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor = colors.surfaceHover)
-                      }
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
-                    >
-                      Clear Thumbnail Cache
-                    </button>
-                  </div>
-                )}
-
-                {/* Clear All Photos Button */}
+                {/* Clear Thumbnail Cache button */}
                 <button
-                  onClick={handleClearPhotosDatabase}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    fontSize: '0.875rem',
-                    backgroundColor: colors.error,
-                    color: colors.buttonText,
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                >
-                  Clear All Photos (Reset Database)
-                </button>
-
-                {/* Clear All App Data Button */}
-                <button
-                  onClick={handleClearAllAppData}
+                  onClick={handleClearThumbnailCache}
                   style={{
                     marginTop: '1rem',
                     padding: '0.5rem 1rem',
                     fontSize: '0.875rem',
-                    backgroundColor: '#b91c1c',
-                    color: colors.buttonText,
-                    border: 'none',
+                    backgroundColor: colors.surface,
+                    color: colors.textSecondary,
+                    border: `1px solid ${colors.border}`,
                     borderRadius: '4px',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
+                    width: '100%',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = colors.surfaceHover)
+                  }
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
                 >
-                  ⚠️ Clear All App Data & Restart
+                  Clear Thumbnail Cache
                 </button>
               </div>
             )}
-          </section>{' '}
+
+            {/* Clear All Photos Button */}
+            <button
+              onClick={handleClearPhotosDatabase}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                backgroundColor: colors.error,
+                color: colors.buttonText,
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              Clear All Photos (Reset Database)
+            </button>
+
+            {/* Clear All App Data Button */}
+            <button
+              onClick={handleClearAllAppData}
+              style={{
+                marginTop: '1rem',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                backgroundColor: '#b91c1c',
+                color: colors.buttonText,
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              ⚠️ Clear All App Data & Restart
+            </button>
+          </SettingsSection>
         </div>
 
         {/* Footer */}
