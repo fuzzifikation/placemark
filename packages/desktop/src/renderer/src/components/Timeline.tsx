@@ -37,7 +37,7 @@ export function Timeline({
   const colors = getThemeColors(theme);
   const [localStart, setLocalStart] = useState(startDate);
   const [localEnd, setLocalEnd] = useState(endDate);
-  const sliderRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
   const currentStart = useRef<number>(startDate);
   const currentEnd = useRef<number>(endDate);
 

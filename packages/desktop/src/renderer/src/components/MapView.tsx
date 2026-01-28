@@ -11,10 +11,12 @@ import type * as GeoJSON from 'geojson';
 import type { Theme } from '../theme';
 import { PhotoHoverPreview } from './Map/PhotoHoverPreview';
 import { addHeatmapLayer, addClusterLayers } from './Map/mapLayers';
+import { ThumbnailCache } from '../utils/ThumbnailCache';
 
 interface MapViewProps {
   photos: Photo[];
   onPhotoClick: (photo: Photo) => void;
+  onViewChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
   clusteringEnabled?: boolean;
   clusterRadius?: number;
   clusterMaxZoom?: number;
@@ -38,19 +40,22 @@ export function MapView({
   autoFit = true,
   theme = 'light',
   showHeatmap = false,
+  onViewChange,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [currentZoom, setCurrentZoom] = useState<number>(0);
+  const hasInitialFit = useRef(false);
   const [hoveredPhoto, setHoveredPhoto] = useState<Photo | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
   const [hoverThumbnailUrl, setHoverThumbnailUrl] = useState<string | null>(null);
   const [loadingHoverThumbnail, setLoadingHoverThumbnail] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const activeHoverIdRef = useRef<number | null>(null);
 
   // In-memory cache for loaded thumbnails (Object URLs)
-  const thumbnailCacheRef = useRef<Map<number, string>>(new Map());
+  const thumbnailCacheRef = useRef<ThumbnailCache>(new ThumbnailCache(50));
 
   // Initialize map
   useEffect(() => {
@@ -101,10 +106,37 @@ export function MapView({
 
     map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
+    map.current.on('moveend', () => {
+      if (!map.current) return;
+      const bounds = map.current.getBounds();
+      const zoom = map.current.getZoom();
+      setCurrentZoom(zoom);
+
+      if (onViewChange) {
+        onViewChange({
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+        });
+      }
+    });
+
     map.current.on('load', () => {
       setMapLoaded(true);
       if (map.current) {
         setCurrentZoom(map.current.getZoom());
+
+        // Initial bounds report
+        const bounds = map.current.getBounds();
+        if (onViewChange) {
+          onViewChange({
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            west: bounds.getWest(),
+          });
+        }
       }
     });
 
@@ -171,6 +203,7 @@ export function MapView({
       // Only load thumbnail if photo changed
       if (!hoveredPhoto || hoveredPhoto.id !== photo.id) {
         setHoveredPhoto(photo);
+        activeHoverIdRef.current = photo.id;
 
         // Clear existing timeout
         if (hoverTimeoutRef.current) {
@@ -187,9 +220,8 @@ export function MapView({
         }
 
         // Immediately clear old thumbnail and show loading state
-        if (hoverThumbnailUrl) {
-          URL.revokeObjectURL(hoverThumbnailUrl);
-        }
+        // Do NOT revoke the URL here if it's from the cache, that's handled by LRU
+        // Just clear the state display
         setHoverThumbnailUrl(null);
         setLoadingHoverThumbnail(true);
 
@@ -198,21 +230,28 @@ export function MapView({
           (window as any).api.thumbnails
             .get(photo.id, photo.path)
             .then((thumbnailBuffer: Buffer | null) => {
+              // Race condition check: ensure we are still hovering the same photo
+              if (activeHoverIdRef.current !== photo.id) return;
+
               if (thumbnailBuffer) {
                 const uint8Array = new Uint8Array(thumbnailBuffer as unknown as ArrayBuffer);
                 const blob = new Blob([uint8Array], { type: 'image/jpeg' });
                 const url = URL.createObjectURL(blob);
 
-                // Store in cache
+                // Store in cache (handles eviction and revocation of old items)
                 thumbnailCacheRef.current.set(photo.id, url);
                 setHoverThumbnailUrl(url);
               }
             })
             .catch((error: Error) => {
-              console.error('Failed to load hover thumbnail:', error);
+              if (activeHoverIdRef.current === photo.id) {
+                console.error('Failed to load hover thumbnail:', error);
+              }
             })
             .finally(() => {
-              setLoadingHoverThumbnail(false);
+              if (activeHoverIdRef.current === photo.id) {
+                setLoadingHoverThumbnail(false);
+              }
             });
         }, 200);
       }
@@ -223,12 +262,12 @@ export function MapView({
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
+      activeHoverIdRef.current = null;
       setHoveredPhoto(null);
       setHoverPosition(null);
-      if (hoverThumbnailUrl) {
-        URL.revokeObjectURL(hoverThumbnailUrl);
-        setHoverThumbnailUrl(null);
-      }
+      // Do NOT revoke URL here - let the cache handle it
+      setHoverThumbnailUrl(null);
+
       // Reset cursor
       if (map.current) map.current.getCanvas().style.cursor = '';
     });
@@ -262,9 +301,9 @@ export function MapView({
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
-      if (hoverThumbnailUrl) {
-        URL.revokeObjectURL(hoverThumbnailUrl);
-      }
+      // Clear cache and revoke all URLs
+      thumbnailCacheRef.current.clear();
+
       map.current?.remove();
       map.current = null;
       setMapLoaded(false);
@@ -398,12 +437,15 @@ export function MapView({
     }
 
     // Fit map to show all photos with smooth transition (respects autoFit setting)
-    if (autoFit && photosWithLocation.length > 0) {
-      const bounds = new maplibregl.LngLatBounds();
-      photosWithLocation.forEach((photo) => {
-        bounds.extend([photo.longitude!, photo.latitude!]);
-      });
-      map.current.fitBounds(bounds, { padding, maxZoom, duration: transitionDuration });
+    if (photosWithLocation.length > 0) {
+      if (autoFit || !hasInitialFit.current) {
+        const bounds = new maplibregl.LngLatBounds();
+        photosWithLocation.forEach((photo) => {
+          bounds.extend([photo.longitude!, photo.latitude!]);
+        });
+        map.current.fitBounds(bounds, { padding, maxZoom, duration: transitionDuration });
+        hasInitialFit.current = true;
+      }
     }
   }, [
     photos,

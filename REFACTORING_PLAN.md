@@ -462,6 +462,7 @@ export const DEBOUNCE_DELAY = 200;
 ### Phase 1: Settings Refactor ✅ COMPLETE
 
 **Created:**
+
 - `Settings/SettingsSlider.tsx` (89 lines)
 - `Settings/SettingsToggle.tsx` (57 lines)
 - `Settings/SettingsSection.tsx` (71 lines)
@@ -471,6 +472,7 @@ export const DEBOUNCE_DELAY = 200;
 ### Phase 2: MapView Refactor ✅ COMPLETE
 
 **Created:**
+
 - `Map/mapStyles.ts` (44 lines)
 - `Map/mapLayers.ts` (115 lines)
 - `Map/PhotoHoverPreview.tsx` (120 lines)
@@ -480,6 +482,7 @@ export const DEBOUNCE_DELAY = 200;
 ### Phase 3: App.tsx Refactor ✅ COMPLETE
 
 **Created:**
+
 - `hooks/usePhotoData.ts` (86 lines)
 - `hooks/useTheme.ts` (31 lines)
 - `hooks/useFolderScan.ts` (58 lines)
@@ -489,6 +492,7 @@ export const DEBOUNCE_DELAY = 200;
 ### Phase 4: Timeline Refactor ✅ COMPLETE
 
 **Created:**
+
 - `Timeline/TimelineControls.tsx` (107 lines)
 - `Timeline/TimelineSlider.tsx` (182 lines)
 - `Timeline/useTimelineDrag.ts` (125 lines)
@@ -499,7 +503,7 @@ export const DEBOUNCE_DELAY = 200;
 
 ### Phase 5: Cross-Cutting Concerns
 
-*Not yet implemented - deferred to future work*
+_Not yet implemented - deferred to future work_
 
 ---
 
@@ -533,6 +537,7 @@ export const DEBOUNCE_DELAY = 200;
 - ✅ Code reuse (components used across multiple contexts)
 
 **Note:** While total line count increased slightly, code quality improved significantly:
+
 - Monolithic components → focused, single-responsibility modules
 - Duplicate logic → reusable abstractions
 - Inline complexity → testable, documented utilities

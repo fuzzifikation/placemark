@@ -26,6 +26,11 @@ contextBridge.exposeInMainWorld('api', {
     clearCache: () => ipcRenderer.invoke('thumbnails:clearCache'),
     setMaxSize: (sizeMB: number) => ipcRenderer.invoke('thumbnails:setMaxSize', sizeMB),
   },
+  ops: {
+    selectDestination: () => ipcRenderer.invoke('ops:selectDestination'),
+    generateDryRun: (photos: any[], destPath: string, opType: string) => 
+      ipcRenderer.invoke('ops:generateDryRun', photos, destPath, opType),
+  },
   system: {
     clearAllAppData: () => ipcRenderer.invoke('system:clearAllAppData'),
   },

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MapView } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { Settings, AppSettings } from './components/Settings';
+import { OperationsPanel } from './components/Operations/OperationsPanel';
 import type { Photo } from '@placemark/core';
 import { usePhotoData } from './hooks/usePhotoData';
 import { useTheme } from './hooks/useTheme';
@@ -41,6 +42,10 @@ declare global {
         clearCache: () => Promise<void>;
         setMaxSize: (sizeMB: number) => Promise<void>;
       };
+      ops: {
+        selectDestination: () => Promise<string | null>;
+        generateDryRun: (photos: Photo[], destPath: string, opType: string) => Promise<any>;
+      };
     };
   }
 }
@@ -57,6 +62,7 @@ function App() {
   const [loadingThumbnail, setLoadingThumbnail] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showOperations, setShowOperations] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('placemark-settings');
     return saved
@@ -88,15 +94,17 @@ function App() {
         .finally(() => {
           setLoadingThumbnail(false);
         });
-
-      // Cleanup URL on unmount or photo change
-      return () => {
-        if (thumbnailUrl) {
-          URL.revokeObjectURL(thumbnailUrl);
-        }
-      };
     }
   }, [selectedPhoto]);
+
+  // Cleanup object URLs when they change or component unmounts
+  useEffect(() => {
+    return () => {
+      if (thumbnailUrl) {
+        URL.revokeObjectURL(thumbnailUrl);
+      }
+    };
+  }, [thumbnailUrl]);
 
   const handleScanFolder = async () => {
     await folderScan.scanFolder(photoData.loadPhotos);
@@ -146,6 +154,32 @@ function App() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setShowOperations(true)}
+              disabled={photoData.photos.length === 0}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                backgroundColor: showOperations ? colors.primary : colors.surface,
+                color: showOperations ? colors.buttonText : colors.textPrimary,
+                border: `1px solid ${showOperations ? colors.primary : colors.border}`,
+                borderRadius: '4px',
+                cursor: photoData.photos.length > 0 ? 'pointer' : 'not-allowed',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (photoData.photos.length > 0 && !showOperations) {
+                  e.currentTarget.style.backgroundColor = colors.surfaceHover;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!showOperations) {
+                  e.currentTarget.style.backgroundColor = colors.surface;
+                }
+              }}
+            >
+              📤 Organize ({photoData.photos.length})
+            </button>
             <button
               onClick={() => setShowSettings(true)}
               style={{
@@ -221,13 +255,14 @@ function App() {
             <MapView
               photos={photoData.photos}
               onPhotoClick={setSelectedPhoto}
+              onViewChange={photoData.filterByMapBounds}
               clusteringEnabled={settings.clusteringEnabled}
               clusterRadius={settings.clusterRadius}
               clusterMaxZoom={settings.clusterMaxZoom}
               transitionDuration={settings.mapTransitionDuration}
               maxZoom={settings.mapMaxZoom}
               padding={settings.mapPadding}
-              autoFit={showTimeline ? settings.autoZoomDuringPlay : true}
+              autoFit={showTimeline ? settings.autoZoomDuringPlay : false}
               theme={theme}
               showHeatmap={settings.showHeatmap}
             />
@@ -255,6 +290,14 @@ function App() {
             onSettingsChange={setSettings}
             theme={theme}
             onThemeChange={toggleTheme}
+          />
+        )}
+
+        {/* Operations Modal */}
+        {showOperations && (
+          <OperationsPanel
+            selectedPhotos={photoData.photos}
+            onClose={() => setShowOperations(false)}
           />
         )}
 

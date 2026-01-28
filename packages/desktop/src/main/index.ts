@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import { join } from 'path';
 import { registerPhotoHandlers, closeThumbnailService } from './ipc/photos';
+import { registerOperationHandlers } from './ipc/operations';
 import { closeStorage } from './services/storage';
 
 // Override userData path for portable mode
@@ -61,5 +62,6 @@ app.on('activate', () => {
 
 app.whenReady().then(() => {
   registerPhotoHandlers();
+  registerOperationHandlers();
   createWindow();
 });

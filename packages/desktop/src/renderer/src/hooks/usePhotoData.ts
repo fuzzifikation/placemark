@@ -2,24 +2,34 @@
  * usePhotoData - Manages photo data loading and filtering
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Photo } from '@placemark/core';
 
 export function usePhotoData() {
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [allPhotos, setAllPhotos] = useState<Photo[]>([]);
+  // Use a ref for the full dataset to avoid state duplication and extra renders
+  const allPhotosRef = useRef<Photo[]>([]);
+
   const [showMap, setShowMap] = useState(false);
   const [dateRange, setDateRange] = useState<{ min: number; max: number } | null>(null);
   const [selectedDateRange, setSelectedDateRange] = useState<{ start: number; end: number } | null>(
     null
   );
+  const [mapBounds, setMapBounds] = useState<{
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
 
   const loadPhotos = async () => {
     setLoading(true);
     try {
       const photosWithLocation = await window.api.photos.getWithLocation();
-      setAllPhotos(photosWithLocation);
+      // Store full dataset in ref
+      allPhotosRef.current = photosWithLocation;
+      // Initialize view with all photos
       setPhotos(photosWithLocation);
 
       if (photosWithLocation.length > 0) {
@@ -39,20 +49,76 @@ export function usePhotoData() {
     }
   };
 
-  const filterByDateRange = async (start: number, end: number) => {
-    setSelectedDateRange({ start, end });
-    try {
-      const filtered = await window.api.photos.getWithLocationInDateRange(start, end);
+  /**
+   * Centralized filter logic to avoid duplication
+   */
+  const applyFilters = useCallback(
+    (
+      targetPhotos: Photo[],
+      range: { start: number; end: number } | null,
+      bounds: { north: number; south: number; east: number; west: number } | null
+    ) => {
+      let filtered = targetPhotos;
+
+      // 1. Date Filter
+      if (range) {
+        filtered = filtered.filter((p) => {
+          if (p.timestamp === null || p.timestamp === undefined) return false;
+          return p.timestamp >= range.start && p.timestamp <= range.end;
+        });
+      }
+
+      // 2. Map Bounds Filter
+      if (bounds) {
+        const crossesIdl = bounds.west > bounds.east;
+
+        filtered = filtered.filter((p) => {
+          if (p.latitude === null || p.longitude === null) return false;
+
+          const latOk = p.latitude <= bounds.north && p.latitude >= bounds.south;
+          let lonOk = false;
+
+          if (crossesIdl) {
+            // It's in the box if it's > West OR < East
+            lonOk = p.longitude >= bounds.west || p.longitude <= bounds.east;
+          } else {
+            // Standard box
+            lonOk = p.longitude >= bounds.west && p.longitude <= bounds.east;
+          }
+
+          return latOk && lonOk;
+        });
+      }
+
       setPhotos(filtered);
-    } catch (error) {
-      console.error('Failed to filter photos by date:', error);
-    }
-  };
+    },
+    []
+  );
+
+  /**
+   * Client-side filtering to avoid IPC overhead and data duplication
+   */
+  const filterByDateRange = useCallback(
+    (start: number, end: number) => {
+      const newRange = { start, end };
+      setSelectedDateRange(newRange);
+      applyFilters(allPhotosRef.current, newRange, mapBounds);
+    },
+    [applyFilters, mapBounds]
+  );
+
+  const filterByMapBounds = useCallback(
+    (bounds: { north: number; south: number; east: number; west: number }) => {
+      setMapBounds(bounds);
+      applyFilters(allPhotosRef.current, selectedDateRange, bounds);
+    },
+    [applyFilters, selectedDateRange]
+  );
 
   const resetDateFilter = () => {
     if (dateRange) {
       setSelectedDateRange({ start: dateRange.min, end: dateRange.max });
-      setPhotos(allPhotos);
+      setPhotos(allPhotosRef.current);
     }
   };
 
@@ -63,13 +129,14 @@ export function usePhotoData() {
 
   return {
     photos,
-    allPhotos,
+    allPhotos: allPhotosRef.current, // Expose for checking length/empty state
     showMap,
     dateRange,
     selectedDateRange,
     loading,
     loadPhotos,
     filterByDateRange,
+    filterByMapBounds, // Export this
     resetDateFilter,
   };
 }

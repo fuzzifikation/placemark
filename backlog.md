@@ -203,3 +203,67 @@
 - Should be smooth, visually clear, and reversible.
 
 Add new ideas, bugs, or feature requests below:
+
+## File Operations — Requirements & Critical Evaluation (Phase 4/5)
+
+### Summary
+
+Goal: Let users sort photos into folders (copy/move) reliably and safely, with preview, progress, rollback where possible, and database updates. Also provide duplicate-photo detection to help consolidate collections.
+
+### Requirements
+
+1. Select photos on screen
+
+- **Description:** Allow selection via map bounds, date range, timeline selection, and manual selection in the grid.
+- **Acceptance:** UI shows selection count and estimated total size; selection persists during dry-run/preview.
+
+2. Source Context Awareness (NEW)
+
+- **Description:** Users select "dots on a map" but manipulate "files in folders". The UI must show a summary of where the selected photos currently reside before any operation is planned.
+- **UI:** "Source Summary" section in Operations Panel listing the folders involved (e.g., "Selection contains 15 photos from 3 folders: \Photos\2021 (12), \Downloads (3)").
+- **Acceptance:** Panel groups selected photos by parent folder, sorts by count, and displays the list to the user immediately upon opening.
+
+3. Offer Copy / Move operations (dry-run + execute)
+
+- **Description:** Provide a dry-run preview (source → destination mapping) that detects conflicts, previews renames, and estimates disk usage; allow user to confirm before executing.
+- **Acceptance:** Dry-run must run without modifying files; execute must perform copy or move with progress, cancellation, and error reporting.
+
+3. Super-reliable execution (safety-first)
+
+- **Description:** File operations must avoid data loss. Use copy-then-verify semantics for `move` (copy then delete only after verification) and atomic database updates. Keep an `operation_log` with status `pending|completed|failed` and per-file errors.
+- **Acceptance:** No user-visible data loss in tested failure scenarios (power loss, partial network failure); failed items are logged and retriable.
+
+4. Update Placemark database
+
+- **Description:** After successful copy/move, update photo records to reflect new `source`/`path`, update thumbnails if file moved, and record operations in `operation_log` table. Support transactional semantics for DB updates tied to operation outcome.
+- **Acceptance:** DB remains consistent after partial failures; operations have idempotent updates and clear audit trail.
+
+5. Duplicate detection
+
+- **Description:** Detect duplicate photos (exact file-hash and configurable heuristics: same hash, similar filesize+timestamp, image-similarity optional). Provide UI to list duplicates and offer actions (delete, move, link, keep both).
+- **Acceptance:** Duplicate detector runs as a background task; user must explicitly approve destructive actions.
+
+### Critical Evaluation / Risks & Mitigations
+
+- **Risk — Data loss on move:** Moves are destructive if implemented as rename. Mitigation: implement move as copy → verify checksum or size → delete source only after verification; offer a `dry-run` and a `safe move` toggle.
+- **Risk — Partial failure & rollback:** Filesystem operations may partially complete (e.g., power loss). Mitigation: maintain `operation_log` with per-file status and implement resume/retry logic. Where possible, support rollback by deleting newly copied files if operation marked failed before completion.
+- **Risk — Performance with large selections:** Copying thousands of files can be slow. Mitigation: stream operations with concurrency limits, show estimated time/bytes, and allow background execution with progress via IPC; prioritize UI responsiveness.
+- **Risk — Disk space & permissions:** Destination may lack space or be read-only. Mitigation: preflight checks in dry-run (available space, write test), show clear warnings, and block execution when checks fail unless user overrides explicitly.
+- **Risk — Conflicts & naming collisions:** Files with same name exist at destination. Mitigation: dry-run shows conflict resolution options (skip, overwrite, rename with suffix, prompt per-file); provide consistent, auditable renaming rules.
+- **Risk — DB inconsistency:** If filesystem changes succeed but DB update fails, the app view may diverge. Mitigation: persist operation metadata first, mark `pending`, perform file ops, then atomically update DB rows and mark `completed`; include compensation steps if DB update fails (flagged items for manual reconciliation).
+- **Risk — Duplicate detection false positives:** Heuristics may misclassify similar but distinct photos. Mitigation: default to conservative rules (exact hash first), present candidates to user with thumbnails and metadata, and require explicit user approval for destructive actions.
+
+### Implementation Notes / Recommendations
+
+- Implement the core planning & validation logic in `packages/core` (dry-run generator, mapping rules, validator.ts already present). Desktop should implement the actual FS engine with safe copy semantics.
+- Add/extend `operation_log` table (timestamp, operation, source_path, dest_path, bytes, status, error) and surface in Settings → Database for audit and retry.
+- Keep copy/move engine incremental and resumable; record progress frequently to DB so cancellation and resume are possible.
+- Duplicate detection: start with SHA-256 file hashes + size + timestamp; add optional perceptual hashing (pHash) later as opt-in.
+- Tests: add integration tests for dry-run mapping, conflict detection, safe-move semantics, and DB consistency under simulated failures.
+
+### Acceptance Criteria for Phase 4 (Dry-run) & Phase 5 (Execution)
+
+- Phase 4 (Dry-run): User can select photos, choose destination, view full source→dest preview with conflict detection, and see total count/size and warnings (permissions/space). Execute button disabled.
+- Phase 5 (Execution): User can run copy/move with progress, cancel, resume failed items, and see `operation_log` entries. Database updates happen reliably and are auditable.
+
+---

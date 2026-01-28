@@ -3,3 +3,6 @@
 
 export * from './models/Photo';
 export * from './models/Source';
+export * from './models/Operation';
+export * from './operations/dryrun';
+export * from './operations/validator';
