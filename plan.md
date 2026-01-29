@@ -2,9 +2,9 @@
 
 Step-by-step roadmap for building Placemark. See [technologydecisions.md](technologydecisions.md) for architecture details and technology choices.
 
-**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | 🔜 Phase 4 - File Operations
+**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | � Phase 4 - In Progress
 
-**Recent Work:** Major code refactoring completed (Jan 2026) - reduced 4 large components by ~1,035 lines through component extraction and custom hooks. See [REFACTORING_PLAN.md](REFACTORING_PLAN.md) for details.
+**Recent Work:** Implemented manual Lasso Selection for photos (Jan 29, 2026). Users can now toggle into selection mode, draw a lasso to select multiple photos, and see the selection count in the UI. Refactored `MapView` to use `useLassoSelection` hook.
 
 ---
 
@@ -128,9 +128,11 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 5. Show warnings: overwrite conflicts, disk space check
 6. Implement `packages/core/src/operations/validator.ts`
 7. Add "Execute" and "Cancel" buttons (Execute disabled for now)
+8. **New:** Implement manual photo selection (Lasso)
 
 **Testing:**
 
+- [x] Manual selection via Lasso tool works
 - [ ] Preview shows correct source → destination mappings
 - [ ] Detects filename conflicts
 - [ ] Warns if destination has insufficient space

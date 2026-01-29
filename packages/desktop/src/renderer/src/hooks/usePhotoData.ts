@@ -22,6 +22,31 @@ export function usePhotoData() {
     west: number;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selection, setSelection] = useState<Set<number>>(new Set());
+
+  const updateSelection = useCallback(
+    (ids: number[], mode: 'set' | 'add' | 'remove' | 'toggle') => {
+      setSelection((prev) => {
+        if (mode === 'set') return new Set(ids);
+
+        const next = new Set(prev);
+        if (mode === 'add') {
+          ids.forEach((id) => next.add(id));
+        } else if (mode === 'remove') {
+          ids.forEach((id) => next.delete(id));
+        } else if (mode === 'toggle') {
+          ids.forEach((id) => {
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+          });
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  const clearSelection = useCallback(() => setSelection(new Set()), []);
 
   const loadPhotos = async () => {
     setLoading(true);
@@ -138,5 +163,8 @@ export function usePhotoData() {
     filterByDateRange,
     filterByMapBounds, // Export this
     resetDateFilter,
+    selection,
+    updateSelection,
+    clearSelection,
   };
 }

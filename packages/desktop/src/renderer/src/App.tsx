@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { MapView } from './components/MapView';
+import { useState, useEffect, useMemo } from 'react';
+import { MapView, SelectionMode } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { Settings, AppSettings } from './components/Settings';
 import { OperationsPanel } from './components/Operations/OperationsPanel';
@@ -69,6 +69,15 @@ function App() {
       ? JSON.parse(saved)
       : { clusterRadius: 30, clusterMaxZoom: 16, mapTransitionDuration: 200 };
   });
+
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>('pan');
+
+  const photosForOperations = useMemo(() => {
+    if (photoData.selection.size > 0) {
+      return photoData.allPhotos.filter((p) => photoData.selection.has(p.id));
+    }
+    return photoData.photos;
+  }, [photoData.selection, photoData.allPhotos, photoData.photos]);
 
   // Load thumbnail when photo is selected
   useEffect(() => {
@@ -155,6 +164,40 @@ function App() {
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
+              title={
+                selectionMode === 'lasso'
+                  ? 'Exit Selection Mode'
+                  : 'Enter Selection Mode (Shift+Drag to add, Alt+Drag to remove)'
+              }
+              onClick={() => setSelectionMode(selectionMode === 'lasso' ? 'pan' : 'lasso')}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                backgroundColor: selectionMode === 'lasso' ? colors.primary : colors.surface,
+                color: selectionMode === 'lasso' ? colors.buttonText : colors.textPrimary,
+                border: `1px solid ${selectionMode === 'lasso' ? colors.primary : colors.border}`,
+                borderRadius: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+              onMouseEnter={(e) => {
+                if (selectionMode !== 'lasso') {
+                  e.currentTarget.style.backgroundColor = colors.surfaceHover;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectionMode !== 'lasso') {
+                  e.currentTarget.style.backgroundColor = colors.surface;
+                }
+              }}
+            >
+              🕸️ Select
+            </button>
+
+            <button
               onClick={() => setShowOperations(true)}
               disabled={photoData.photos.length === 0}
               style={{
@@ -178,7 +221,11 @@ function App() {
                 }
               }}
             >
-              📤 Organize ({photoData.photos.length})
+              📤 Organize (
+              {photoData.selection.size > 0
+                ? `${photoData.selection.size} selected`
+                : `${photoData.photos.length} visible`}
+              )
             </button>
             <button
               onClick={() => setShowSettings(true)}
@@ -265,6 +312,9 @@ function App() {
               autoFit={showTimeline ? settings.autoZoomDuringPlay : false}
               theme={theme}
               showHeatmap={settings.showHeatmap}
+              selectionMode={selectionMode}
+              selectedIds={photoData.selection}
+              onSelectionChange={photoData.updateSelection}
             />
           </div>
           {showTimeline && photoData.dateRange && photoData.selectedDateRange && (
@@ -296,7 +346,7 @@ function App() {
         {/* Operations Modal */}
         {showOperations && (
           <OperationsPanel
-            selectedPhotos={photoData.photos}
+            selectedPhotos={photosForOperations}
             onClose={() => setShowOperations(false)}
           />
         )}

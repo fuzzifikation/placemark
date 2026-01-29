@@ -12,6 +12,9 @@ import type { Theme } from '../theme';
 import { PhotoHoverPreview } from './Map/PhotoHoverPreview';
 import { addHeatmapLayer, addClusterLayers } from './Map/mapLayers';
 import { ThumbnailCache } from '../utils/ThumbnailCache';
+import { useLassoSelection } from './Map/useLassoSelection';
+
+export type SelectionMode = 'pan' | 'lasso';
 
 interface MapViewProps {
   photos: Photo[];
@@ -26,6 +29,10 @@ interface MapViewProps {
   autoFit?: boolean;
   theme?: Theme;
   showHeatmap?: boolean;
+  // Selection Props
+  selectedIds?: Set<number>;
+  onSelectionChange?: (ids: number[], mode: 'set' | 'add' | 'remove' | 'toggle') => void;
+  selectionMode?: SelectionMode;
 }
 
 export function MapView({
@@ -41,6 +48,10 @@ export function MapView({
   theme = 'light',
   showHeatmap = false,
   onViewChange,
+  // Selection Props
+  selectedIds,
+  onSelectionChange,
+  selectionMode = 'pan',
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -53,6 +64,44 @@ export function MapView({
   const [loadingHoverThumbnail, setLoadingHoverThumbnail] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const activeHoverIdRef = useRef<number | null>(null);
+
+  // Lasso Hook
+  const { isLassoActive, lassoPoints, startLasso, updateLasso, endLasso } = useLassoSelection({
+    map,
+    photos,
+    selectionMode,
+    onSelectionChange,
+  });
+
+  // Sync selection state to map features
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    // We must wait for the source to actally contain the features.
+    // The source update happens in another effect.
+    // If we run before that, this might do nothing.
+    // However, setFeatureState is persistent for the source if the IDs match?
+    // "The state is not persisted... and will be removed when the source is removed."
+    // Since we remove/add source in the other effect, we must run AFTER it.
+    // React effects run in order of definition?
+    // If I put this effect AFTER the big source effect, it should work.
+    // For now, I'll assume standard React behavior.
+    // But since the other effect has `photos` as dep, and this one does too...
+
+    // Safer:
+    if (map.current.getSource('photos')) {
+      try {
+        map.current.removeFeatureState({ source: 'photos' });
+        if (selectedIds) {
+          selectedIds.forEach((id) => {
+            map.current?.setFeatureState({ source: 'photos', id }, { selected: true });
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to set feature state', err);
+      }
+    }
+  }, [selectedIds, mapLoaded, photos]); // Trigger when source data likely changed
 
   // In-memory cache for loaded thumbnails (Object URLs)
   const thumbnailCacheRef = useRef<ThumbnailCache>(new ThumbnailCache(50));
@@ -336,6 +385,7 @@ export function MapView({
       type: 'FeatureCollection',
       features: photosWithLocation.map((photo) => ({
         type: 'Feature',
+        id: photo.id, // Top-level ID is required for feature-state
         geometry: {
           type: 'Point',
           coordinates: [photo.longitude!, photo.latitude!],
@@ -355,12 +405,15 @@ export function MapView({
       })),
     };
 
+    // Disable clustering when in lasso mode to allow individual selection
+    const isClusteringActive = clusteringEnabled && selectionMode !== 'lasso';
+
     if (!map.current.getSource('photos')) {
       // Add source with clustering enabled for markers
       map.current.addSource('photos', {
         type: 'geojson',
         data: geojson,
-        cluster: clusteringEnabled,
+        cluster: isClusteringActive,
         clusterMaxZoom: clusterMaxZoom,
         clusterRadius: clusterRadius,
       });
@@ -397,7 +450,7 @@ export function MapView({
 
       if (
         currentSource._data &&
-        (currentSource._options.cluster !== clusteringEnabled ||
+        (currentSource._options.cluster !== isClusteringActive ||
           currentSource._options.clusterRadius !== clusterRadius ||
           currentSource._options.clusterMaxZoom !== clusterMaxZoom ||
           heatmapNeedsUpdate)
@@ -417,7 +470,7 @@ export function MapView({
         map.current.addSource('photos', {
           type: 'geojson',
           data: geojson,
-          cluster: clusteringEnabled,
+          cluster: isClusteringActive,
           clusterMaxZoom: clusterMaxZoom,
           clusterRadius: clusterRadius,
         });
@@ -458,6 +511,7 @@ export function MapView({
     padding,
     autoFit,
     showHeatmap,
+    selectionMode,
   ]);
 
   // Toggle heatmap visibility when showHeatmap prop changes
@@ -515,15 +569,58 @@ export function MapView({
   }, [showHeatmap, mapLoaded]);
 
   return (
-    <>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div
         ref={mapContainer}
         style={{
           width: '100%',
           height: '100%',
-          position: 'relative',
         }}
       />
+      {/* Lasso Layer */}
+      {selectionMode === 'lasso' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 10,
+            cursor: 'crosshair',
+            touchAction: 'none', // Critical for preventing scrolling while drawing
+          }}
+          onMouseDown={startLasso}
+          onMouseMove={updateLasso}
+          onMouseUp={endLasso}
+          onTouchStart={startLasso}
+          onTouchMove={updateLasso}
+          onTouchEnd={endLasso}
+        />
+      )}
+      {/* Lasso Visuals */}
+      {isLassoActive && lassoPoints.length > 0 && (
+        <svg
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            zIndex: 11,
+          }}
+        >
+          <polygon
+            points={lassoPoints.map((p) => `${p.x},${p.y}`).join(' ')}
+            fill="rgba(74, 158, 255, 0.2)"
+            stroke="rgba(74, 158, 255, 0.8)"
+            strokeWidth="2"
+            strokeDasharray="5,5"
+          />
+        </svg>
+      )}
+
       {/* Debug: Show current zoom level */}
       <div
         style={{
@@ -552,6 +649,6 @@ export function MapView({
           theme={theme}
         />
       )}
-    </>
+    </div>
   );
 }

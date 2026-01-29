@@ -8,6 +8,7 @@ import {
   CLUSTER_COLORS,
   CLUSTER_RADII,
   UNCLUSTERED_STYLE,
+  SELECTED_STYLE,
   HEATMAP_CONFIG,
 } from './mapStyles';
 
@@ -108,10 +109,30 @@ export function addClusterLayers(map: maplibregl.Map, showHeatmap: boolean = fal
     source: 'photos',
     filter: ['!', ['has', 'point_count']],
     paint: {
-      'circle-color': UNCLUSTERED_STYLE.COLOR,
-      'circle-radius': UNCLUSTERED_STYLE.RADIUS,
-      'circle-stroke-width': UNCLUSTERED_STYLE.STROKE_WIDTH,
-      'circle-stroke-color': UNCLUSTERED_STYLE.STROKE_COLOR,
+      'circle-color': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        SELECTED_STYLE.COLOR,
+        UNCLUSTERED_STYLE.COLOR,
+      ],
+      'circle-radius': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        SELECTED_STYLE.RADIUS,
+        UNCLUSTERED_STYLE.RADIUS,
+      ],
+      'circle-stroke-width': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        SELECTED_STYLE.STROKE_WIDTH,
+        UNCLUSTERED_STYLE.STROKE_WIDTH,
+      ],
+      'circle-stroke-color': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        SELECTED_STYLE.STROKE_COLOR,
+        UNCLUSTERED_STYLE.STROKE_COLOR,
+      ],
     },
   });
 

@@ -27,6 +27,13 @@ export const UNCLUSTERED_STYLE = {
   STROKE_COLOR: '#fff',
 } as const;
 
+export const SELECTED_STYLE = {
+  COLOR: '#ff4444', // Bright red
+  RADIUS: 8,
+  STROKE_WIDTH: 3,
+  STROKE_COLOR: '#ffffff', // White border for contrast
+} as const;
+
 export const HEATMAP_CONFIG = {
   MAX_ZOOM: 22,
   COLORS: {
