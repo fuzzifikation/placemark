@@ -1,8 +1,14 @@
 import { app, BrowserWindow } from 'electron';
 import { join } from 'path';
-import { registerPhotoHandlers, closeThumbnailService } from './ipc/photos';
-import { registerOperationHandlers } from './ipc/operations';
-import { closeStorage } from './services/storage';
+
+// Lazy load these ensuring splash screen appears immediately
+// import { registerPhotoHandlers, closeThumbnailService } from './ipc/photos';
+// import { registerOperationHandlers } from './ipc/operations';
+// import { closeStorage } from './services/storage';
+
+// Store cleanup functions for window-all-closed
+let closeStorage: (() => void) | undefined;
+let closeThumbnailService: (() => void) | undefined;
 
 // Override userData path for portable mode
 // In portable builds, databases live next to the .exe
@@ -40,7 +46,7 @@ function createSplash() {
   });
 
   splash.loadFile(join(__dirname, '../../splash.html'));
-  
+
   splash.once('ready-to-show', () => {
     splash?.show();
   });
@@ -67,12 +73,10 @@ function createWindow() {
 
   // Show window when ready and close splash
   win.once('ready-to-show', () => {
-    // Small delay to ensure smooth transition and let React hydrate
-    setTimeout(() => {
-      splash?.destroy();
-      splash = null;
-      win?.show();
-    }, 1500); 
+    // Destroy splash immediately when main window is ready
+    splash?.destroy();
+    splash = null;
+    win?.show();
   });
 
   if (VITE_DEV_SERVER_URL) {
@@ -84,8 +88,8 @@ function createWindow() {
 }
 
 app.on('window-all-closed', () => {
-  closeStorage();
-  closeThumbnailService();
+  if (closeStorage) closeStorage();
+  if (closeThumbnailService) closeThumbnailService();
   if (process.platform !== 'darwin') {
     app.quit();
     win = null;
@@ -94,14 +98,26 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createSplash();
     createWindow();
   }
 });
 
-app.whenReady().then(() => {
-  registerPhotoHandlers();
-  registerOperationHandlers();
+app.whenReady().then(async () => {
   createSplash();
+  
+  // Register handlers after showing splash to prioritize UI content
+  // Dynamically import heavyweight modules (SQLite, Sharp) to avoid blocking splash screen
+  const photosModule = await import('./ipc/photos');
+  const opsModule = await import('./ipc/operations');
+  const storageModule = await import('./services/storage');
+
+  // Assign cleanup functions
+  closeStorage = storageModule.closeStorage;
+  closeThumbnailService = photosModule.closeThumbnailService;
+
+  // Initialize features
+  photosModule.registerPhotoHandlers();
+  opsModule.registerOperationHandlers();
+
   createWindow();
 });
