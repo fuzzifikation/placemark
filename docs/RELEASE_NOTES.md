@@ -1,0 +1,56 @@
+# Placemark v0.2.0 - Alpha Release
+
+🎉 **Second Alpha Release** with major UI improvements and Portable Mode.
+
+## New in v0.2.0
+
+### 🚀 Portable Mode
+- Placemark is now a **portable application**. No installation required.
+- All data (databases, cache) is stored in a `placemark_data` folder next to the executable.
+- Perfect for running from a USB drive or keeping your system clean.
+
+### 🎨 UI & Experience
+- **Mobile-Friendly Toggles:** Replaced checkboxes with smooth switches.
+- **Clustering Controls:** New settings to toggle clustering, adjust radius, and use heatmap.
+- **Dark/Light Mode:** Heatmap now works beautifully on both themes.
+- **Menu Bar:** Auto-hidden for a cleaner look.
+- **Scrollbars:** Hidden global scrollbars for a native feel.
+
+### 🛠️ Improvements & Fixes
+- **Smart Spiderify:** Photos at the exact same location now "spider out" so you can click them individually.
+- **Zoom Limit Fix:** Map no longer goes blank when zooming too far deep.
+- **Thumbnail Cache:** In-memory caching for instant hover previews.
+- **Database Management:** "Clear All App Data" replaced with safe "Open Data Folder" button.
+- **Performance:** Optimized MapView event listeners and render logic.
+
+## Core Features
+- 📂 Scan local photo folders and extract EXIF GPS + timestamps
+- 🗺️ Interactive MapLibre map with photo markers
+- ⏱️ Timeline view with play controls and date filtering
+- 🖼️ Thumbnail caching system (400px JPEG)
+- 🔍 Hover preview tooltips on map markers
+
+## ⚠️ Important Notes
+- This is an **unsigned** Windows build - you might see a "Windows protected your PC" popup.
+- Click "More info" → "Run anyway" to launch.
+- This is alpha software.
+
+## Installation
+1. Download **Placemark-0.2.0-portable.exe** from Assets below.
+2. Move it to a folder of your choice (e.g. `D:\MyPhotos\Placemark`).
+3. Double-click to run.
+4. Data will be created in `placemark_data` next to the file.
+
+## Requirements
+- Windows 10/11 (64-bit)
+- ~200MB disk space for app + thumbnail cache
+
+## Known Limitations
+- Windows only
+- Local folders only (OneDrive integration in Phase 7)
+- No file operations yet (copy/move coming in Phase 4)
+
+## What's Next
+Phase 4 will add file operations (copy/move photos based on location/date selection).
+
+Report issues at: https://github.com/fuzzifikation/placemark/issues

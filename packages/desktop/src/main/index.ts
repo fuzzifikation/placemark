@@ -9,7 +9,8 @@ import { closeStorage } from './services/storage';
 // In dev mode, use standard AppData location
 const portableDir = process.env.PORTABLE_EXECUTABLE_DIR;
 if (portableDir) {
-  app.setPath('userData', portableDir);
+  // Use a subdirectory to avoid cluttering the executable directory with Electron files
+  app.setPath('userData', join(portableDir, 'placemark_data'));
 } else if (!app.isPackaged) {
   // Dev mode: use default AppData location
   // (no change needed, but keeping this explicit for clarity)

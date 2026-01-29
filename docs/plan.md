@@ -124,11 +124,12 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 1. Create `OperationsPanel.tsx` component
 2. Implement `packages/core/src/operations/dryrun.ts`
 3. Add UI: destination folder picker, operation type (copy/move)
-4. Generate preview: source → destination paths
-5. Show warnings: overwrite conflicts, disk space check
-6. Implement `packages/core/src/operations/validator.ts`
-7. Add "Execute" and "Cancel" buttons (Execute disabled for now)
-8. **New:** Implement manual photo selection (Lasso)
+4. **Source Context Awareness:** Show summary of source folders involved in selection.
+5. Generate preview: source → destination paths
+6. Show warnings: overwrite conflicts, disk space check
+7. Implement `packages/core/src/operations/validator.ts`
+8. Add "Execute" and "Cancel" buttons (Execute disabled for now)
+9. **New:** Implement manual photo selection (Lasso)
 
 **Testing:**
 
@@ -157,6 +158,7 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 5. Stream progress updates via IPC
 6. Handle errors gracefully (log, skip, retry)
 7. Transaction support: mark operations as pending/completed/failed
+8. **Duplicate Detection:** Background task to identify duplicates (hash/size) and offer cleanup options.
 
 **Testing:**
 
@@ -232,13 +234,16 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 **Tasks:**
 
 1. Virtual scrolling for photo grid (handle 100k+ photos)
-2. Map marker clustering (performance)
-3. Incremental folder scanning (only new files)
-4. File hash deduplication (same photo in multiple sources)
-5. Settings: cache location, map tile source, scan schedule
-6. Error boundary and crash reporting
-7. User documentation (help screen)
-8. Packaging with electron-builder (Windows .exe, macOS .dmg)
+2. Map marker clustering (performance) - _Refine: Dynamic expansion on hover_
+3. **Multi-threaded Import:** Use worker threads for EXIF/thumbnail generation.
+4. **Timeline Animation:** Visual "swooshes" connecting photos during playback.
+5. Incremental folder scanning (only new files)
+6. File hash deduplication (same photo in multiple sources)
+7. Settings: cache location, map tile source, scan schedule
+8. Error boundary and crash reporting
+9. User documentation (help screen)
+10. Packaging with electron-builder (Windows .exe, macOS .dmg)
+11. **Overlapping Points Interaction:** Fix issue where points underneath others are not clickable (refined spiderify or z-index management).
 
 **Testing:**
 
@@ -283,6 +288,19 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 - [ ] App size <30MB
 
 **Deliverable:** Mobile app showing device photos on map.
+
+---
+
+### Phase 10: AI & Location Inference (Future)
+
+**Goal:** Infer locations for photos without GPS data.
+
+**Tasks:**
+
+1. **Hierarchy-based Inference:** Guess location from folder names (e.g., "Paris 2022").
+2. **Opt-in Geocoding:** Integration with privacy-respecting geocoding APIs.
+3. **Manual Tagging:** UI to drag-and-drop non-located photos onto the map.
+4. **Transparency:** Log all inferred locations; distinguish distinctively from real EXIF data.
 
 ---
 

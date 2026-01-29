@@ -32,6 +32,6 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke('ops:generateDryRun', photos, destPath, opType),
   },
   system: {
-    clearAllAppData: () => ipcRenderer.invoke('system:clearAllAppData'),
+    openAppDataFolder: () => ipcRenderer.invoke('system:openAppDataFolder'),
   },
 });

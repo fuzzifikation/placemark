@@ -1,6 +1,6 @@
 # Copilot Instructions for Placemark
 
-Placemark is a privacy-first, local-first photo organizer. Read [projectgoal.md](../projectgoal.md) for scope, [plan.md](../plan.md) for roadmap, and [technologydecisions.md](../technologydecisions.md) for architecture.
+Placemark is a privacy-first, local-first photo organizer. Read [README.md](../README.md) for scope, [docs/plan.md](../docs/plan.md) for roadmap, and [docs/technologydecisions.md](../docs/technologydecisions.md) for architecture.
 
 ## Technology Stack
 

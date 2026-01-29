@@ -64,7 +64,7 @@ export function MapView({
   const [loadingHoverThumbnail, setLoadingHoverThumbnail] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const activeHoverIdRef = useRef<number | null>(null);
-  
+
   // Refs for callbacks to avoid stale closures in map event listeners
   const onViewChangeRef = useRef(onViewChange);
   const onPhotoClickRef = useRef(onPhotoClick);

@@ -143,20 +143,12 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
     }
   };
 
-  const handleClearAllAppData = async () => {
-    if (
-      !confirm(
-        'Clear ALL app data? This will delete databases, thumbnails, caches, and settings. The app will restart. This cannot be undone.'
-      )
-    ) {
-      return;
-    }
+  const handleOpenAppDataFolder = async () => {
     try {
-      await (window as any).api.system.clearAllAppData();
-      // App will restart automatically
+      await (window as any).api.system.openAppDataFolder();
     } catch (error) {
-      console.error('Failed to clear app data:', error);
-      alert('Failed to clear app data: ' + error);
+      console.error('Failed to open app data folder:', error);
+      alert('Failed to open app data folder: ' + error);
     }
   };
 
@@ -619,24 +611,24 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               Clear All Photos (Reset Database)
             </button>
 
-            {/* Clear All App Data Button */}
+            {/* Open Data Folder Button */}
             <button
-              onClick={handleClearAllAppData}
+              onClick={handleOpenAppDataFolder}
               style={{
                 marginTop: '1rem',
                 padding: '0.5rem 1rem',
                 fontSize: '0.875rem',
-                backgroundColor: '#b91c1c',
-                color: colors.buttonText,
-                border: 'none',
+                backgroundColor: colors.surface,
+                color: colors.textPrimary,
+                border: `1px solid ${colors.border}`,
                 borderRadius: '4px',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
             >
-              ⚠️ Clear All App Data & Restart
+              Open Data Folder
             </button>
           </SettingsSection>
         </div>

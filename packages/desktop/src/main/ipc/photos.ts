@@ -139,32 +139,10 @@ export function registerPhotoHandlers(): void {
     thumbnailService.setMaxSizeMB(sizeMB);
   });
 
-  // Clear all app data and restart
-  ipcMain.handle('system:clearAllAppData', async () => {
+  // Open app data folder in file explorer
+  ipcMain.handle('system:openAppDataFolder', async () => {
     const userDataPath = app.getPath('userData');
-
-    // Close databases first
-    if (thumbnailService) {
-      thumbnailService.close();
-    }
-
-    // Close main database
-    closeStorage();
-
-    // Wait a moment for file handles to close
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    try {
-      // Remove the entire userData directory
-      fs.rmSync(userDataPath, { recursive: true, force: true });
-
-      // Restart the app
-      app.relaunch();
-      app.exit(0);
-    } catch (error) {
-      console.error('Failed to clear app data:', error);
-      throw error;
-    }
+    await shell.openPath(userDataPath);
   });
 }
 
