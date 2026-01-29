@@ -96,4 +96,9 @@ export function registerOperationHandlers(): void {
       return result;
     }
   );
+
+  // CRITICAL: Block execution for this preview release
+  ipcMain.handle('ops:execute', async () => {
+    throw new Error('File operations (Copy/Move) are disabled in this preview version for safety.');
+  });
 }

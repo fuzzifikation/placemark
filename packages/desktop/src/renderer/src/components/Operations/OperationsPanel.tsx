@@ -278,9 +278,16 @@ export function OperationsPanel({ selectedPhotos, onClose }: OperationsPanelProp
                   </button>
                   <button
                     onClick={handleExecute}
-                    style={{ ...styles.actionBtn, backgroundColor: '#059669' }} // Green
+                    style={{
+                      ...styles.actionBtn,
+                      backgroundColor: '#6b7280', // Gray
+                      cursor: 'not-allowed',
+                      opacity: 0.7,
+                    }}
+                    disabled={true}
+                    title="File operations are coming in v0.4.0"
                   >
-                    Execute {opType === 'copy' ? 'Copy' : 'Move'}
+                    Execute (Coming Soon)
                   </button>
                 </div>
               </div>
