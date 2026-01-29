@@ -17,9 +17,34 @@ if (portableDir) {
 }
 
 let win: BrowserWindow | null;
+let splash: BrowserWindow | null;
 
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 const RENDERER_DIST = join(__dirname, '../../dist');
+
+function createSplash() {
+  splash = new BrowserWindow({
+    width: 500,
+    height: 300,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    center: true,
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+    icon: join(__dirname, '../../build/icon.png'),
+    show: false, // Don't show until ready to prevent white flash
+  });
+
+  splash.loadFile(join(__dirname, '../../splash.html'));
+  
+  splash.once('ready-to-show', () => {
+    splash?.show();
+  });
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -27,6 +52,7 @@ function createWindow() {
     height: 800,
     autoHideMenuBar: true,
     icon: join(__dirname, '../../build/icon.png'),
+    show: false, // Hide initially (splash is showing)
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -37,6 +63,16 @@ function createWindow() {
   // Test active push message to Renderer-process
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString());
+  });
+
+  // Show window when ready and close splash
+  win.once('ready-to-show', () => {
+    // Small delay to ensure smooth transition and let React hydrate
+    setTimeout(() => {
+      splash?.destroy();
+      splash = null;
+      win?.show();
+    }, 1500); 
   });
 
   if (VITE_DEV_SERVER_URL) {
@@ -58,6 +94,7 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
+    createSplash();
     createWindow();
   }
 });
@@ -65,5 +102,6 @@ app.on('activate', () => {
 app.whenReady().then(() => {
   registerPhotoHandlers();
   registerOperationHandlers();
+  createSplash();
   createWindow();
 });
