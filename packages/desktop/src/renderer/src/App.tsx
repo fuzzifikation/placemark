@@ -51,6 +51,24 @@ declare global {
 }
 
 function App() {
+  // Global styles to remove default margins and scrollbars
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   // Custom hooks
   const photoData = usePhotoData();
   const { theme, colors, toggleTheme } = useTheme();
@@ -67,10 +85,25 @@ function App() {
     const saved = localStorage.getItem('placemark-settings');
     return saved
       ? JSON.parse(saved)
-      : { clusterRadius: 30, clusterMaxZoom: 16, mapTransitionDuration: 200 };
+      : {
+          clusterRadius: 30,
+          clusterMaxZoom: 14,
+          mapTransitionDuration: 200,
+          autoZoomDuringPlay: true,
+          timelineUpdateInterval: 100,
+        };
   });
 
   const [selectionMode, setSelectionMode] = useState<SelectionMode>('pan');
+
+  const handleSelectionModeToggle = () => {
+    if (selectionMode === 'lasso') {
+      setSelectionMode('pan');
+      photoData.clearSelection();
+    } else {
+      setSelectionMode('lasso');
+    }
+  };
 
   const photosForOperations = useMemo(() => {
     if (photoData.selection.size > 0) {
@@ -124,7 +157,10 @@ function App() {
   };
 
   const handleDateRangeChange = async (start: number, end: number) => {
-    await photoData.filterByDateRange(start, end);
+    // If autoZoom is ON, we want to find ALL photos in the new date range (ignoring current map bounds)
+    // so the map can auto-fit to them.
+    // If autoZoom is OFF, we only want to see photos in the CURRENT view.
+    await photoData.filterByDateRange(start, end, settings.autoZoomDuringPlay);
   };
 
   const handleTimelineClose = () => {
@@ -136,52 +172,103 @@ function App() {
     return (
       <div
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100vh',
+          position: 'relative',
+          width: '100%',
+          height: '100%',
           backgroundColor: colors.background,
           color: colors.textPrimary,
+          overflow: 'hidden',
           transition: 'background-color 0.2s ease, color 0.2s ease',
         }}
       >
-        {/* Header */}
+        {/* Map - Background Layer */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
+          <MapView
+            photos={photoData.photos}
+            onPhotoClick={setSelectedPhoto}
+            onViewChange={photoData.filterByMapBounds}
+            clusteringEnabled={settings.clusteringEnabled}
+            clusterRadius={settings.clusterRadius}
+            clusterMaxZoom={settings.clusterMaxZoom}
+            transitionDuration={settings.mapTransitionDuration}
+            maxZoom={settings.mapMaxZoom}
+            padding={settings.mapPadding}
+            autoFit={
+              showTimeline && settings.autoZoomDuringPlay ? photoData.filterSource !== 'map' : false
+            }
+            theme={theme}
+            showHeatmap={settings.showHeatmap}
+            selectionMode={selectionMode}
+            selectedIds={photoData.selection}
+            onSelectionChange={photoData.updateSelection}
+          />
+        </div>
+
+        {/* Floating Header */}
         <div
           style={{
-            padding: '1rem',
-            backgroundColor: colors.surface,
-            borderBottom: `1px solid ${colors.border}`,
+            position: 'absolute',
+            top: '1rem',
+            left: '1rem',
+            padding: '0.75rem 1.25rem',
+            backgroundColor: colors.glassSurface,
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: `1px solid ${colors.glassBorder}`,
+            borderRadius: '16px',
+            boxShadow: colors.shadow,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            gap: '2rem',
+            zIndex: 10,
             transition: 'background-color 0.2s ease, border-color 0.2s ease',
           }}
         >
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', color: colors.textPrimary }}>Placemark</h1>
-            <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
-              {photoData.photos.length} photos with location
+            <h1
+              style={{
+                margin: 0,
+                fontSize: '1.25rem',
+                fontWeight: 700,
+                color: colors.textPrimary,
+                letterSpacing: '-0.025em',
+              }}
+            >
+              Placemark
+            </h1>
+            <p
+              style={{
+                margin: 0,
+                color: colors.textSecondary,
+                fontSize: '0.8rem',
+                fontWeight: 500,
+              }}
+            >
+              {photoData.photos.length} photos found
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button
               title={
                 selectionMode === 'lasso'
                   ? 'Exit Selection Mode'
                   : 'Enter Selection Mode (Shift+Drag to add, Alt+Drag to remove)'
               }
-              onClick={() => setSelectionMode(selectionMode === 'lasso' ? 'pan' : 'lasso')}
+              onClick={handleSelectionModeToggle}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '0.6rem 1rem',
                 fontSize: '0.875rem',
-                backgroundColor: selectionMode === 'lasso' ? colors.primary : colors.surface,
+                fontWeight: 600,
+                backgroundColor: selectionMode === 'lasso' ? colors.primary : 'transparent',
                 color: selectionMode === 'lasso' ? colors.buttonText : colors.textPrimary,
-                border: `1px solid ${selectionMode === 'lasso' ? colors.primary : colors.border}`,
-                borderRadius: '4px',
+                border: selectionMode === 'lasso' ? 'none' : `1px solid ${colors.border}`,
+                borderRadius: '10px',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
+                boxShadow: selectionMode === 'lasso' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
               }}
               onMouseEnter={(e) => {
                 if (selectionMode !== 'lasso') {
@@ -190,7 +277,7 @@ function App() {
               }}
               onMouseLeave={(e) => {
                 if (selectionMode !== 'lasso') {
-                  e.currentTarget.style.backgroundColor = colors.surface;
+                  e.currentTarget.style.backgroundColor = 'transparent';
                 }
               }}
             >
@@ -201,61 +288,61 @@ function App() {
               onClick={() => setShowOperations(true)}
               disabled={photoData.photos.length === 0}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '0.6rem 1rem',
                 fontSize: '0.875rem',
-                backgroundColor: showOperations ? colors.primary : colors.surface,
+                fontWeight: 600,
+                backgroundColor: showOperations ? colors.primary : 'transparent',
                 color: showOperations ? colors.buttonText : colors.textPrimary,
-                border: `1px solid ${showOperations ? colors.primary : colors.border}`,
-                borderRadius: '4px',
+                border: showOperations ? 'none' : `1px solid ${colors.border}`,
+                borderRadius: '10px',
                 cursor: photoData.photos.length > 0 ? 'pointer' : 'not-allowed',
                 transition: 'all 0.2s ease',
               }}
-              onMouseEnter={(e) => {
-                if (photoData.photos.length > 0 && !showOperations) {
-                  e.currentTarget.style.backgroundColor = colors.surfaceHover;
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!showOperations) {
-                  e.currentTarget.style.backgroundColor = colors.surface;
-                }
-              }}
             >
-              📤 Organize (
-              {photoData.selection.size > 0
-                ? `${photoData.selection.size} selected`
-                : `${photoData.photos.length} visible`}
-              )
+              📤 Organize ({photoData.selection.size > 0 ? photoData.selection.size : 0})
             </button>
             <button
               onClick={() => setShowSettings(true)}
               style={{
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                backgroundColor: colors.surface,
+                padding: '0.6rem',
+                fontSize: '1.25rem',
+                backgroundColor: 'transparent',
                 color: colors.textPrimary,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '4px',
+                border: 'none',
+                borderRadius: '50%',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'background-color 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '40px',
+                height: '40px',
               }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              title="Settings"
             >
-              ⚙️ Settings
+              ⚙️
             </button>
             <button
               onClick={handleTimelineToggle}
-              disabled={!photoData.dateRange}
+              disabled={!photoData.dateRange || selectionMode === 'lasso'}
               style={{
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                backgroundColor: showTimeline ? colors.primary : colors.surface,
+                padding: '0.6rem',
+                fontSize: '1.25rem',
+                backgroundColor: showTimeline ? colors.primary : 'transparent',
                 color: showTimeline ? colors.buttonText : colors.textPrimary,
-                border: `1px solid ${showTimeline ? colors.primary : colors.border}`,
-                borderRadius: '4px',
-                cursor: photoData.dateRange ? 'pointer' : 'not-allowed',
+                opacity: selectionMode === 'lasso' ? 0.3 : 1,
+                border: 'none',
+                borderRadius: '50%',
+                cursor:
+                  photoData.dateRange && selectionMode !== 'lasso' ? 'pointer' : 'not-allowed',
                 transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '40px',
+                height: '40px',
               }}
               onMouseEnter={(e) => {
                 if (photoData.dateRange && !showTimeline) {
@@ -264,24 +351,27 @@ function App() {
               }}
               onMouseLeave={(e) => {
                 if (!showTimeline) {
-                  e.currentTarget.style.backgroundColor = colors.surface;
+                  e.currentTarget.style.backgroundColor = 'transparent';
                 }
               }}
+              title="Toggle Timeline"
             >
-              📅 Timeline
+              📅
             </button>
             <button
               onClick={handleScanFolder}
               disabled={folderScan.scanning}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '0.6rem 1.2rem',
                 fontSize: '0.875rem',
-                backgroundColor: folderScan.scanning ? colors.textMuted : colors.primary,
+                fontWeight: 600,
+                backgroundColor: colors.primary,
                 color: colors.buttonText,
                 border: 'none',
-                borderRadius: '4px',
+                borderRadius: '10px',
                 cursor: folderScan.scanning ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
+                boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)',
               }}
               onMouseEnter={(e) => {
                 if (!folderScan.scanning)
@@ -291,33 +381,33 @@ function App() {
                 if (!folderScan.scanning) e.currentTarget.style.backgroundColor = colors.primary;
               }}
             >
-              {folderScan.scanning ? 'Scanning...' : 'Scan Another Folder'}
+              {folderScan.scanning ? 'Scanning...' : 'Scan'}
             </button>
           </div>
         </div>
 
-        {/* Map */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1 }}>
-            <MapView
-              photos={photoData.photos}
-              onPhotoClick={setSelectedPhoto}
-              onViewChange={photoData.filterByMapBounds}
-              clusteringEnabled={settings.clusteringEnabled}
-              clusterRadius={settings.clusterRadius}
-              clusterMaxZoom={settings.clusterMaxZoom}
-              transitionDuration={settings.mapTransitionDuration}
-              maxZoom={settings.mapMaxZoom}
-              padding={settings.mapPadding}
-              autoFit={showTimeline ? settings.autoZoomDuringPlay : false}
-              theme={theme}
-              showHeatmap={settings.showHeatmap}
-              selectionMode={selectionMode}
-              selectedIds={photoData.selection}
-              onSelectionChange={photoData.updateSelection}
-            />
-          </div>
-          {showTimeline && photoData.dateRange && photoData.selectedDateRange && (
+        {/* Floating Timeline */}
+        {showTimeline && photoData.dateRange && photoData.selectedDateRange && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '2rem',
+              left: '2rem',
+              right: '2rem',
+              zIndex: 10,
+              backgroundColor: colors.glassSurface,
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: `1px solid ${colors.glassBorder}`,
+              borderRadius: '16px',
+              boxShadow: colors.shadow,
+              padding: '1rem',
+              transition: 'all 0.3s ease',
+              pointerEvents: selectionMode === 'lasso' ? 'none' : 'auto',
+              opacity: selectionMode === 'lasso' ? 0.5 : 1,
+              filter: selectionMode === 'lasso' ? 'grayscale(100%)' : 'none',
+            }}
+          >
             <Timeline
               minDate={photoData.dateRange.min}
               maxDate={photoData.dateRange.max}
@@ -330,8 +420,8 @@ function App() {
               updateInterval={settings.timelineUpdateInterval}
               theme={theme}
             />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Settings Modal */}
         {showSettings && (

@@ -64,6 +64,15 @@ export function MapView({
   const [loadingHoverThumbnail, setLoadingHoverThumbnail] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const activeHoverIdRef = useRef<number | null>(null);
+  
+  // Refs for callbacks to avoid stale closures in map event listeners
+  const onViewChangeRef = useRef(onViewChange);
+  const onPhotoClickRef = useRef(onPhotoClick);
+
+  useEffect(() => {
+    onViewChangeRef.current = onViewChange;
+    onPhotoClickRef.current = onPhotoClick;
+  }, [onViewChange, onPhotoClick]);
 
   // Lasso Hook
   const { isLassoActive, lassoPoints, startLasso, updateLasso, endLasso } = useLassoSelection({
@@ -161,8 +170,8 @@ export function MapView({
       const zoom = map.current.getZoom();
       setCurrentZoom(zoom);
 
-      if (onViewChange) {
-        onViewChange({
+      if (onViewChangeRef.current) {
+        onViewChangeRef.current({
           north: bounds.getNorth(),
           south: bounds.getSouth(),
           east: bounds.getEast(),
@@ -178,8 +187,8 @@ export function MapView({
 
         // Initial bounds report
         const bounds = map.current.getBounds();
-        if (onViewChange) {
-          onViewChange({
+        if (onViewChangeRef.current) {
+          onViewChangeRef.current({
             north: bounds.getNorth(),
             south: bounds.getSouth(),
             east: bounds.getEast(),
@@ -342,7 +351,7 @@ export function MapView({
         scannedAt: props.scannedAt,
         fileHash: props.fileHash || null,
       };
-      onPhotoClick(photo);
+      onPhotoClickRef.current(photo);
     });
 
     return () => {
@@ -357,7 +366,7 @@ export function MapView({
       map.current = null;
       setMapLoaded(false);
     };
-  }, [onPhotoClick, theme]);
+  }, [theme]); // Removed onPhotoClick and onViewChange from deps
 
   // Update photo data source when photos change
   useEffect(() => {

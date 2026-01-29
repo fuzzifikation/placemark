@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { type Theme, getThemeColors } from '../theme';
+import { type Theme } from '../theme';
 import { TimelineControls } from './Timeline/TimelineControls';
 import { TimelineSlider } from './Timeline/TimelineSlider';
 import { useTimelineDrag } from './Timeline/useTimelineDrag';
@@ -34,7 +34,6 @@ export function Timeline({
   updateInterval = 100,
   theme,
 }: TimelineProps) {
-  const colors = getThemeColors(theme);
   const [localStart, setLocalStart] = useState(startDate);
   const [localEnd, setLocalEnd] = useState(endDate);
   const sliderRef = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
@@ -88,15 +87,14 @@ export function Timeline({
   return (
     <div
       style={{
-        height: '15vh',
-        minHeight: '120px',
-        backgroundColor: colors.surface,
-        borderTop: `1px solid ${colors.border}`,
-        padding: '1rem',
+        height: 'auto',
+        minHeight: '100px',
+        backgroundColor: 'transparent',
+        padding: '0.5rem',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.75rem',
-        transition: 'background-color 0.2s ease',
+        width: '100%',
       }}
     >
       <TimelineControls

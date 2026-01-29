@@ -37,6 +37,11 @@ export interface ThemeColors {
   // Overlay
   overlay: string;
   modalBackground: string;
+
+  // Glassmorphism
+  glassSurface: string;
+  glassBorder: string;
+  shadow: string;
 }
 
 export const lightTheme: ThemeColors = {
@@ -72,6 +77,11 @@ export const lightTheme: ThemeColors = {
   // Overlay
   overlay: 'rgba(0, 0, 0, 0.5)',
   modalBackground: '#ffffff',
+
+  // Glassmorphism (Light)
+  glassSurface: 'rgba(255, 255, 255, 0.85)',
+  glassBorder: 'rgba(255, 255, 255, 0.5)',
+  shadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
 };
 
 export const darkTheme: ThemeColors = {
@@ -107,6 +117,11 @@ export const darkTheme: ThemeColors = {
   // Overlay
   overlay: 'rgba(0, 0, 0, 0.7)',
   modalBackground: '#1e293b',
+
+  // Glassmorphism (Dark)
+  glassSurface: 'rgba(30, 41, 59, 0.75)',
+  glassBorder: 'rgba(255, 255, 255, 0.1)',
+  shadow: '0 10px 15px -3px rgb(0 0 0 / 0.5)',
 };
 
 export function getThemeColors(theme: Theme): ThemeColors {

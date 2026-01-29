@@ -23,6 +23,7 @@ export function usePhotoData() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [selection, setSelection] = useState<Set<number>>(new Set());
+  const [filterSource, setFilterSource] = useState<'date' | 'map' | 'scan' | 'init'>('init');
 
   const updateSelection = useCallback(
     (ids: number[], mode: 'set' | 'add' | 'remove' | 'toggle') => {
@@ -54,8 +55,8 @@ export function usePhotoData() {
       const photosWithLocation = await window.api.photos.getWithLocation();
       // Store full dataset in ref
       allPhotosRef.current = photosWithLocation;
-      // Initialize view with all photos
       setPhotos(photosWithLocation);
+      setFilterSource('scan');
 
       if (photosWithLocation.length > 0) {
         setShowMap(true);
@@ -124,10 +125,13 @@ export function usePhotoData() {
    * Client-side filtering to avoid IPC overhead and data duplication
    */
   const filterByDateRange = useCallback(
-    (start: number, end: number) => {
+    (start: number, end: number, ignoreBounds = false) => {
       const newRange = { start, end };
       setSelectedDateRange(newRange);
-      applyFilters(allPhotosRef.current, newRange, mapBounds);
+      // We set the source BEFORE applying filters so the consumer can react
+      setFilterSource('date');
+      // If ignoring bounds (e.g. for auto-zoom), pass null instead of current bounds
+      applyFilters(allPhotosRef.current, newRange, ignoreBounds ? null : mapBounds);
     },
     [applyFilters, mapBounds]
   );
@@ -135,6 +139,7 @@ export function usePhotoData() {
   const filterByMapBounds = useCallback(
     (bounds: { north: number; south: number; east: number; west: number }) => {
       setMapBounds(bounds);
+      setFilterSource('map');
       applyFilters(allPhotosRef.current, selectedDateRange, bounds);
     },
     [applyFilters, selectedDateRange]
@@ -166,5 +171,6 @@ export function usePhotoData() {
     selection,
     updateSelection,
     clearSelection,
+    filterSource,
   };
 }
