@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { existsSync } from 'fs';
 
 // Lazy load these ensuring splash screen appears immediately
 // import { registerPhotoHandlers, closeThumbnailService } from './ipc/photos';
@@ -14,43 +15,24 @@ let closeThumbnailService: (() => void) | undefined;
 // In portable builds, databases live next to the .exe
 // In dev mode, use standard AppData location
 const portableDir = process.env.PORTABLE_EXECUTABLE_DIR;
+const exeDir = dirname(app.getPath('exe'));
+const localDataPath = join(exeDir, 'placemark_data');
+
 if (portableDir) {
-  // Use a subdirectory to avoid cluttering the executable directory with Electron files
+  // NSIS Portable wrapper
   app.setPath('userData', join(portableDir, 'placemark_data'));
+} else if (app.isPackaged && existsSync(localDataPath)) {
+  // Unpacked portable convention: if 'placemark_data' exists next to the exe, use it
+  app.setPath('userData', localDataPath);
 } else if (!app.isPackaged) {
   // Dev mode: use default AppData location
   // (no change needed, but keeping this explicit for clarity)
 }
 
 let win: BrowserWindow | null;
-let splash: BrowserWindow | null;
 
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 const RENDERER_DIST = join(__dirname, '../../dist');
-
-function createSplash() {
-  splash = new BrowserWindow({
-    width: 500,
-    height: 300,
-    transparent: true,
-    frame: false,
-    alwaysOnTop: true,
-    center: true,
-    resizable: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-    },
-    icon: join(__dirname, '../../build/icon.png'),
-    show: false, // Don't show until ready to prevent white flash
-  });
-
-  splash.loadFile(join(__dirname, '../../splash.html'));
-
-  splash.once('ready-to-show', () => {
-    splash?.show();
-  });
-}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -58,7 +40,7 @@ function createWindow() {
     height: 800,
     autoHideMenuBar: true,
     icon: join(__dirname, '../../build/icon.png'),
-    show: false, // Hide initially (splash is showing)
+    show: false, // Hide initially
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -71,11 +53,8 @@ function createWindow() {
     win?.webContents.send('main-process-message', new Date().toLocaleString());
   });
 
-  // Show window when ready and close splash
+  // Show window when ready
   win.once('ready-to-show', () => {
-    // Destroy splash immediately when main window is ready
-    splash?.destroy();
-    splash = null;
     win?.show();
   });
 
@@ -103,21 +82,28 @@ app.on('activate', () => {
 });
 
 app.whenReady().then(async () => {
-  createSplash();
-  
-  // Register handlers after showing splash to prioritize UI content
-  // Dynamically import heavyweight modules (SQLite, Sharp) to avoid blocking splash screen
-  const photosModule = await import('./ipc/photos');
-  const opsModule = await import('./ipc/operations');
-  const storageModule = await import('./services/storage');
+  try {
+    // Register handlers
+    // Dynamically import heavyweight modules (SQLite, Sharp) in parallel
+    const [photosModule, opsModule, storageModule, systemModule] = await Promise.all([
+      import('./ipc/photos'),
+      import('./ipc/operations'),
+      import('./services/storage'),
+      import('./ipc/system'),
+    ]);
 
-  // Assign cleanup functions
-  closeStorage = storageModule.closeStorage;
-  closeThumbnailService = photosModule.closeThumbnailService;
+    // Assign cleanup functions
+    closeStorage = storageModule.closeStorage;
+    closeThumbnailService = photosModule.closeThumbnailService;
 
-  // Initialize features
-  photosModule.registerPhotoHandlers();
-  opsModule.registerOperationHandlers();
+    // Initialize features
+    photosModule.registerPhotoHandlers();
+    opsModule.registerOperationHandlers();
+    systemModule.registerSystemHandlers();
 
-  createWindow();
+    createWindow();
+  } catch (error) {
+    console.error('Failed to initialize app:', error);
+    process.exit(1);
+  }
 });

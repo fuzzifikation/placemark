@@ -168,6 +168,11 @@ function App() {
     photoData.resetDateFilter();
   };
 
+  // Prevent flash of empty state during initialization
+  if (!photoData.isInitialized) {
+    return null;
+  }
+
   if (photoData.showMap && photoData.allPhotos.length > 0) {
     return (
       <div

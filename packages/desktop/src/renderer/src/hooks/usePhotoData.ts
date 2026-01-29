@@ -24,6 +24,7 @@ export function usePhotoData() {
   const [loading, setLoading] = useState(false);
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [filterSource, setFilterSource] = useState<'date' | 'map' | 'scan' | 'init'>('init');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const updateSelection = useCallback(
     (ids: number[], mode: 'set' | 'add' | 'remove' | 'toggle') => {
@@ -72,6 +73,7 @@ export function usePhotoData() {
       console.error('Failed to load photos:', error);
     } finally {
       setLoading(false);
+      setIsInitialized(true);
     }
   };
 
@@ -172,5 +174,6 @@ export function usePhotoData() {
     updateSelection,
     clearSelection,
     filterSource,
+    isInitialized,
   };
 }

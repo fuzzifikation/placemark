@@ -138,12 +138,6 @@ export function registerPhotoHandlers(): void {
   ipcMain.handle('thumbnails:setMaxSize', async (_event, sizeMB: number) => {
     thumbnailService.setMaxSizeMB(sizeMB);
   });
-
-  // Open app data folder in file explorer
-  ipcMain.handle('system:openAppDataFolder', async () => {
-    const userDataPath = app.getPath('userData');
-    await shell.openPath(userDataPath);
-  });
 }
 
 export function closeThumbnailService(): void {
