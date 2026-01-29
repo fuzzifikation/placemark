@@ -26,6 +26,7 @@ function createWindow() {
     width: 1200,
     height: 800,
     autoHideMenuBar: true,
+    icon: join(__dirname, '../../build/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
