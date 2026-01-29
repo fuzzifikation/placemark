@@ -2,9 +2,12 @@
 
 Step-by-step roadmap for building Placemark. See [technologydecisions.md](technologydecisions.md) for architecture details and technology choices.
 
-**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | � Phase 4 - In Progress
+**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | ⚙️ Phase 4 - In Progress
 
-**Recent Work:** Implemented manual Lasso Selection for photos (Jan 29, 2026). Users can now toggle into selection mode, draw a lasso to select multiple photos, and see the selection count in the UI. Refactored `MapView` to use `useLassoSelection` hook.
+**Recent Work:**
+
+- **v0.2.1 (Jan 29, 2026):** Major architectural refactoring for mobile compatibility. Extracted filtering logic to core package, created storage interface, reduced App.tsx from 737 to 313 lines. Project now ready for React Native port (Phase 9).
+- **v0.2.0 (Jan 29, 2026):** Implemented manual Lasso Selection for photos. Users can now toggle into selection mode, draw a lasso to select multiple photos, and see the selection count in the UI. Refactored `MapView` to use `useLassoSelection` hook.
 
 ---
 

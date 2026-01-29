@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
 import { app } from 'electron';
+import { logger } from './logger';
 
 const THUMBNAIL_CONFIG = {
   size: 400, // Single size for all contexts
@@ -187,7 +188,7 @@ export class ThumbnailService {
       // Recalculate metadata after eviction
       this.recalculateMetadata();
 
-      console.log(`Evicted ${idsToDelete.length} thumbnails to free ${freedSpace} bytes`);
+      logger.debug(`Evicted ${idsToDelete.length} thumbnails to free ${freedSpace} bytes`);
     }
   }
 
@@ -246,7 +247,7 @@ export class ThumbnailService {
     this.db.prepare('DELETE FROM thumbnails').run();
     // Recalculate metadata (will be 0 after DELETE)
     this.recalculateMetadata();
-    console.log('Thumbnail cache cleared');
+    logger.info('Thumbnail cache cleared');
   }
 
   /**
@@ -256,7 +257,7 @@ export class ThumbnailService {
     this.db
       .prepare('UPDATE thumbnail_metadata SET value = ? WHERE key = ?')
       .run(sizeMB.toString(), 'max_size_mb');
-    console.log(`Thumbnail cache max size set to ${sizeMB}MB`);
+    logger.info(`Thumbnail cache max size set to ${sizeMB}MB`);
 
     // Evict if new size is smaller than current cache
     this.evictToFitNewLimit();
@@ -304,7 +305,7 @@ export class ThumbnailService {
       // Recalculate metadata after eviction
       this.recalculateMetadata();
 
-      console.log(`Evicted ${idsToDelete.length} thumbnails to fit new size limit`);
+      logger.debug(`Evicted ${idsToDelete.length} thumbnails to fit new size limit`);
     }
   }
 

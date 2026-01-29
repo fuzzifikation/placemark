@@ -3,7 +3,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Photo } from '@placemark/core';
+import type { Photo, BoundingBox } from '@placemark/core';
+import { filterPhotos } from '@placemark/core';
 
 export function usePhotoData() {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -78,46 +79,18 @@ export function usePhotoData() {
   };
 
   /**
-   * Centralized filter logic to avoid duplication
+   * Centralized filter logic using core package
    */
   const applyFilters = useCallback(
     (
       targetPhotos: Photo[],
       range: { start: number; end: number } | null,
-      bounds: { north: number; south: number; east: number; west: number } | null
+      bounds: BoundingBox | null
     ) => {
-      let filtered = targetPhotos;
-
-      // 1. Date Filter
-      if (range) {
-        filtered = filtered.filter((p) => {
-          if (p.timestamp === null || p.timestamp === undefined) return false;
-          return p.timestamp >= range.start && p.timestamp <= range.end;
-        });
-      }
-
-      // 2. Map Bounds Filter
-      if (bounds) {
-        const crossesIdl = bounds.west > bounds.east;
-
-        filtered = filtered.filter((p) => {
-          if (p.latitude === null || p.longitude === null) return false;
-
-          const latOk = p.latitude <= bounds.north && p.latitude >= bounds.south;
-          let lonOk = false;
-
-          if (crossesIdl) {
-            // It's in the box if it's > West OR < East
-            lonOk = p.longitude >= bounds.west || p.longitude <= bounds.east;
-          } else {
-            // Standard box
-            lonOk = p.longitude >= bounds.west && p.longitude <= bounds.east;
-          }
-
-          return latOk && lonOk;
-        });
-      }
-
+      const filtered = filterPhotos(targetPhotos, {
+        dateRange: range ? { start: range.start, end: range.end } : undefined,
+        bounds: bounds || undefined,
+      });
       setPhotos(filtered);
     },
     []

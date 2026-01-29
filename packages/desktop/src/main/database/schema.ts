@@ -4,6 +4,7 @@
  */
 
 import Database from 'better-sqlite3';
+import { logger } from '../services/logger';
 
 export interface DatabaseOptions {
   path: string;
@@ -106,7 +107,7 @@ function runMigrations(db: Database.Database): void {
       continue;
     }
 
-    console.log(`Applying migration ${migration.version}-${migration.name}...`);
+    logger.info(`Applying migration ${migration.version}-${migration.name}...`);
 
     db.transaction(() => {
       db.exec(migration.sql);
@@ -116,7 +117,7 @@ function runMigrations(db: Database.Database): void {
       );
     })();
 
-    console.log(`Migration ${migration.version}-${migration.name} applied successfully`);
+    logger.info(`Migration ${migration.version}-${migration.name} applied successfully`);
   }
 }
 

@@ -633,25 +633,20 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
           </SettingsSection>
 
           {/* About & Legal */}
-          <SettingsSection
-            title="About & Legal"
-            expanded={true}
-            onToggle={() => {}}
-            theme={theme}
-          >
+          <SettingsSection title="About & Legal" expanded={true} onToggle={() => {}} theme={theme}>
             <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
               <p style={{ margin: '0 0 0.5rem 0' }}>
                 <strong style={{ color: colors.textPrimary }}>Placemark</strong> v0.2.0
               </p>
-              <p style={{ margin: '0 0 1rem 0' }}>
-                Privacy-first, local-first photo organizer.
-              </p>
+              <p style={{ margin: '0 0 1rem 0' }}>Privacy-first, local-first photo organizer.</p>
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <a
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    (window as any).api.system.openExternal('https://github.com/placemark/placemark');
+                    (window as any).api.system.openExternal(
+                      'https://github.com/placemark/placemark'
+                    );
                   }}
                   style={{ color: colors.primary, textDecoration: 'none', cursor: 'pointer' }}
                 >
@@ -661,7 +656,9 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    (window as any).api.system.openExternal('https://github.com/placemark/placemark/blob/main/LICENSE');
+                    (window as any).api.system.openExternal(
+                      'https://github.com/placemark/placemark/blob/main/LICENSE'
+                    );
                   }}
                   style={{ color: colors.primary, textDecoration: 'none', cursor: 'pointer' }}
                 >

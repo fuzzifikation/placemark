@@ -8,13 +8,14 @@ import { app } from 'electron';
 import * as path from 'path';
 import { Photo, PhotoCreateInput, Source, SourceCreateInput } from '@placemark/core';
 import { initializeDatabase, closeDatabase } from '../database/schema';
+import { logger } from './logger';
 
 let db: Database.Database | null = null;
 
 function getDb(): Database.Database {
   if (!db) {
     const dbPath = path.join(app.getPath('userData'), 'placemark.db');
-    console.log(`Initializing database at: ${dbPath}`);
+    logger.info(`Initializing database at: ${dbPath}`);
     db = initializeDatabase({ path: dbPath });
   }
   return db;

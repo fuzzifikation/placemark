@@ -1,15 +1,50 @@
-# Placemark v0.2.0 - Alpha Release
+# Release Notes
+
+## v0.2.1 - Architectural Improvements (Unreleased)
+
+🏗️ **Major code refactoring** to prepare for mobile platform support and improve maintainability.
+
+### 🔧 Technical Improvements
+
+- **Mobile-Ready Architecture:** Extracted all filtering logic to platform-agnostic core package
+- **Storage Interface:** Created `IStorage` abstraction for future React Native compatibility
+- **Component Refactoring:** Reduced App.tsx from 737 to 313 lines (58% reduction)
+- **Type Safety:** Centralized Window API types in dedicated `preload.d.ts` file
+- **Code Organization:** New components: `FloatingHeader`, `PhotoPreviewModal`
+- **Constants Module:** Eliminated magic numbers with centralized UI constants
+- **Logger Service:** Structured logging foundation (ready to replace console.log)
+
+### 📦 New Core Modules
+
+- `@placemark/core/filters/geographic` - Bounding box logic with IDL support
+- `@placemark/core/filters/temporal` - Date range filtering
+- `@placemark/core/filters/combined` - Combined geographic + temporal filters
+- `@placemark/core/storage/IStorage` - Platform-agnostic database interface
+- `@placemark/core/storage/queries` - SQL query builders
+
+### 🎯 Impact
+
+- **Phase 9 Readiness:** Core logic can now be shared with React Native mobile app
+- **Maintainability:** Single-responsibility components, cleaner separation of concerns
+- **Testability:** Pure TypeScript functions in core package can be unit tested
+- **Scalability:** Foundation for 100k+ photo performance optimizations
+
+---
+
+## v0.2.0 - Alpha Release
 
 🎉 **Second Alpha Release** with major UI improvements and Portable Mode.
 
 ## New in v0.2.0
 
 ### 🚀 Portable Mode
+
 - Placemark is now a **portable application**. No installation required.
 - All data (databases, cache) is stored in a `placemark_data` folder next to the executable.
 - Perfect for running from a USB drive or keeping your system clean.
 
 ### 🎨 UI & Experience
+
 - **Mobile-Friendly Toggles:** Replaced checkboxes with smooth switches.
 - **Clustering Controls:** New settings to toggle clustering, adjust radius, and use heatmap.
 - **Dark/Light Mode:** Heatmap now works beautifully on both themes.
@@ -17,6 +52,7 @@
 - **Scrollbars:** Hidden global scrollbars for a native feel.
 
 ### 🛠️ Improvements & Fixes
+
 - **Smart Spiderify:** Photos at the exact same location now "spider out" so you can click them individually.
 - **Zoom Limit Fix:** Map no longer goes blank when zooming too far deep.
 - **Thumbnail Cache:** In-memory caching for instant hover previews.
@@ -24,6 +60,7 @@
 - **Performance:** Optimized MapView event listeners and render logic.
 
 ## Core Features
+
 - 📂 Scan local photo folders and extract EXIF GPS + timestamps
 - 🗺️ Interactive MapLibre map with photo markers
 - ⏱️ Timeline view with play controls and date filtering
@@ -31,26 +68,31 @@
 - 🔍 Hover preview tooltips on map markers
 
 ## ⚠️ Important Notes
+
 - This is an **unsigned** Windows build - you might see a "Windows protected your PC" popup.
 - Click "More info" → "Run anyway" to launch.
 - This is alpha software.
 
 ## Installation
+
 1. Download **Placemark-0.2.0-portable.exe** from Assets below.
 2. Move it to a folder of your choice (e.g. `D:\MyPhotos\Placemark`).
 3. Double-click to run.
 4. Data will be created in `placemark_data` next to the file.
 
 ## Requirements
+
 - Windows 10/11 (64-bit)
 - ~200MB disk space for app + thumbnail cache
 
 ## Known Limitations
+
 - Windows only
 - Local folders only (OneDrive integration in Phase 7)
 - No file operations yet (copy/move coming in Phase 4)
 
 ## What's Next
+
 Phase 4 will add file operations (copy/move photos based on location/date selection).
 
 Report issues at: https://github.com/fuzzifikation/placemark/issues

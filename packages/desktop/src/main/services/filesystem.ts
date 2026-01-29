@@ -8,6 +8,7 @@ import * as path from 'path';
 import { createPhoto } from './storage';
 import { extractExif, isSupportedImageFile } from './exif';
 import { PhotoSource } from '@placemark/core';
+import { logger } from './logger';
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 const MIME_TYPES: Record<string, string> = {
@@ -58,7 +59,7 @@ export async function scanDirectory(
   const imageFiles = await findImageFiles(dirPath, includeSubdirectories);
   result.totalFiles = imageFiles.length;
 
-  console.log(`Found ${imageFiles.length} image files in ${dirPath}`);
+  logger.info(`Found ${imageFiles.length} image files in ${dirPath}`);
 
   // Process each file
   for (const filePath of imageFiles) {
