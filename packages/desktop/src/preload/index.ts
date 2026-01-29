@@ -28,7 +28,7 @@ contextBridge.exposeInMainWorld('api', {
   },
   ops: {
     selectDestination: () => ipcRenderer.invoke('ops:selectDestination'),
-    generateDryRun: (photos: any[], destPath: string, opType: string) => 
+    generateDryRun: (photos: any[], destPath: string, opType: string) =>
       ipcRenderer.invoke('ops:generateDryRun', photos, destPath, opType),
   },
   system: {
