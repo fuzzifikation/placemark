@@ -1,6 +1,6 @@
 {
   "name": "@placemark/desktop",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "private": true,
   "description": "Placemark desktop application built with Electron",
   "author": "Placemark",
