@@ -187,6 +187,7 @@ export function useSpider({
 }: UseSpiderOptions) {
   const [spiderState, setSpiderState] = useState<SpiderState | null>(null);
   const animationRef = useRef<number | null>(null);
+  const isCollapsingRef = useRef(false); // Track if we're in a collapse animation
   const photosRef = useRef(photos);
   const configRef = useRef(config);
   const converterRef = useRef(pixelToDegreesConverter);
@@ -210,6 +211,7 @@ export function useSpider({
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
       }
+      isCollapsingRef.current = false; // Reset collapsing flag when starting new spider
 
       if (clickedPhoto.latitude == null || clickedPhoto.longitude == null) return;
 
@@ -277,6 +279,9 @@ export function useSpider({
   const clearSpider = useCallback(
     (animate: boolean = true) => {
       if (!spiderState) return;
+      
+      // Prevent re-triggering if already collapsing
+      if (isCollapsingRef.current) return;
 
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -284,24 +289,29 @@ export function useSpider({
       }
 
       if (!animate) {
+        isCollapsingRef.current = false;
         setSpiderState(null);
         return;
       }
 
-      // Animate collapsing
-      const { center, photoIds } = spiderState;
+      // Mark that we're collapsing to prevent re-triggering
+      isCollapsingRef.current = true;
+
+      // Animate collapsing - start from current progress, not from 1
+      const { center, photoIds, animationProgress: startProgress } = spiderState;
       const spiderPhotos = photosRef.current.filter((p) => photoIds.has(p.id));
       const startTime = performance.now();
-      const duration = configRef.current.animationDuration / 2; // Collapse faster
+      // Scale duration based on how expanded we are (if partially expanded, collapse faster)
+      const duration = (configRef.current.animationDuration / 2) * startProgress;
       const radiusPixels = configRef.current.radius;
 
       const animateCollapse = (currentTime: number) => {
         const elapsed = currentTime - startTime;
-        const progress = Math.max(1 - elapsed / duration, 0);
-        // Ease in
-        const easedProgress = Math.pow(progress, 2);
+        // Linear interpolation from startProgress to 0
+        const currentProgress = Math.max(startProgress * (1 - elapsed / duration), 0);
 
-        if (progress <= 0) {
+        if (currentProgress <= 0.001) {
+          isCollapsingRef.current = false;
           setSpiderState(null);
           return;
         }
@@ -309,7 +319,7 @@ export function useSpider({
         const offsets = calculateSpiderOffsets(
           spiderPhotos,
           center,
-          easedProgress,
+          currentProgress, // Use linear progress directly - no additional easing
           radiusPixels,
           converterRef.current
         );
@@ -318,7 +328,7 @@ export function useSpider({
           center,
           photoIds,
           offsets,
-          animationProgress: easedProgress,
+          animationProgress: currentProgress,
         });
 
         animationRef.current = requestAnimationFrame(animateCollapse);

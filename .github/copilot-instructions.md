@@ -185,6 +185,23 @@ When user requests a commit or says "let's commit", you MUST perform this full r
 - Can complex logic be extracted to well-named functions?
 - Is the code self-documenting?
 
+### 8. **Version Number Check**
+
+Evaluate if changes warrant a version bump:
+
+- **Patch bump (0.2.x → 0.2.x+1):** Bug fixes, minor improvements, refactoring
+- **Minor bump (0.x.0 → 0.x+1.0):** New features, significant UX changes
+- **No bump needed:** Documentation-only, comments, formatting
+
+**Version locations to update (all must match):**
+
+- `package.json` (root)
+- `packages/core/package.json`
+- `packages/desktop/package.json`
+- `packages/desktop/src/renderer/src/components/Settings/AboutSection.tsx` (APP_VERSION const)
+
+**Ask yourself:** Would a user notice these changes? If yes, bump the version.
+
 **Report findings explicitly:** State what you checked and what you found/fixed.
 
 **This is a simple app - keep code simple.** If a file exceeds 200 lines, consider splitting it.

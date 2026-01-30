@@ -381,9 +381,13 @@ export function MapView({
 
     // Collapse spider when mouse leaves the spider area
     mapRef.current.on('mousemove', (e: MapLayerMouseEvent) => {
-      if (!mapRef.current || !isSpiderActiveRef.current || !spiderStateRef.current) return;
+      if (!mapRef.current) return;
+      
+      // Check spiderState directly from ref (more reliable than isSpiderActive boolean)
+      const currentSpiderState = spiderStateRef.current;
+      if (!currentSpiderState) return;
 
-      const center = spiderStateRef.current.center;
+      const center = currentSpiderState.center;
       const centerPoint = mapRef.current.project(center);
       const dx = e.point.x - centerPoint.x;
       const dy = e.point.y - centerPoint.y;
