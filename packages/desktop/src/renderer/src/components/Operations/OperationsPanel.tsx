@@ -20,7 +20,7 @@ export function OperationsPanel({ selectedPhotos, onClose }: OperationsPanelProp
 
   const handleSelectDest = async () => {
     try {
-      const path = await (window as any).api.ops.selectDestination();
+      const path = await window.api.ops.selectDestination();
       if (path) {
         setDestPath(path);
         setDryRunResult(null); // Reset preview when path changes
@@ -37,7 +37,7 @@ export function OperationsPanel({ selectedPhotos, onClose }: OperationsPanelProp
     setLoading(true);
     setError(null);
     try {
-      const result = await (window as any).api.ops.generateDryRun(selectedPhotos, destPath, opType);
+      const result = await window.api.ops.generateDryRun(selectedPhotos, destPath, opType);
       setDryRunResult(result);
     } catch (err: any) {
       console.error(err);

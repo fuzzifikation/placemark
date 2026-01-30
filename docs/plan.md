@@ -2,10 +2,13 @@
 
 Step-by-step roadmap for building Placemark. See [technologydecisions.md](technologydecisions.md) for architecture details and technology choices.
 
-**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | ⚙️ Phase 4 - In Progress
+Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
+
+**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | ✅ Phase 4 Complete | ⚙️ Phase 5 - Next
 
 **Recent Work:**
 
+- **v0.2.2 (Jan 30, 2026):** Code quality improvements: Refactored Settings.tsx (719→357 lines) and MapView.tsx (664→534 lines) by extracting hooks (useMapHover, useSpiderfy). Fixed type safety issues, implemented spiderify for overlapping markers.
 - **v0.2.1 (Jan 29, 2026):** Major architectural refactoring for mobile compatibility. Extracted filtering logic to core package, created storage interface, reduced App.tsx from 737 to 313 lines. Project now ready for React Native port (Phase 9).
 - **v0.2.0 (Jan 29, 2026):** Implemented manual Lasso Selection for photos. Users can now toggle into selection mode, draw a lasso to select multiple photos, and see the selection count in the UI. Refactored `MapView` to use `useLassoSelection` hook.
 
@@ -118,33 +121,51 @@ Step-by-step roadmap for building Placemark. See [technologydecisions.md](techno
 
 ---
 
-### Phase 4: File Operations - Dry Run
+### Phase 4: Code Quality & Usability Fixes
 
-**Goal:** Preview copy/move operations without executing.
+**Goal:** Improve code maintainability, fix type safety issues, and enhance immediate usability before expanding features.
 
-**Tasks:**
+**4A. Code Refactoring (blocking):**
 
-1. Create `OperationsPanel.tsx` component
-2. Implement `packages/core/src/operations/dryrun.ts`
-3. Add UI: destination folder picker, operation type (copy/move)
-4. **Source Context Awareness:** Show summary of source folders involved in selection.
-5. Generate preview: source → destination paths
-6. Show warnings: overwrite conflicts, disk space check
-7. Implement `packages/core/src/operations/validator.ts`
-8. Add "Execute" and "Cancel" buttons (Execute disabled for now)
-9. **New:** Implement manual photo selection (Lasso)
+1. **Refactor Settings.tsx** (719 lines → split into sub-components): ✅
+   - Extract `StorageSettings.tsx` (289 lines - thumbnails + database management)
+   - Extract `AboutSection.tsx` (138 lines - app info with improved styling)
+   - Settings.tsx reduced from 719 → 357 lines
+2. **Refactor MapView.tsx** (664 lines → extract hooks): ✅
+   - Extract `useMapHover.ts` (156 lines - hover preview logic)
+   - Extract `useSpiderfy.ts` (133 lines - spiderfication)
+   - MapView.tsx reduced from 664 → 534 lines
+3. **Type Safety:** ✅ Remove all `(window as any).api` casts → use typed `window.api`
+4. **Dead Code Removal:** ✅ Reviewed - no dead code found (unused query builders are scaffolding for mobile)
+
+**4B. Usability Fixes:**
+
+5. **Overlapping Photos:** ✅ Implemented spiderify so stacked markers expand on click
+6. **Lasso Selection:** ✅ Already implemented, verified working
+
+**4C. File Operations - Dry Run (existing, already partially done):**
+
+7. `OperationsPanel.tsx` — ✅ exists
+8. `packages/core/src/operations/dryrun.ts` — ✅ exists
+9. `packages/core/src/operations/validator.ts` — ✅ exists
+10. Add "Execute" button (disabled for now, enabled in Phase 5)
+
+**Deferred to later phases:**
+
+- Toast notifications (nice-to-have, current `alert()` is sufficient)
+- Logger file writing (Phase 8 polish)
+- OneDrive integration (Phase 7, after file operations work)
 
 **Testing:**
 
 - [x] Manual selection via Lasso tool works
+- [x] Settings.tsx split into <200 line components (357 lines main, 289+138 extracted)
+- [x] MapView.tsx reduced via hook extraction (534 lines, 156+133 extracted)
+- [x] No `(window as any).api` casts remain
+- [x] Spiderify works for overlapping markers
 - [ ] Preview shows correct source → destination mappings
-- [ ] Detects filename conflicts
-- [ ] Warns if destination has insufficient space
-- [ ] Validates destination path is writable
-- [ ] Shows operation count and total size
-- [ ] Cancel clears preview
 
-**Deliverable:** Can preview file operations but not execute yet.
+**Deliverable:** Clean, maintainable codebase with improved UX for overlapping photos.
 
 ---
 

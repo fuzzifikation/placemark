@@ -1,5 +1,6 @@
 /**
  * Settings component - configure app parameters
+ * Refactored to use sub-components for maintainability
  */
 
 import { useState, useEffect } from 'react';
@@ -7,6 +8,8 @@ import { type Theme, getThemeColors } from '../theme';
 import { SettingsSlider } from './Settings/SettingsSlider';
 import { SettingsToggle } from './Settings/SettingsToggle';
 import { SettingsSection } from './Settings/SettingsSection';
+import { StorageSettings } from './Settings/StorageSettings';
+import { AboutSection } from './Settings/AboutSection';
 
 interface SettingsProps {
   onClose: () => void;
@@ -17,172 +20,112 @@ interface SettingsProps {
 
 export interface AppSettings {
   // Map Clustering
-  clusteringEnabled: boolean; // whether clustering is enabled
-  clusterRadius: number; // 10-100 pixels
-  clusterMaxZoom: number; // 10-20 zoom level
-
+  clusteringEnabled: boolean;
+  clusterRadius: number;
+  clusterMaxZoom: number;
   // Map Display
-  mapMaxZoom: number; // 10-20 - maximum zoom when auto-fitting
-  mapPadding: number; // 20-100 pixels - padding around markers
-  mapTransitionDuration: number; // 0-1000 milliseconds
-  showHeatmap: boolean; // whether to show heatmap overlay
-
+  mapMaxZoom: number;
+  mapPadding: number;
+  mapTransitionDuration: number;
+  showHeatmap: boolean;
   // Timeline
-  timelineUpdateInterval: number; // 50-500 milliseconds - how often map updates during playback
-  autoZoomDuringPlay: boolean; // whether map should auto-fit to photos during timeline playback
+  timelineUpdateInterval: number;
+  autoZoomDuringPlay: boolean;
+  // Developer Settings (fine-tuning)
+  devSettingsEnabled: boolean;
+  tileMaxZoom: number; // Max zoom level for map tiles
+  spiderOverlapTolerance: number; // Pixels - how close points must be visually to overlap
+  spiderRadius: number; // Pixels - visual radius of spider circle on screen
+  spiderAnimationDuration: number; // ms - spider expand/collapse animation
+  spiderTriggerZoom: number; // Zoom level at which clusters spider instead of zoom
+  spiderCollapseMargin: number; // Pixels - how far mouse can leave spider before it closes
+  spiderClearZoom: number; // Auto-clear spider when zooming below this level
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  // Map Clustering
   clusteringEnabled: true,
   clusterRadius: 30,
-  clusterMaxZoom: 14, // Must be < mapMaxZoom to avoid warning
-
-  // Map Display
-  mapMaxZoom: 18, // Increased to allow deeper zoom
+  clusterMaxZoom: 14,
+  mapMaxZoom: 15,
   mapPadding: 50,
   mapTransitionDuration: 200,
   showHeatmap: false,
-
-  // Timeline
   timelineUpdateInterval: 100,
   autoZoomDuringPlay: true,
+  // Developer defaults
+  devSettingsEnabled: false,
+  tileMaxZoom: 18, // OSM tiles work up to 19, but 18 is safer
+  spiderOverlapTolerance: 20, // pixels - roughly size of a photo dot
+  spiderRadius: 60, // pixels - visual radius of spider circle on screen
+  spiderAnimationDuration: 300,
+  spiderTriggerZoom: 12,
+  spiderCollapseMargin: 30, // pixels - mouse distance beyond spider before collapse
+  spiderClearZoom: 15, // auto-clear spider when zooming below this
 };
+
+// Settings version for migration
+const SETTINGS_VERSION = 2; // Increment when settings format changes
+
+/**
+ * Migrate old settings to new format
+ */
+function migrateSettings(saved: Partial<AppSettings> & { _version?: number }): AppSettings {
+  const version = saved._version ?? 1;
+  const migrated = { ...DEFAULT_SETTINGS, ...saved };
+
+  // v1 -> v2: spiderRadius changed from degrees (~0.0004) to pixels (~60)
+  if (version < 2) {
+    // If spiderRadius is suspiciously small (< 1), it's the old degree-based value
+    if (migrated.spiderRadius < 1) {
+      migrated.spiderRadius = DEFAULT_SETTINGS.spiderRadius;
+    }
+  }
+
+  return migrated;
+}
 
 export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: SettingsProps) {
   const colors = getThemeColors(theme);
   const [settings, setSettings] = useState<AppSettings>(() => {
-    // Load from localStorage or use defaults
     const saved = localStorage.getItem('placemark-settings');
-    return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+    if (saved) {
+      return migrateSettings(JSON.parse(saved));
+    }
+    return DEFAULT_SETTINGS;
   });
 
-  const [expandedSections, setExpandedSections] = useState<{
-    clustering: boolean;
-    display: boolean;
-    timeline: boolean;
-    thumbnails: boolean;
-    database: boolean;
-  }>({
+  const [expandedSections, setExpandedSections] = useState({
     clustering: true,
     display: true,
     timeline: true,
-    thumbnails: true,
     database: true,
+    devSettings: false,
   });
-
-  const [thumbnailStats, setThumbnailStats] = useState<{
-    totalSizeMB: number;
-    thumbnailCount: number;
-    maxSizeMB: number;
-    usagePercent: number;
-  } | null>(null);
-
-  const [databaseStats, setDatabaseStats] = useState<{
-    photosDbSizeMB: number;
-    thumbnailsDbSizeMB: number;
-    totalPhotoCount: number;
-  } | null>(null);
-
-  // Load stats on mount
-  useEffect(() => {
-    loadThumbnailStats();
-    loadDatabaseStats();
-  }, []);
-
-  const loadThumbnailStats = async () => {
-    try {
-      const stats = await (window as any).api.thumbnails.getStats();
-      setThumbnailStats(stats);
-    } catch (error) {
-      console.error('Failed to load thumbnail stats:', error);
-    }
-  };
-
-  const loadDatabaseStats = async () => {
-    try {
-      const stats = await (window as any).api.photos.getDatabaseStats();
-      setDatabaseStats(stats);
-    } catch (error) {
-      console.error('Failed to load database stats:', error);
-    }
-  };
-
-  const handleClearThumbnailCache = async () => {
-    if (!confirm('Clear thumbnail cache? Thumbnails will be regenerated as needed.')) {
-      return;
-    }
-    try {
-      await (window as any).api.thumbnails.clearCache();
-      await loadThumbnailStats();
-      await loadDatabaseStats();
-      alert('Thumbnail cache cleared successfully.');
-    } catch (error) {
-      console.error('Failed to clear thumbnail cache:', error);
-      alert('Failed to clear cache: ' + error);
-    }
-  };
-
-  const handleClearPhotosDatabase = async () => {
-    if (
-      !confirm(
-        'Clear all photos from database? This cannot be undone. You will need to re-scan your folders.'
-      )
-    ) {
-      return;
-    }
-    try {
-      await (window as any).api.photos.clearDatabase();
-      await loadDatabaseStats();
-      alert('Photos database cleared successfully.');
-      // Notify parent to refresh UI
-      window.location.reload();
-    } catch (error) {
-      console.error('Failed to clear photos database:', error);
-      alert('Failed to clear database: ' + error);
-    }
-  };
-
-  const handleOpenAppDataFolder = async () => {
-    try {
-      await (window as any).api.system.openAppDataFolder();
-    } catch (error) {
-      console.error('Failed to open app data folder:', error);
-      alert('Failed to open app data folder: ' + error);
-    }
-  };
-
-  const handleSetMaxCacheSize = async (sizeMB: number) => {
-    try {
-      await (window as any).api.thumbnails.setMaxSize(sizeMB);
-      await loadThumbnailStats();
-    } catch (error) {
-      console.error('Failed to set cache size:', error);
-    }
-  };
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   useEffect(() => {
-    // Save to localStorage whenever settings change
-    localStorage.setItem('placemark-settings', JSON.stringify(settings));
+    // Save settings with version for future migrations
+    localStorage.setItem(
+      'placemark-settings',
+      JSON.stringify({ ...settings, _version: SETTINGS_VERSION })
+    );
     onSettingsChange(settings);
   }, [settings, onSettingsChange]);
 
-  const handleReset = () => {
-    setSettings(DEFAULT_SETTINGS);
+  const handleReset = () => setSettings(DEFAULT_SETTINGS);
+
+  const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   return (
     <div
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        inset: 0,
         backgroundColor: colors.overlay,
         display: 'flex',
         alignItems: 'center',
@@ -202,7 +145,6 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
           maxHeight: '90vh',
           overflowY: 'auto',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          transition: 'background-color 0.2s ease, color 0.2s ease',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -224,42 +166,19 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               fontSize: '1.5rem',
               cursor: 'pointer',
               color: colors.textSecondary,
-              transition: 'color 0.2s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = colors.textPrimary)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = colors.textSecondary)}
           >
             ×
           </button>
         </div>
 
-        {/* Settings sections */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem',
-          }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {/* Appearance */}
           <section style={{ borderBottom: `1px solid ${colors.border}`, paddingBottom: '1rem' }}>
-            <h3
-              style={{
-                margin: '0 0 1rem 0',
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: colors.textPrimary,
-              }}
-            >
-              Appearance
-            </h3>
+            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600 }}>Appearance</h3>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <label
-                  style={{ fontSize: '0.875rem', color: colors.textSecondary, display: 'block' }}
-                >
-                  Theme
-                </label>
+                <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>Theme</label>
                 <div style={{ fontSize: '0.7rem', color: colors.textMuted, marginTop: '0.25rem' }}>
                   Switch between light and dark mode
                 </div>
@@ -274,16 +193,14 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                   border: `1px solid ${colors.border}`,
                   borderRadius: '4px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
                 title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
               >
                 {theme === 'light' ? '🌙' : '☀️'}
               </button>
             </div>
           </section>
+
           {/* Map Clustering */}
           <SettingsSection
             title="Map Clustering"
@@ -295,10 +212,9 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               label="Enable marker clustering"
               value={settings.clusteringEnabled}
               description="Group nearby photos into clusters to improve performance"
-              onChange={(val) => setSettings({ ...settings, clusteringEnabled: val })}
+              onChange={(val) => updateSetting('clusteringEnabled', val)}
               theme={theme}
             />
-
             {settings.clusteringEnabled && (
               <>
                 <SettingsSlider
@@ -310,10 +226,9 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                   unit="px"
                   minLabel="More markers (10)"
                   maxLabel="Fewer markers (100)"
-                  onChange={(val) => setSettings({ ...settings, clusterRadius: val })}
+                  onChange={(val) => updateSetting('clusterRadius', val)}
                   theme={theme}
                 />
-
                 <SettingsSlider
                   label="Stop Clustering At Zoom"
                   value={settings.clusterMaxZoom}
@@ -322,20 +237,20 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                   step={1}
                   minLabel="Earlier (10)"
                   maxLabel="Later (20)"
-                  onChange={(val) => setSettings({ ...settings, clusterMaxZoom: val })}
+                  onChange={(val) => updateSetting('clusterMaxZoom', val)}
                   theme={theme}
                 />
               </>
             )}
-
             <SettingsToggle
               label="Show Heatmap"
               value={settings.showHeatmap}
               description="Display photo density as a colored heat map"
-              onChange={(val) => setSettings({ ...settings, showHeatmap: val })}
+              onChange={(val) => updateSetting('showHeatmap', val)}
               theme={theme}
             />
           </SettingsSection>
+
           {/* Map Display */}
           <SettingsSection
             title="Map Display"
@@ -347,14 +262,13 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               label="Maximum Zoom Level"
               value={settings.mapMaxZoom}
               min={10}
-              max={20}
+              max={settings.tileMaxZoom}
               step={1}
               minLabel="Zoomed out (10)"
-              maxLabel="Zoomed in (20)"
-              onChange={(val) => setSettings({ ...settings, mapMaxZoom: val })}
+              maxLabel={`Zoomed in (${settings.tileMaxZoom})`}
+              onChange={(val) => updateSetting('mapMaxZoom', val)}
               theme={theme}
             />
-
             <SettingsSlider
               label="Map Padding"
               value={settings.mapPadding}
@@ -364,10 +278,9 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               unit="px"
               minLabel="Tight (20)"
               maxLabel="Loose (100)"
-              onChange={(val) => setSettings({ ...settings, mapPadding: val })}
+              onChange={(val) => updateSetting('mapPadding', val)}
               theme={theme}
             />
-
             <SettingsSlider
               label="Transition Speed"
               value={settings.mapTransitionDuration}
@@ -377,10 +290,11 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               unit="ms"
               minLabel="Instant (0)"
               maxLabel="Slow (1000)"
-              onChange={(val) => setSettings({ ...settings, mapTransitionDuration: val })}
+              onChange={(val) => updateSetting('mapTransitionDuration', val)}
               theme={theme}
             />
           </SettingsSection>
+
           {/* Timeline */}
           <SettingsSection
             title="Timeline"
@@ -410,9 +324,7 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
                 max={500}
                 step={50}
                 value={settings.timelineUpdateInterval}
-                onChange={(e) =>
-                  setSettings({ ...settings, timelineUpdateInterval: parseInt(e.target.value) })
-                }
+                onChange={(e) => updateSetting('timelineUpdateInterval', parseInt(e.target.value))}
                 style={{ width: '100%' }}
               />
               <div
@@ -432,241 +344,147 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               label="Auto-fit map during playback"
               value={settings.autoZoomDuringPlay}
               description="Map will follow your journey as the timeline plays"
-              onChange={(value) => setSettings({ ...settings, autoZoomDuringPlay: value })}
+              onChange={(value) => updateSetting('autoZoomDuringPlay', value)}
               theme={theme}
             />
           </SettingsSection>
+
           {/* Database Management */}
-          <SettingsSection
-            title="Database Management"
+          <StorageSettings
+            theme={theme}
             expanded={expandedSections.database}
             onToggle={() => toggleSection('database')}
+          />
+
+          {/* Developer Settings */}
+          <SettingsSection
+            title="🔧 Developer Settings"
+            expanded={expandedSections.devSettings}
+            onToggle={() => toggleSection('devSettings')}
             theme={theme}
           >
-            {/* Database Statistics */}
-            {databaseStats && (
-              <div
-                style={{
-                  backgroundColor: colors.surface,
-                  padding: '1rem',
-                  borderRadius: '4px',
-                  marginBottom: '1rem',
-                  border: `1px solid ${colors.border}`,
-                }}
-              >
-                <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                  <p style={{ margin: '0.25rem 0' }}>
-                    <strong>Total Photos:</strong> {databaseStats.totalPhotoCount.toLocaleString()}
-                  </p>
-                  <p style={{ margin: '0.25rem 0' }}>
-                    <strong>Photos Database:</strong> {databaseStats.photosDbSizeMB.toFixed(1)} MB
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Thumbnail Cache Statistics and Settings */}
-            {thumbnailStats && (
-              <div
-                style={{
-                  backgroundColor: colors.surface,
-                  padding: '1rem',
-                  borderRadius: '4px',
-                  marginBottom: '1rem',
-                  border: `1px solid ${colors.border}`,
-                }}
-              >
-                <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                  <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>Thumbnail Cache</p>
-                  <p style={{ margin: '0.25rem 0' }}>
-                    <strong>Cached Thumbnails:</strong> {thumbnailStats.thumbnailCount}
-                  </p>
-                  <p style={{ margin: '0.25rem 0' }}>
-                    <strong>Cache Size:</strong> {thumbnailStats.totalSizeMB.toFixed(1)} MB /{' '}
-                    {thumbnailStats.maxSizeMB} MB ({thumbnailStats.usagePercent.toFixed(1)}%)
-                  </p>
-                </div>
-                {/* Progress bar */}
+            <SettingsToggle
+              label="Enable Developer Settings"
+              value={settings.devSettingsEnabled}
+              description="Show advanced fine-tuning options (for development only)"
+              onChange={(val) => updateSetting('devSettingsEnabled', val)}
+              theme={theme}
+            />
+            {settings.devSettingsEnabled && (
+              <>
                 <div
                   style={{
-                    marginTop: '0.75rem',
-                    height: '8px',
-                    backgroundColor: colors.border,
-                    borderRadius: '4px',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${Math.min(thumbnailStats.usagePercent, 100)}%`,
-                      backgroundColor:
-                        thumbnailStats.usagePercent > 90
-                          ? '#f28cb1'
-                          : thumbnailStats.usagePercent > 75
-                            ? '#f1f075'
-                            : '#51bbd6',
-                      transition: 'width 0.3s ease',
-                    }}
-                  />
-                </div>
-
-                {/* Max Cache Size Slider */}
-                <div style={{ marginTop: '1rem' }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    <label style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-                      Maximum Size
-                    </label>
-                    <span
-                      style={{
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                        color: colors.textPrimary,
-                      }}
-                    >
-                      {thumbnailStats.maxSizeMB} MB
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="100"
-                    max="2000"
-                    step="100"
-                    value={thumbnailStats.maxSizeMB}
-                    onChange={(e) => handleSetMaxCacheSize(parseInt(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: '0.7rem',
-                      color: colors.textMuted,
-                      marginTop: '0.25rem',
-                    }}
-                  >
-                    <span>100 MB (~2.8K photos)</span>
-                    <span>2000 MB (~57K photos)</span>
-                  </div>
-                  <p
-                    style={{
-                      fontSize: '0.75rem',
-                      color: colors.textMuted,
-                      margin: '0.5rem 0 0 0',
-                    }}
-                  >
-                    Thumbnails stored at 400px (~35KB each). Least recently used thumbnails are
-                    automatically removed when limit is reached.
-                  </p>
-                </div>
-
-                {/* Clear Thumbnail Cache button */}
-                <button
-                  onClick={handleClearThumbnailCache}
-                  style={{
-                    marginTop: '1rem',
-                    padding: '0.5rem 1rem',
-                    fontSize: '0.875rem',
+                    padding: '0.5rem',
+                    marginBottom: '1rem',
                     backgroundColor: colors.surface,
-                    color: colors.textSecondary,
-                    border: `1px solid ${colors.border}`,
                     borderRadius: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    width: '100%',
+                    fontSize: '0.75rem',
+                    color: colors.textMuted,
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = colors.surfaceHover)
-                  }
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
                 >
-                  Clear Thumbnail Cache
-                </button>
-              </div>
+                  ⚠️ These settings are for development and testing. Incorrect values may cause
+                  issues.
+                </div>
+
+                <SettingsSlider
+                  label="Tile Max Zoom"
+                  value={settings.tileMaxZoom}
+                  min={15}
+                  max={19}
+                  step={1}
+                  minLabel="Conservative (15)"
+                  maxLabel="Maximum (19)"
+                  onChange={(val) => {
+                    updateSetting('tileMaxZoom', val);
+                    // Also cap mapMaxZoom if it exceeds the new limit
+                    if (settings.mapMaxZoom > val) {
+                      updateSetting('mapMaxZoom', val);
+                    }
+                  }}
+                  theme={theme}
+                />
+
+                <SettingsSlider
+                  label="Spider Trigger Zoom"
+                  value={settings.spiderTriggerZoom}
+                  min={0}
+                  max={18}
+                  step={1}
+                  minLabel="Always (0)"
+                  maxLabel="Max zoom (18)"
+                  onChange={(val) => updateSetting('spiderTriggerZoom', val)}
+                  theme={theme}
+                />
+
+                <SettingsSlider
+                  label="Spider Overlap Tolerance"
+                  value={settings.spiderOverlapTolerance}
+                  min={5}
+                  max={50}
+                  step={5}
+                  unit="px"
+                  minLabel="Tight (5px)"
+                  maxLabel="Loose (50px)"
+                  onChange={(val) => updateSetting('spiderOverlapTolerance', val)}
+                  theme={theme}
+                />
+
+                <SettingsSlider
+                  label="Spider Radius"
+                  value={settings.spiderRadius}
+                  min={30}
+                  max={150}
+                  step={10}
+                  unit="px"
+                  minLabel="Small (30px)"
+                  maxLabel="Large (150px)"
+                  onChange={(val) => updateSetting('spiderRadius', val)}
+                  theme={theme}
+                />
+
+                <SettingsSlider
+                  label="Spider Animation"
+                  value={settings.spiderAnimationDuration}
+                  min={0}
+                  max={1000}
+                  step={50}
+                  unit="ms"
+                  minLabel="Instant (0)"
+                  maxLabel="Slow (1000)"
+                  onChange={(val) => updateSetting('spiderAnimationDuration', val)}
+                  theme={theme}
+                />
+
+                <SettingsSlider
+                  label="Spider Collapse Margin"
+                  value={settings.spiderCollapseMargin}
+                  min={10}
+                  max={100}
+                  step={10}
+                  unit="px"
+                  minLabel="Tight (10px)"
+                  maxLabel="Loose (100px)"
+                  onChange={(val) => updateSetting('spiderCollapseMargin', val)}
+                  theme={theme}
+                />
+
+                <SettingsSlider
+                  label="Spider Clear Zoom"
+                  value={settings.spiderClearZoom}
+                  min={5}
+                  max={18}
+                  step={1}
+                  minLabel="Zoomed out (5)"
+                  maxLabel="Zoomed in (18)"
+                  onChange={(val) => updateSetting('spiderClearZoom', val)}
+                  theme={theme}
+                />
+              </>
             )}
-
-            {/* Clear All Photos Button */}
-            <button
-              onClick={handleClearPhotosDatabase}
-              style={{
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                backgroundColor: colors.error,
-                color: colors.buttonText,
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-            >
-              Clear All Photos (Reset Database)
-            </button>
-
-            {/* Open Data Folder Button */}
-            <button
-              onClick={handleOpenAppDataFolder}
-              style={{
-                marginTop: '1rem',
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                backgroundColor: colors.surface,
-                color: colors.textPrimary,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
-            >
-              Open Data Folder
-            </button>
           </SettingsSection>
 
           {/* About & Legal */}
-          <SettingsSection title="About & Legal" expanded={true} onToggle={() => {}} theme={theme}>
-            <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
-              <p style={{ margin: '0 0 0.5rem 0' }}>
-                <strong style={{ color: colors.textPrimary }}>Placemark</strong> v0.2.0
-              </p>
-              <p style={{ margin: '0 0 1rem 0' }}>Privacy-first, local-first photo organizer.</p>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    (window as any).api.system.openExternal(
-                      'https://github.com/placemark/placemark'
-                    );
-                  }}
-                  style={{ color: colors.primary, textDecoration: 'none', cursor: 'pointer' }}
-                >
-                  GitHub
-                </a>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    (window as any).api.system.openExternal(
-                      'https://github.com/placemark/placemark/blob/main/LICENSE'
-                    );
-                  }}
-                  style={{ color: colors.primary, textDecoration: 'none', cursor: 'pointer' }}
-                >
-                  License (MIT)
-                </a>
-              </div>
-            </div>
-          </SettingsSection>
+          <AboutSection theme={theme} />
         </div>
 
         {/* Footer */}
@@ -688,10 +506,7 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               border: `1px solid ${colors.border}`,
               borderRadius: '4px',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
           >
             Reset to Defaults
           </button>
@@ -705,10 +520,7 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.primaryHover)}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.primary)}
           >
             Done
           </button>

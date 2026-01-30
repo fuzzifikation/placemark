@@ -68,8 +68,8 @@ function App() {
     if (photoData.selection.size > 0) {
       return photoData.allPhotos.filter((p) => photoData.selection.has(p.id));
     }
-    return photoData.photos;
-  }, [photoData.selection, photoData.allPhotos, photoData.photos]);
+    return photoData.mapPhotos;
+  }, [photoData.selection, photoData.allPhotos, photoData.mapPhotos]);
 
   const handleScanFolder = async () => {
     await folderScan.scanFolder(photoData.loadPhotos);
@@ -112,14 +112,15 @@ function App() {
         {/* Map - Background Layer */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
           <MapView
-            photos={photoData.photos}
+            photos={photoData.mapPhotos}
             onPhotoClick={setSelectedPhoto}
-            onViewChange={photoData.filterByMapBounds}
+            onViewChange={photoData.trackMapBounds}
             clusteringEnabled={settings.clusteringEnabled}
             clusterRadius={settings.clusterRadius}
             clusterMaxZoom={settings.clusterMaxZoom}
             transitionDuration={settings.mapTransitionDuration}
             maxZoom={settings.mapMaxZoom}
+            tileMaxZoom={settings.tileMaxZoom}
             padding={settings.mapPadding}
             autoFit={
               showTimeline && settings.autoZoomDuringPlay ? photoData.filterSource !== 'map' : false
@@ -129,12 +130,20 @@ function App() {
             selectionMode={selectionMode}
             selectedIds={photoData.selection}
             onSelectionChange={photoData.updateSelection}
+            spiderSettings={{
+              overlapTolerance: settings.spiderOverlapTolerance,
+              radius: settings.spiderRadius,
+              animationDuration: settings.spiderAnimationDuration,
+              triggerZoom: settings.spiderTriggerZoom,
+              collapseMargin: settings.spiderCollapseMargin,
+              clearZoom: settings.spiderClearZoom,
+            }}
           />
         </div>
 
         {/* Floating Header */}
         <FloatingHeader
-          photoCount={photoData.photos.length}
+          photoCount={photoData.mapPhotos.length}
           selectionCount={photoData.selection.size}
           selectionMode={selectionMode}
           dateRangeAvailable={!!photoData.dateRange}
@@ -176,7 +185,7 @@ function App() {
               startDate={photoData.selectedDateRange.start}
               endDate={photoData.selectedDateRange.end}
               totalPhotos={photoData.allPhotos.length}
-              filteredPhotos={photoData.photos.length}
+              filteredPhotos={photoData.mapPhotos.length}
               onRangeChange={handleDateRangeChange}
               onClose={handleTimelineClose}
               updateInterval={settings.timelineUpdateInterval}

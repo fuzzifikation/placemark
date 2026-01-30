@@ -2,7 +2,7 @@
  * usePhotoData - Manages photo data loading and filtering
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Photo, BoundingBox } from '@placemark/core';
 import { filterPhotos } from '@placemark/core';
 
@@ -26,6 +26,25 @@ export function usePhotoData() {
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [filterSource, setFilterSource] = useState<'date' | 'map' | 'scan' | 'init'>('init');
   const [isInitialized, setIsInitialized] = useState(false);
+
+  /**
+   * Photos filtered only by date range - used for map display.
+   * MapLibre handles viewport culling efficiently, so we don't filter by bounds.
+   */
+  const mapPhotos = useMemo(() => {
+    if (!selectedDateRange) return allPhotosRef.current;
+    return filterPhotos(allPhotosRef.current, {
+      dateRange: { start: selectedDateRange.start, end: selectedDateRange.end },
+    });
+  }, [selectedDateRange, photos]); // photos dep ensures refresh after load
+
+  /**
+   * Count of photos visible in current map bounds (for UI display)
+   */
+  const visibleInBoundsCount = useMemo(() => {
+    if (!mapBounds) return mapPhotos.length;
+    return filterPhotos(mapPhotos, { bounds: mapBounds }).length;
+  }, [mapPhotos, mapBounds]);
 
   const updateSelection = useCallback(
     (ids: number[], mode: 'set' | 'add' | 'remove' | 'toggle') => {
@@ -111,13 +130,15 @@ export function usePhotoData() {
     [applyFilters, mapBounds]
   );
 
-  const filterByMapBounds = useCallback(
+  /**
+   * Track map bounds for UI display (doesn't filter map photos)
+   */
+  const trackMapBounds = useCallback(
     (bounds: { north: number; south: number; east: number; west: number }) => {
       setMapBounds(bounds);
       setFilterSource('map');
-      applyFilters(allPhotosRef.current, selectedDateRange, bounds);
     },
-    [applyFilters, selectedDateRange]
+    []
   );
 
   const resetDateFilter = () => {
@@ -134,14 +155,16 @@ export function usePhotoData() {
 
   return {
     photos,
+    mapPhotos, // Date-filtered photos for map display (no bounds filtering)
     allPhotos: allPhotosRef.current, // Expose for checking length/empty state
+    visibleInBoundsCount, // Count of photos in current map view
     showMap,
     dateRange,
     selectedDateRange,
     loading,
     loadPhotos,
     filterByDateRange,
-    filterByMapBounds, // Export this
+    trackMapBounds, // Renamed: just tracks bounds, doesn't filter map
     resetDateFilter,
     selection,
     updateSelection,
