@@ -382,7 +382,7 @@ export function MapView({
     // Collapse spider when mouse leaves the spider area
     mapRef.current.on('mousemove', (e: MapLayerMouseEvent) => {
       if (!mapRef.current) return;
-      
+
       // Check spiderState directly from ref (more reliable than isSpiderActive boolean)
       const currentSpiderState = spiderStateRef.current;
       if (!currentSpiderState) return;

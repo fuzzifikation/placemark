@@ -279,7 +279,7 @@ export function useSpider({
   const clearSpider = useCallback(
     (animate: boolean = true) => {
       if (!spiderState) return;
-      
+
       // Prevent re-triggering if already collapsing
       if (isCollapsingRef.current) return;
 
