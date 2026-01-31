@@ -418,7 +418,11 @@ function App() {
       )}
 
       {/* Toast Notifications */}
-      <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
+      <ToastContainer
+        toasts={toast.toasts}
+        removeToast={toast.removeToast}
+        duration={settings.toastDuration}
+      />
     </div>
   );
 }

@@ -13,9 +13,10 @@ interface ToastItem {
 interface ToastContainerProps {
   toasts: ToastItem[];
   removeToast: (id: string) => void;
+  duration?: number; // ms - defaults to 4000
 }
 
-export function ToastContainer({ toasts, removeToast }: ToastContainerProps) {
+export function ToastContainer({ toasts, removeToast, duration = 4000 }: ToastContainerProps) {
   return (
     <>
       {toasts.map((toast, index) => {
@@ -33,6 +34,7 @@ export function ToastContainer({ toasts, removeToast }: ToastContainerProps) {
               message={toast.message}
               type={toast.type}
               onClose={() => removeToast(toast.id)}
+              duration={duration}
             />
           </div>
         );

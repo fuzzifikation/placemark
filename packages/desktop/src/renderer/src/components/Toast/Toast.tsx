@@ -9,26 +9,27 @@ interface ToastProps {
   message: string;
   type: 'success' | 'error' | 'info';
   onClose: () => void;
+  duration?: number; // ms - defaults to 4000
 }
 
-export function Toast({ message, type, onClose }: ToastProps) {
+export function Toast({ message, type, onClose, duration = 4000 }: ToastProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     // Fade in
     const timer = setTimeout(() => setVisible(true), 10);
 
-    // Auto close after 4 seconds
+    // Auto close after specified duration
     const closeTimer = setTimeout(() => {
       setVisible(false);
       setTimeout(onClose, 300); // Wait for fade out
-    }, 4000);
+    }, duration);
 
     return () => {
       clearTimeout(timer);
       clearTimeout(closeTimer);
     };
-  }, [onClose]);
+  }, [onClose, duration]);
 
   const colors = {
     success: { bg: '#10b981', border: '#059669', text: '#ffffff' },
