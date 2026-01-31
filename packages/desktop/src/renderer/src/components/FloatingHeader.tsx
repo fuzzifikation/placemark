@@ -12,6 +12,7 @@ import {
   Z_INDEX,
 } from '../constants/ui';
 import { Lasso, Folder, Settings, History } from 'lucide-react';
+import type { ThemeColors } from '../theme';
 
 interface FloatingHeaderProps {
   photoCount: number;
@@ -20,7 +21,7 @@ interface FloatingHeaderProps {
   dateRangeAvailable: boolean;
   showTimeline: boolean;
   scanning: boolean;
-  colors: any;
+  colors: ThemeColors;
   onSelectionModeToggle: () => void;
   onOperationsOpen: () => void;
   onSettingsOpen: () => void;
@@ -111,6 +112,7 @@ export function FloatingHeader({
               : 'Enter Selection Mode (Shift+Drag to add, Alt+Drag to remove)'
           }
           onClick={onSelectionModeToggle}
+          className="floating-header-button"
           style={{
             padding: `${SPACING.SM} ${SPACING.LG}`,
             fontSize: FONT_SIZE.SM,
@@ -120,20 +122,23 @@ export function FloatingHeader({
             border: selectionMode === 'lasso' ? 'none' : `1px solid ${colors.border}`,
             borderRadius: BORDER_RADIUS.LG,
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             alignItems: 'center',
             gap: SPACING.SM,
-            boxShadow: selectionMode === 'lasso' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+            boxShadow: selectionMode === 'lasso' ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
+            transform: 'scale(1)',
           }}
           onMouseEnter={(e) => {
             if (selectionMode !== 'lasso') {
               e.currentTarget.style.backgroundColor = colors.surfaceHover;
+              e.currentTarget.style.transform = 'scale(1.02)';
             }
           }}
           onMouseLeave={(e) => {
             if (selectionMode !== 'lasso') {
               e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.transform = 'scale(1)';
             }
           }}
         >
@@ -145,19 +150,36 @@ export function FloatingHeader({
         <button
           onClick={onOperationsOpen}
           disabled={photoCount === 0}
+          className="floating-header-button"
           style={{
             padding: `${SPACING.SM} ${SPACING.LG}`,
             fontSize: FONT_SIZE.SM,
             fontWeight: FONT_WEIGHT.MEDIUM,
             backgroundColor: 'transparent',
-            color: colors.textPrimary,
+            color: photoCount === 0 ? colors.textMuted : colors.textPrimary,
             border: `1px solid ${colors.border}`,
             borderRadius: BORDER_RADIUS.LG,
             cursor: photoCount > 0 ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             alignItems: 'center',
             gap: SPACING.SM,
+            transform: 'scale(1)',
+            opacity: photoCount === 0 ? 0.6 : 1,
+          }}
+          onMouseEnter={(e) => {
+            if (photoCount > 0) {
+              e.currentTarget.style.backgroundColor = colors.surfaceHover;
+              e.currentTarget.style.borderColor = colors.primary;
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (photoCount > 0) {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.borderColor = colors.border;
+              e.currentTarget.style.transform = 'scale(1)';
+            }
           }}
         >
           <Folder size={16} />
@@ -167,6 +189,7 @@ export function FloatingHeader({
         {/* Settings Button */}
         <button
           onClick={onSettingsOpen}
+          className="floating-header-button"
           style={{
             padding: SPACING.SM,
             fontSize: FONT_SIZE.LG,
@@ -175,15 +198,24 @@ export function FloatingHeader({
             border: 'none',
             borderRadius: BORDER_RADIUS.FULL,
             cursor: 'pointer',
-            transition: 'background-color 0.2s ease',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             width: '40px',
             height: '40px',
+            transform: 'scale(1)',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = colors.surfaceHover;
+            e.currentTarget.style.transform = 'scale(1.05)';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
           title="Settings"
         >
           <Settings size={20} />
@@ -193,6 +225,7 @@ export function FloatingHeader({
         <button
           onClick={onTimelineToggle}
           disabled={!dateRangeAvailable || selectionMode === 'lasso'}
+          className="floating-header-button"
           style={{
             padding: SPACING.SM,
             fontSize: FONT_SIZE.LG,
@@ -202,21 +235,27 @@ export function FloatingHeader({
             border: 'none',
             borderRadius: BORDER_RADIUS.FULL,
             cursor: dateRangeAvailable && selectionMode !== 'lasso' ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             width: '40px',
             height: '40px',
+            transform: 'scale(1)',
+            boxShadow: showTimeline ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
           }}
           onMouseEnter={(e) => {
             if (dateRangeAvailable && !showTimeline) {
               e.currentTarget.style.backgroundColor = colors.surfaceHover;
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
             }
           }}
           onMouseLeave={(e) => {
             if (!showTimeline) {
               e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = 'none';
             }
           }}
           title="Toggle Timeline"
@@ -228,6 +267,7 @@ export function FloatingHeader({
         <button
           onClick={onScanFolder}
           disabled={scanning}
+          className="floating-header-button"
           style={{
             padding: `${SPACING.SM} ${SPACING.XL}`,
             fontSize: FONT_SIZE.SM,
@@ -237,14 +277,24 @@ export function FloatingHeader({
             border: 'none',
             borderRadius: BORDER_RADIUS.LG,
             cursor: scanning ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
+            transform: 'scale(1)',
+            opacity: scanning ? 0.7 : 1,
           }}
           onMouseEnter={(e) => {
-            if (!scanning) e.currentTarget.style.backgroundColor = colors.primaryHover;
+            if (!scanning) {
+              e.currentTarget.style.backgroundColor = colors.primaryHover;
+              e.currentTarget.style.transform = 'scale(1.02)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.4)';
+            }
           }}
           onMouseLeave={(e) => {
-            if (!scanning) e.currentTarget.style.backgroundColor = colors.primary;
+            if (!scanning) {
+              e.currentTarget.style.backgroundColor = colors.primary;
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 99, 235, 0.3)';
+            }
           }}
         >
           {scanning ? 'Scanning...' : 'Scan'}

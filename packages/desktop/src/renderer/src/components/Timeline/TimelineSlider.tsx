@@ -88,6 +88,17 @@ export function TimelineSlider({
             borderRadius: '6px',
             cursor: isDragging === 'range' ? 'grabbing' : 'grab',
             touchAction: 'none',
+            transition: isDragging ? 'none' : 'background-color 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.backgroundColor = colors.primaryHover;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.backgroundColor = colors.primary;
+            }
           }}
         />
         {/* Start thumb - vertical bar */}
@@ -106,6 +117,20 @@ export function TimelineSlider({
             boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
             touchAction: 'none',
             border: `1px solid ${colors.surface}`,
+            transition: isDragging ? 'none' : 'all 0.2s ease',
+            transform: isDragging === 'start' ? 'scale(1.2)' : 'scale(1)',
+          }}
+          onMouseEnter={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+            }
           }}
         />
         {/* End thumb - vertical bar */}
@@ -124,6 +149,20 @@ export function TimelineSlider({
             boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
             touchAction: 'none',
             border: `1px solid ${colors.surface}`,
+            transition: isDragging ? 'none' : 'all 0.2s ease',
+            transform: isDragging === 'end' ? 'scale(1.2)' : 'scale(1)',
+          }}
+          onMouseEnter={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+            }
           }}
         />
         {/* Start date label - moves with thumb */}

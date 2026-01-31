@@ -112,20 +112,50 @@ export function addClusterLayers(map: maplibregl.Map, showHeatmap: boolean = fal
       'circle-color': [
         'case',
         ['boolean', ['feature-state', 'selected'], false],
-        SELECTED_STYLE.COLOR,
-        UNCLUSTERED_STYLE.COLOR,
+        [
+          'case',
+          ['boolean', ['feature-state', 'hover'], false],
+          SELECTED_STYLE.HOVER_COLOR,
+          SELECTED_STYLE.COLOR,
+        ],
+        [
+          'case',
+          ['boolean', ['feature-state', 'hover'], false],
+          UNCLUSTERED_STYLE.HOVER_COLOR,
+          UNCLUSTERED_STYLE.COLOR,
+        ],
       ],
       'circle-radius': [
         'case',
         ['boolean', ['feature-state', 'selected'], false],
-        SELECTED_STYLE.RADIUS,
-        UNCLUSTERED_STYLE.RADIUS,
+        [
+          'case',
+          ['boolean', ['feature-state', 'hover'], false],
+          SELECTED_STYLE.HOVER_RADIUS,
+          SELECTED_STYLE.RADIUS,
+        ],
+        [
+          'case',
+          ['boolean', ['feature-state', 'hover'], false],
+          UNCLUSTERED_STYLE.HOVER_RADIUS,
+          UNCLUSTERED_STYLE.RADIUS,
+        ],
       ],
       'circle-stroke-width': [
         'case',
         ['boolean', ['feature-state', 'selected'], false],
-        SELECTED_STYLE.STROKE_WIDTH,
-        UNCLUSTERED_STYLE.STROKE_WIDTH,
+        [
+          'case',
+          ['boolean', ['feature-state', 'hover'], false],
+          SELECTED_STYLE.HOVER_STROKE_WIDTH,
+          SELECTED_STYLE.STROKE_WIDTH,
+        ],
+        [
+          'case',
+          ['boolean', ['feature-state', 'hover'], false],
+          UNCLUSTERED_STYLE.HOVER_STROKE_WIDTH,
+          UNCLUSTERED_STYLE.STROKE_WIDTH,
+        ],
       ],
       'circle-stroke-color': [
         'case',

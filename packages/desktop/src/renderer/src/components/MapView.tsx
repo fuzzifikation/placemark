@@ -83,6 +83,7 @@ export function MapView({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [currentZoom, setCurrentZoom] = useState<number>(0);
   const hasInitialFit = useRef(false);
+  const hoveredFeatureIdRef = useRef<string | null>(null);
 
   // Converter function to convert pixel radius to degrees at a given center point
   // This uses the map's projection to calculate the actual degree offset for a pixel distance
@@ -417,6 +418,20 @@ export function MapView({
       const props = e.features[0].properties;
       if (!props) return;
 
+      // Set hover feature state for visual feedback
+      if (mapRef.current) {
+        // Clear previous hover state
+        if (hoveredFeatureIdRef.current !== null && hoveredFeatureIdRef.current !== props.id) {
+          mapRef.current.setFeatureState(
+            { source: 'photos', id: hoveredFeatureIdRef.current },
+            { hover: false }
+          );
+        }
+        // Set new hover state
+        mapRef.current.setFeatureState({ source: 'photos', id: props.id }, { hover: true });
+        hoveredFeatureIdRef.current = props.id;
+      }
+
       // Show hover preview
       hoverHandlersRef.current.onMouseMove(props, e.originalEvent.clientX, e.originalEvent.clientY);
 
@@ -451,6 +466,15 @@ export function MapView({
     });
 
     mapRef.current.on('mouseleave', 'unclustered-point', () => {
+      // Clear hover feature state
+      if (mapRef.current && hoveredFeatureIdRef.current !== null) {
+        mapRef.current.setFeatureState(
+          { source: 'photos', id: hoveredFeatureIdRef.current },
+          { hover: false }
+        );
+        hoveredFeatureIdRef.current = null;
+      }
+
       hoverHandlersRef.current.onMouseLeave();
       // Reset cursor
       if (mapRef.current) mapRef.current.getCanvas().style.cursor = '';

@@ -58,7 +58,20 @@ export function TimelineControls({
             border: `1px solid ${colors.border}`,
             borderRadius: '4px',
             cursor: isPlaying ? 'default' : 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: 'scale(1)',
+          }}
+          onMouseEnter={(e) => {
+            if (!isPlaying) {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.backgroundColor = colors.surfaceHover;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isPlaying) {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.backgroundColor = colors.surface;
+            }
           }}
           title="Cycle speed"
         >
@@ -74,10 +87,19 @@ export function TimelineControls({
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: 'scale(1)',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.primaryHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.primary)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.05)';
+            e.currentTarget.style.backgroundColor = colors.primaryHover;
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.backgroundColor = colors.primary;
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         >
           {isPlaying ? '⏸ Pause' : '▶ Play'}
         </button>
@@ -91,10 +113,19 @@ export function TimelineControls({
             border: `1px solid ${colors.border}`,
             borderRadius: '4px',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: 'scale(1)',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.surfaceHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.surface)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.05)';
+            e.currentTarget.style.backgroundColor = colors.surfaceHover;
+            e.currentTarget.style.color = colors.error || '#dc3545';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.backgroundColor = colors.surface;
+            e.currentTarget.style.color = colors.textPrimary;
+          }}
         >
           ×
         </button>

@@ -25,6 +25,9 @@ export const UNCLUSTERED_STYLE = {
   RADIUS: 6,
   STROKE_WIDTH: 2,
   STROKE_COLOR: '#fff',
+  HOVER_COLOR: '#0088ff',
+  HOVER_RADIUS: 8,
+  HOVER_STROKE_WIDTH: 3,
 } as const;
 
 export const SELECTED_STYLE = {
@@ -32,6 +35,9 @@ export const SELECTED_STYLE = {
   RADIUS: 8,
   STROKE_WIDTH: 3,
   STROKE_COLOR: '#ffffff', // White border for contrast
+  HOVER_COLOR: '#ff6666',
+  HOVER_RADIUS: 10,
+  HOVER_STROKE_WIDTH: 4,
 } as const;
 
 export const HEATMAP_CONFIG = {
