@@ -4,6 +4,7 @@
 
 import type { SelectionMode } from './MapView';
 import { SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, Z_INDEX } from '../constants/ui';
+import { Lasso, Folder, Settings, History } from 'lucide-react';
 
 interface FloatingHeaderProps {
   photoCount: number;
@@ -55,28 +56,42 @@ export function FloatingHeader({
       }}
     >
       {/* Title */}
-      <div>
-        <h1
+      <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.SM }}>
+        <img
+          src="/icon.png"
+          alt="Placemark"
           style={{
-            margin: 0,
-            fontSize: FONT_SIZE.LG,
-            fontWeight: FONT_WEIGHT.BOLD,
-            color: colors.textPrimary,
-            letterSpacing: '-0.025em',
+            width: 32,
+            height: 32,
+            borderRadius: '4px',
+            flexShrink: 0,
           }}
-        >
-          Placemark
-        </h1>
-        <p
-          style={{
-            margin: 0,
-            color: colors.textSecondary,
-            fontSize: FONT_SIZE.XS,
-            fontWeight: FONT_WEIGHT.NORMAL,
-          }}
-        >
-          {photoCount} photos found
-        </p>
+        />
+        <div>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: FONT_SIZE.LG,
+              fontWeight: FONT_WEIGHT.BOLD,
+              color: colors.textPrimary,
+              letterSpacing: '-0.025em',
+              fontFamily: 'sans-serif',
+            }}
+          >
+            Placemark
+          </h1>
+          <p
+            style={{
+              margin: 0,
+              color: colors.textSecondary,
+              fontSize: FONT_SIZE.XS,
+              fontWeight: FONT_WEIGHT.NORMAL,
+              fontFamily: 'sans-serif',
+            }}
+          >
+            {photoCount} photos found
+          </p>
+        </div>
       </div>
 
       {/* Action Buttons */}
@@ -115,7 +130,8 @@ export function FloatingHeader({
             }
           }}
         >
-          🕸️ Select
+          <Lasso size={16} />
+          Select
         </button>
 
         {/* Operations Button */}
@@ -132,9 +148,13 @@ export function FloatingHeader({
             borderRadius: BORDER_RADIUS.LG,
             cursor: photoCount > 0 ? 'pointer' : 'not-allowed',
             transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: SPACING.SM,
           }}
         >
-          📤 Organize ({selectionCount > 0 ? selectionCount : 0})
+          <Folder size={16} />
+          Organize ({selectionCount > 0 ? selectionCount : 0})
         </button>
 
         {/* Settings Button */}
@@ -159,7 +179,7 @@ export function FloatingHeader({
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           title="Settings"
         >
-          ⚙️
+          <Settings size={20} />
         </button>
 
         {/* Timeline Button */}
@@ -194,7 +214,7 @@ export function FloatingHeader({
           }}
           title="Toggle Timeline"
         >
-          📅
+          <History size={20} />
         </button>
 
         {/* Scan Button */}
