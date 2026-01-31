@@ -3,7 +3,14 @@
  */
 
 import type { SelectionMode } from './MapView';
-import { SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, Z_INDEX } from '../constants/ui';
+import {
+  SPACING,
+  BORDER_RADIUS,
+  FONT_SIZE,
+  FONT_WEIGHT,
+  FONT_FAMILY,
+  Z_INDEX,
+} from '../constants/ui';
 import { Lasso, Folder, Settings, History } from 'lucide-react';
 
 interface FloatingHeaderProps {
@@ -75,7 +82,7 @@ export function FloatingHeader({
               fontWeight: FONT_WEIGHT.BOLD,
               color: colors.textPrimary,
               letterSpacing: '-0.025em',
-              fontFamily: 'sans-serif',
+              fontFamily: FONT_FAMILY,
             }}
           >
             Placemark
@@ -86,7 +93,7 @@ export function FloatingHeader({
               color: colors.textSecondary,
               fontSize: FONT_SIZE.XS,
               fontWeight: FONT_WEIGHT.NORMAL,
-              fontFamily: 'sans-serif',
+              fontFamily: FONT_FAMILY,
             }}
           >
             {photoCount} photos found

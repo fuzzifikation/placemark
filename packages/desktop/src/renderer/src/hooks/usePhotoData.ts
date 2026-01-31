@@ -142,10 +142,9 @@ export function usePhotoData() {
   );
 
   const resetDateFilter = () => {
-    if (dateRange) {
-      setSelectedDateRange({ start: dateRange.min, end: dateRange.max });
-      setPhotos(allPhotosRef.current);
-    }
+    setSelectedDateRange(null);
+    setFilterSource('date');
+    applyFilters(allPhotosRef.current, null, mapBounds);
   };
 
   // Load photos on mount

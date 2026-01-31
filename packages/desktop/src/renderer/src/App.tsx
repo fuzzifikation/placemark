@@ -9,6 +9,7 @@ import type { Photo } from '@placemark/core';
 import { usePhotoData } from './hooks/usePhotoData';
 import { useTheme } from './hooks/useTheme';
 import { useFolderScan } from './hooks/useFolderScan';
+import { FONT_FAMILY } from './constants/ui';
 import './types/preload.d'; // Import type definitions
 
 function App() {
@@ -40,6 +41,10 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showOperations, setShowOperations] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [lastSelectedDateRange, setLastSelectedDateRange] = useState<{
+    start: number;
+    end: number;
+  } | null>(null);
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('placemark-settings');
     return saved
@@ -76,7 +81,17 @@ function App() {
   };
 
   const handleTimelineToggle = () => {
-    setShowTimeline(!showTimeline);
+    const newShowTimeline = !showTimeline;
+    setShowTimeline(newShowTimeline);
+    if (newShowTimeline) {
+      // When opening timeline, restore last selection if it exists
+      if (lastSelectedDateRange) {
+        photoData.filterByDateRange(lastSelectedDateRange.start, lastSelectedDateRange.end, false);
+      }
+    } else {
+      // When closing timeline, reset to show all photos
+      photoData.resetDateFilter();
+    }
   };
 
   const handleDateRangeChange = async (start: number, end: number) => {
@@ -84,6 +99,8 @@ function App() {
     // so the map can auto-fit to them.
     // If autoZoom is OFF, we only want to see photos in the CURRENT view.
     await photoData.filterByDateRange(start, end, settings.autoZoomDuringPlay);
+    // Remember this selection for when timeline is reopened
+    setLastSelectedDateRange({ start, end });
   };
 
   const handleTimelineClose = () => {
@@ -158,7 +175,7 @@ function App() {
         />
 
         {/* Floating Timeline */}
-        {showTimeline && photoData.dateRange && photoData.selectedDateRange && (
+        {showTimeline && photoData.dateRange && (
           <div
             style={{
               position: 'absolute',
@@ -182,8 +199,20 @@ function App() {
             <Timeline
               minDate={photoData.dateRange.min}
               maxDate={photoData.dateRange.max}
-              startDate={photoData.selectedDateRange.start}
-              endDate={photoData.selectedDateRange.end}
+              startDate={
+                photoData.selectedDateRange
+                  ? photoData.selectedDateRange.start
+                  : lastSelectedDateRange
+                    ? lastSelectedDateRange.start
+                    : photoData.dateRange.min
+              }
+              endDate={
+                photoData.selectedDateRange
+                  ? photoData.selectedDateRange.end
+                  : lastSelectedDateRange
+                    ? lastSelectedDateRange.end
+                    : photoData.dateRange.max
+              }
               totalPhotos={photoData.allPhotos.length}
               filteredPhotos={photoData.mapPhotos.length}
               onRangeChange={handleDateRangeChange}
@@ -228,7 +257,7 @@ function App() {
         alignItems: 'center',
         justifyContent: 'center',
         height: '100vh',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontFamily: FONT_FAMILY,
         padding: '2rem',
       }}
     >

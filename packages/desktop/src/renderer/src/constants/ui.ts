@@ -33,6 +33,8 @@ export const FONT_WEIGHT = {
   BOLD: 700,
 } as const;
 
+export const FONT_FAMILY = 'system-ui, -apple-system, sans-serif';
+
 export const Z_INDEX = {
   MAP: 0,
   HEADER: 10,

@@ -4,6 +4,7 @@
  */
 
 import { Component, ReactNode } from 'react';
+import { FONT_FAMILY } from '../constants/ui';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -62,7 +63,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             justifyContent: 'center',
             height: '100vh',
             padding: '2rem',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontFamily: FONT_FAMILY,
             backgroundColor: '#f5f5f5',
           }}
         >
