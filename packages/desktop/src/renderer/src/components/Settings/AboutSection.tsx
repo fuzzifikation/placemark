@@ -6,7 +6,7 @@ import { type Theme, getThemeColors } from '../../theme';
 import { SettingsSection } from './SettingsSection';
 
 // App version - should be synced with package.json
-const APP_VERSION = '0.2.4';
+const APP_VERSION = '0.2.5';
 
 interface AboutSectionProps {
   theme: Theme;

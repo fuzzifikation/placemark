@@ -23,9 +23,14 @@ interface StorageSettingsProps {
   theme: Theme;
   expanded: boolean;
   onToggle: () => void;
+  toast: {
+    success: (message: string) => void;
+    error: (message: string) => void;
+    info: (message: string) => void;
+  };
 }
 
-export function StorageSettings({ theme, expanded, onToggle }: StorageSettingsProps) {
+export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSettingsProps) {
   const colors = getThemeColors(theme);
   const [thumbnailStats, setThumbnailStats] = useState<ThumbnailStats | null>(null);
   const [databaseStats, setDatabaseStats] = useState<DatabaseStats | null>(null);
@@ -61,10 +66,10 @@ export function StorageSettings({ theme, expanded, onToggle }: StorageSettingsPr
       await window.api.thumbnails.clearCache();
       await loadThumbnailStats();
       await loadDatabaseStats();
-      alert('Thumbnail cache cleared successfully.');
+      toast.success('Thumbnail cache cleared successfully.');
     } catch (error) {
       console.error('Failed to clear thumbnail cache:', error);
-      alert('Failed to clear cache: ' + error);
+      toast.error('Failed to clear cache: ' + error);
     }
   };
 
@@ -79,11 +84,11 @@ export function StorageSettings({ theme, expanded, onToggle }: StorageSettingsPr
     try {
       await window.api.photos.clearDatabase();
       await loadDatabaseStats();
-      alert('Photos database cleared successfully.');
+      toast.success('Photos database cleared successfully.');
       window.location.reload();
     } catch (error) {
       console.error('Failed to clear photos database:', error);
-      alert('Failed to clear database: ' + error);
+      toast.error('Failed to clear database: ' + error);
     }
   };
 
@@ -92,7 +97,7 @@ export function StorageSettings({ theme, expanded, onToggle }: StorageSettingsPr
       await window.api.system.openAppDataFolder();
     } catch (error) {
       console.error('Failed to open app data folder:', error);
-      alert('Failed to open app data folder: ' + error);
+      toast.error('Failed to open app data folder: ' + error);
     }
   };
 

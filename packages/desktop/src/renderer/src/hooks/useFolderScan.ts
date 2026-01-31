@@ -8,6 +8,8 @@ interface ScanProgress {
   currentFile: string;
   processed: number;
   total: number;
+  startTime?: number;
+  eta?: number; // estimated time remaining in seconds
 }
 
 export function useFolderScan() {
@@ -21,9 +23,19 @@ export function useFolderScan() {
     setResult(null);
     setScanProgress(null);
 
+    const startTime = Date.now();
+
     // Set up progress listener
     const removeListener = window.api.photos.onScanProgress((progress) => {
-      setScanProgress(progress);
+      const elapsed = (Date.now() - startTime) / 1000; // seconds
+      const progressRatio = progress.processed / progress.total;
+      const eta = progressRatio > 0 ? elapsed / progressRatio - elapsed : 0;
+
+      setScanProgress({
+        ...progress,
+        startTime,
+        eta: Math.max(0, Math.round(eta)),
+      });
     });
 
     try {

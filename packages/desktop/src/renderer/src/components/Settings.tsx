@@ -16,6 +16,11 @@ interface SettingsProps {
   onSettingsChange: (settings: AppSettings) => void;
   theme: Theme;
   onThemeChange: () => void;
+  toast: {
+    success: (message: string) => void;
+    error: (message: string) => void;
+    info: (message: string) => void;
+  };
 }
 
 export interface AppSettings {
@@ -84,7 +89,7 @@ function migrateSettings(saved: Partial<AppSettings> & { _version?: number }): A
   return migrated;
 }
 
-export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: SettingsProps) {
+export function Settings({ onClose, onSettingsChange, theme, onThemeChange, toast }: SettingsProps) {
   const colors = getThemeColors(theme);
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('placemark-settings');
@@ -354,6 +359,7 @@ export function Settings({ onClose, onSettingsChange, theme, onThemeChange }: Se
             theme={theme}
             expanded={expandedSections.database}
             onToggle={() => toggleSection('database')}
+            toast={toast}
           />
 
           {/* Developer Settings */}

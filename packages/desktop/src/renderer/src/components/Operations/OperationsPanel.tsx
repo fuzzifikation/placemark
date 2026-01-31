@@ -7,10 +7,15 @@ import { useTheme } from '../../hooks/useTheme';
 interface OperationsPanelProps {
   selectedPhotos: Photo[];
   onClose: () => void;
+  toast: {
+    success: (message: string) => void;
+    error: (message: string) => void;
+    info: (message: string) => void;
+  };
   // We can use the hook inside, no need to pass theme if we use useTheme
 }
 
-export function OperationsPanel({ selectedPhotos, onClose }: OperationsPanelProps) {
+export function OperationsPanel({ selectedPhotos, onClose, toast }: OperationsPanelProps) {
   const { colors, theme } = useTheme();
   const [destPath, setDestPath] = useState<string | null>(null);
   const [opType, setOpType] = useState<OperationType>('copy');
@@ -48,7 +53,7 @@ export function OperationsPanel({ selectedPhotos, onClose }: OperationsPanelProp
   };
 
   const handleExecute = () => {
-    alert('Execution coming in Phase 5!');
+    toast.info('Execution coming in Phase 5!');
   };
 
   const totalSize = selectedPhotos.reduce((acc, p) => acc + p.fileSize, 0);

@@ -9,7 +9,9 @@ import type { Photo } from '@placemark/core';
 import { usePhotoData } from './hooks/usePhotoData';
 import { useTheme } from './hooks/useTheme';
 import { useFolderScan } from './hooks/useFolderScan';
+import { useToast } from './hooks/useToast';
 import { FONT_FAMILY } from './constants/ui';
+import { ToastContainer } from './components/Toast/ToastContainer';
 import './types/preload.d'; // Import type definitions
 
 function App() {
@@ -35,6 +37,7 @@ function App() {
   const photoData = usePhotoData();
   const { theme, colors, toggleTheme } = useTheme();
   const folderScan = useFolderScan();
+  const toast = useToast();
 
   // Component state
   const [showTimeline, setShowTimeline] = useState(false);
@@ -230,6 +233,7 @@ function App() {
             onSettingsChange={setSettings}
             theme={theme}
             onThemeChange={toggleTheme}
+            toast={toast}
           />
         )}
 
@@ -238,6 +242,7 @@ function App() {
           <OperationsPanel
             selectedPhotos={photosForOperations}
             onClose={() => setShowOperations(false)}
+            toast={toast}
           />
         )}
 
@@ -245,6 +250,9 @@ function App() {
         {selectedPhoto && (
           <PhotoPreviewModal photo={selectedPhoto} onClose={() => setSelectedPhoto(null)} />
         )}
+
+        {/* Toast Notifications */}
+        <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
       </div>
     );
   }
@@ -315,8 +323,34 @@ function App() {
             fontSize: '0.875rem',
           }}
         >
+          <div style={{ marginBottom: '0.5rem' }}>
+            <div
+              style={{
+                width: '100%',
+                height: '8px',
+                backgroundColor: '#e0e0e0',
+                borderRadius: '4px',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${(folderScan.scanProgress.processed / folderScan.scanProgress.total) * 100}%`,
+                  height: '100%',
+                  backgroundColor: '#0066cc',
+                  transition: 'width 0.3s ease',
+                }}
+              />
+            </div>
+          </div>
           <p style={{ margin: '0.25rem 0', color: '#666' }}>
             Processing: {folderScan.scanProgress.processed} of {folderScan.scanProgress.total} files
+            {folderScan.scanProgress.eta !== undefined && folderScan.scanProgress.eta > 0 && (
+              <span style={{ marginLeft: '1rem', color: '#333' }}>
+                ~{Math.floor(folderScan.scanProgress.eta / 60)} min{' '}
+                {folderScan.scanProgress.eta % 60} sec remaining
+              </span>
+            )}
           </p>
           <p
             style={{
@@ -382,6 +416,9 @@ function App() {
           )}
         </div>
       )}
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
     </div>
   );
 }

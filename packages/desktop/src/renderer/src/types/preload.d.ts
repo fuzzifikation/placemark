@@ -9,6 +9,8 @@ export interface ScanProgress {
   currentFile: string;
   processed: number;
   total: number;
+  startTime?: number;
+  eta?: number;
 }
 
 export interface ScanResult {
