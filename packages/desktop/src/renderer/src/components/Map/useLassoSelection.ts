@@ -1,3 +1,16 @@
+/**
+ * useLassoSelection - Manual photo selection via drag-to-draw lasso tool
+ *
+ * Provides lasso selection functionality where users can draw a freehand
+ * polygon on the map to select multiple photos at once. Handles:
+ * - Mouse/touch event tracking during drag
+ * - Polygon drawing and visual feedback
+ * - Point-in-polygon testing for photo selection
+ * - Keyboard shortcuts (Escape to cancel)
+ *
+ * Selection mode must be 'lasso' for this hook to be active.
+ */
+
 import { useState, useCallback, useEffect, RefObject } from 'react';
 import type { Map } from 'maplibre-gl';
 import type { Photo } from '@placemark/core';

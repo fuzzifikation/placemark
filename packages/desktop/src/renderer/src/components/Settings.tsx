@@ -9,12 +9,14 @@
  */
 
 import { useState, useEffect } from 'react';
-import { type Theme, getThemeColors } from '../theme';
-import { SettingsSlider } from './Settings/SettingsSlider';
-import { SettingsToggle } from './Settings/SettingsToggle';
-import { SettingsSection } from './Settings/SettingsSection';
+import { type Theme } from '../theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { StorageSettings } from './Settings/StorageSettings';
 import { AboutSection } from './Settings/AboutSection';
+import { AppearanceSettings } from './Settings/AppearanceSettings';
+import { MapDisplaySettings } from './Settings/MapDisplaySettings';
+import { TimelineSettings } from './Settings/TimelineSettings';
+import { AdvancedSettings } from './Settings/AdvancedSettings';
 import { FONT_FAMILY } from '../constants/ui';
 import type { SpiderSettings } from './MapView';
 
@@ -119,7 +121,7 @@ export function Settings({
   onThemeChange,
   toast,
 }: SettingsProps) {
-  const colors = getThemeColors(theme);
+  const colors = useThemeColors(theme);
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('placemark-settings');
     if (saved) {
@@ -317,509 +319,40 @@ export function Settings({
         >
           {/* Section Content */}
           {activeSection === 'appearance' && (
-            <div>
-              <div
-                style={{
-                  marginBottom: '1.5rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
-                    🎨 Appearance
-                  </h3>
-                  <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
-                    Customize the look and feel of Placemark
-                  </p>
-                </div>
-                <button
-                  onClick={resetAppearance}
-                  style={{
-                    padding: '0.25rem 0.75rem',
-                    fontSize: '0.75rem',
-                    backgroundColor: colors.surface,
-                    color: colors.textSecondary,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
-                  title="Reset appearance settings"
-                >
-                  Reset
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {/* Theme Toggle */}
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '1rem',
-                    backgroundColor: colors.surface,
-                    borderRadius: '8px',
-                    border: `1px solid ${colors.border}`,
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{ fontSize: '0.875rem', fontWeight: 500, color: colors.textPrimary }}
-                    >
-                      Theme
-                    </div>
-                    <div
-                      style={{ fontSize: '0.75rem', color: colors.textMuted, marginTop: '0.25rem' }}
-                    >
-                      Switch between light and dark mode
-                    </div>
-                  </div>
-                  <button
-                    onClick={onThemeChange}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      fontSize: '1.25rem',
-                      backgroundColor: colors.background,
-                      color: colors.textPrimary,
-                      border: `1px solid ${colors.border}`,
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                    title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-                  >
-                    {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <AppearanceSettings
+              theme={theme}
+              onThemeChange={onThemeChange}
+              onReset={resetAppearance}
+            />
           )}
 
           {activeSection === 'map' && (
-            <div>
-              <div
-                style={{
-                  marginBottom: '1.5rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
-                    🗺️ Map & Display
-                  </h3>
-                  <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
-                    Configure how photos are displayed on the map
-                  </p>
-                </div>
-                <button
-                  onClick={resetMap}
-                  style={{
-                    padding: '0.25rem 0.75rem',
-                    fontSize: '0.75rem',
-                    backgroundColor: colors.surface,
-                    color: colors.textSecondary,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
-                  title="Reset map settings"
-                >
-                  Reset
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {/* Clustering */}
-                <SettingsSection
-                  title="Marker Clustering"
-                  expanded={true}
-                  onToggle={() => {}}
-                  theme={theme}
-                >
-                  <SettingsToggle
-                    label="Enable marker clustering"
-                    value={settings.clusteringEnabled}
-                    description="Group nearby photos into clusters to improve performance with many photos"
-                    onChange={(val) => updateSetting('clusteringEnabled', val)}
-                    theme={theme}
-                  />
-                  {settings.clusteringEnabled && (
-                    <>
-                      <SettingsSlider
-                        label="Cluster Radius"
-                        value={settings.clusterRadius}
-                        min={10}
-                        max={100}
-                        step={5}
-                        unit="px"
-                        minLabel="More markers (10px)"
-                        maxLabel="Fewer markers (100px)"
-                        onChange={(val) => updateSetting('clusterRadius', val)}
-                        theme={theme}
-                      />
-                      <SettingsSlider
-                        label="Stop Clustering At Zoom"
-                        value={settings.clusterMaxZoom}
-                        min={10}
-                        max={20}
-                        step={1}
-                        minLabel="Earlier (10)"
-                        maxLabel="Later (20)"
-                        onChange={(val) => updateSetting('clusterMaxZoom', val)}
-                        theme={theme}
-                      />
-                    </>
-                  )}
-                </SettingsSection>
-
-                {/* Display Options */}
-                <SettingsSection
-                  title="Display Options"
-                  expanded={true}
-                  onToggle={() => {}}
-                  theme={theme}
-                >
-                  <SettingsToggle
-                    label="Show Heatmap"
-                    value={settings.showHeatmap}
-                    description="Display photo density as a colored heat map overlay"
-                    onChange={(val) => updateSetting('showHeatmap', val)}
-                    theme={theme}
-                  />
-                  <SettingsSlider
-                    label="Maximum Zoom Level"
-                    value={settings.mapMaxZoom}
-                    min={10}
-                    max={settings.tileMaxZoom}
-                    step={1}
-                    minLabel="Zoomed out (10)"
-                    maxLabel={`Zoomed in (${settings.tileMaxZoom})`}
-                    onChange={(val) => updateSetting('mapMaxZoom', val)}
-                    theme={theme}
-                  />
-                  <SettingsSlider
-                    label="Map Padding"
-                    value={settings.mapPadding}
-                    min={20}
-                    max={100}
-                    step={10}
-                    unit="px"
-                    minLabel="Tight (20px)"
-                    maxLabel="Loose (100px)"
-                    onChange={(val) => updateSetting('mapPadding', val)}
-                    theme={theme}
-                  />
-                  <SettingsSlider
-                    label="Transition Speed"
-                    value={settings.mapTransitionDuration}
-                    min={0}
-                    max={1000}
-                    step={50}
-                    unit="ms"
-                    minLabel="Instant (0ms)"
-                    maxLabel="Slow (1000ms)"
-                    onChange={(val) => updateSetting('mapTransitionDuration', val)}
-                    theme={theme}
-                  />
-                </SettingsSection>
-              </div>
-            </div>
+            <MapDisplaySettings
+              theme={theme}
+              settings={settings}
+              onSettingChange={updateSetting}
+              onReset={resetMap}
+            />
           )}
 
           {activeSection === 'timeline' && (
-            <div>
-              <div
-                style={{
-                  marginBottom: '1.5rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
-                    ⏱️ Timeline
-                  </h3>
-                  <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
-                    Control timeline behavior and playback settings
-                  </p>
-                </div>
-                <button
-                  onClick={resetTimeline}
-                  style={{
-                    padding: '0.25rem 0.75rem',
-                    fontSize: '0.75rem',
-                    backgroundColor: colors.surface,
-                    color: colors.textSecondary,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
-                  title="Reset timeline settings"
-                >
-                  Reset
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <SettingsSection
-                  title="Playback Settings"
-                  expanded={true}
-                  onToggle={() => {}}
-                  theme={theme}
-                >
-                  <SettingsToggle
-                    label="Auto-fit map during playback"
-                    value={settings.autoZoomDuringPlay}
-                    description="Map will automatically zoom and pan to follow your journey"
-                    onChange={(value) => updateSetting('autoZoomDuringPlay', value)}
-                    theme={theme}
-                  />
-                  <div>
-                    <label
-                      style={{
-                        display: 'block',
-                        fontSize: '0.875rem',
-                        fontWeight: 500,
-                        marginBottom: '0.5rem',
-                        color: colors.textPrimary,
-                      }}
-                    >
-                      Update Frequency: {settings.timelineUpdateInterval}ms
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          color: colors.textMuted,
-                          marginLeft: '0.5rem',
-                        }}
-                      >
-                        ({Math.round(1000 / settings.timelineUpdateInterval)} updates/sec)
-                      </span>
-                    </label>
-                    <input
-                      type="range"
-                      min={50}
-                      max={500}
-                      step={50}
-                      value={settings.timelineUpdateInterval}
-                      onChange={(e) =>
-                        updateSetting('timelineUpdateInterval', parseInt(e.target.value))
-                      }
-                      style={{
-                        width: '100%',
-                        height: '6px',
-                        borderRadius: '3px',
-                        background: colors.surface,
-                        outline: 'none',
-                      }}
-                    />
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        fontSize: '0.7rem',
-                        color: colors.textMuted,
-                        marginTop: '0.25rem',
-                      }}
-                    >
-                      <span>Frequent/High CPU (50ms)</span>
-                      <span>Infrequent/Low CPU (500ms)</span>
-                    </div>
-                  </div>
-                </SettingsSection>
-              </div>
-            </div>
+            <TimelineSettings
+              theme={theme}
+              settings={settings}
+              onSettingChange={updateSetting}
+              onReset={resetTimeline}
+            />
           )}
 
           {activeSection === 'storage' && <StorageSettings theme={theme} toast={toast} />}
 
           {activeSection === 'advanced' && (
-            <div>
-              <div
-                style={{
-                  marginBottom: '1.5rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
-                    🔧 Advanced Settings
-                  </h3>
-                  <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
-                    Fine-tune advanced map and interaction settings
-                  </p>
-                </div>
-                <button
-                  onClick={resetAdvanced}
-                  style={{
-                    padding: '0.25rem 0.75rem',
-                    fontSize: '0.75rem',
-                    backgroundColor: colors.surface,
-                    color: colors.textSecondary,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
-                  title="Reset advanced settings"
-                >
-                  Reset
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div
-                  style={{
-                    padding: '1rem',
-                    backgroundColor: colors.surface,
-                    borderRadius: '8px',
-                    border: `1px solid ${colors.warning || colors.border}`,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: '0.875rem',
-                      fontWeight: 500,
-                      color: colors.textPrimary,
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    ⚠️ Advanced Settings
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: colors.textMuted }}>
-                    These settings are for development and testing. Incorrect values may cause
-                    issues or poor performance.
-                  </div>
-                </div>
-
-                <SettingsSection
-                  title="UI Settings"
-                  expanded={true}
-                  onToggle={() => {}}
-                  theme={theme}
-                >
-                  <SettingsSlider
-                    label="Toast Duration"
-                    value={settings.toastDuration}
-                    min={1000}
-                    max={10000}
-                    step={500}
-                    unit="ms"
-                    minLabel="Quick (1s)"
-                    maxLabel="Long (10s)"
-                    onChange={(val) => updateSetting('toastDuration', val)}
-                    theme={theme}
-                  />
-                </SettingsSection>
-
-                <SettingsSection
-                  title="Spider Settings"
-                  expanded={true}
-                  onToggle={() => {}}
-                  theme={theme}
-                >
-                  <SettingsSlider
-                    label="Spider Trigger Zoom"
-                    value={settings.spiderTriggerZoom}
-                    min={0}
-                    max={18}
-                    step={1}
-                    minLabel="Always (0)"
-                    maxLabel="Max zoom (18)"
-                    onChange={(val) => updateSetting('spiderTriggerZoom', val)}
-                    theme={theme}
-                  />
-                  <SettingsSlider
-                    label="Spider Overlap Tolerance"
-                    value={settings.spiderOverlapTolerance}
-                    min={5}
-                    max={50}
-                    step={5}
-                    unit="px"
-                    minLabel="Tight (5px)"
-                    maxLabel="Loose (50px)"
-                    onChange={(val) => updateSetting('spiderOverlapTolerance', val)}
-                    theme={theme}
-                  />
-                  <SettingsSlider
-                    label="Spider Radius"
-                    value={settings.spiderRadius}
-                    min={30}
-                    max={150}
-                    step={10}
-                    unit="px"
-                    minLabel="Small (30px)"
-                    maxLabel="Large (150px)"
-                    onChange={(val) => updateSetting('spiderRadius', val)}
-                    theme={theme}
-                  />
-                  <SettingsSlider
-                    label="Spider Animation Duration"
-                    value={settings.spiderAnimationDuration}
-                    min={0}
-                    max={1000}
-                    step={50}
-                    unit="ms"
-                    minLabel="Instant (0ms)"
-                    maxLabel="Slow (1000ms)"
-                    onChange={(val) => updateSetting('spiderAnimationDuration', val)}
-                    theme={theme}
-                  />
-                  <SettingsSlider
-                    label="Spider Collapse Margin"
-                    value={settings.spiderCollapseMargin}
-                    min={10}
-                    max={100}
-                    step={10}
-                    unit="px"
-                    minLabel="Tight (10px)"
-                    maxLabel="Loose (100px)"
-                    onChange={(val) => updateSetting('spiderCollapseMargin', val)}
-                    theme={theme}
-                  />
-                  <SettingsSlider
-                    label="Spider Clear Zoom"
-                    value={settings.spiderClearZoom}
-                    min={5}
-                    max={18}
-                    step={1}
-                    minLabel="Zoomed out (5)"
-                    maxLabel="Zoomed in (18)"
-                    onChange={(val) => updateSetting('spiderClearZoom', val)}
-                    theme={theme}
-                  />
-                </SettingsSection>
-
-                <SettingsSection
-                  title="Tile Settings"
-                  expanded={true}
-                  onToggle={() => {}}
-                  theme={theme}
-                >
-                  <SettingsSlider
-                    label="Tile Max Zoom"
-                    value={settings.tileMaxZoom}
-                    min={15}
-                    max={19}
-                    step={1}
-                    minLabel="Conservative (15)"
-                    maxLabel="Maximum (19)"
-                    onChange={(val) => {
-                      updateSetting('tileMaxZoom', val);
-                      if (settings.mapMaxZoom > val) {
-                        updateSetting('mapMaxZoom', val);
-                      }
-                    }}
-                    theme={theme}
-                  />
-                </SettingsSection>
-              </div>
-            </div>
+            <AdvancedSettings
+              theme={theme}
+              settings={settings}
+              onSettingChange={updateSetting}
+              onReset={resetAdvanced}
+            />
           )}
 
           {activeSection === 'about' && <AboutSection theme={theme} />}

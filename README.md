@@ -83,36 +83,66 @@ Access the Settings panel via the **Gear ⚙️** icon.
 
 ## For Developers
 
-Placemark is an open-source Electron + React + TypeScript application.
+Placemark is an open-source Electron + React + TypeScript application built with privacy and portability in mind.
 
 ### Quick Start
 
 See [docs/SETUP.md](docs/SETUP.md) for detailed build instructions.
 
 ```bash
+# Install dependencies
 pnpm install
+
+# Build core package (required first)
+pnpm -C packages/core build
+
+# Run development server with hot reload
 pnpm dev
 ```
+
+### Tech Stack
+
+- **Frontend:** React 18 + TypeScript + Vite
+- **Desktop:** Electron 40+ with secure IPC
+- **Maps:** MapLibre GL JS (open-source, offline-capable)
+- **Database:** SQLite via better-sqlite3
+- **Monorepo:** pnpm workspaces
+
+### Documentation
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — System design and patterns
+- [docs/plan.md](docs/plan.md) — Implementation roadmap (9 phases)
+- [docs/SETUP.md](docs/SETUP.md) — Development environment setup
 
 ### Version Management
 
 To update the app version across all files:
 
 ```bash
-pnpm run version:update 0.3.4
+pnpm run version:update 0.4.0
 ```
 
-This updates:
-
-- Root `package.json`
-- `packages/core/package.json`
-- `packages/desktop/package.json`
-- Fallback version in `AboutSection.tsx`
-
-The app version is read from `package.json` at runtime, so no rebuild is needed for version changes.
+This updates root `package.json`, core `package.json`, desktop `package.json`, and fallback version in `AboutSection.tsx`.
 
 ### Documentation
 
-- [docs/plan.md](docs/plan.md) — Implementation roadmap
-- [docs/technologydecisions.md](docs/technologydecisions.md) — Architecture choices
-- [docs/RELEASE_NOTES.md](docs/RELEASE_NOTES.md) — Version history
+- **User Guide:** See [User Manual](#user-manual) above
+- **Developer Docs:**
+  - [SETUP.md](docs/SETUP.md) — Development environment setup
+  - [ARCHITECTURE.md](docs/ARCHITECTURE.md) — System design and patterns
+  - [plan.md](docs/plan.md) — Implementation roadmap (9 phases)
+  - [technologydecisions.md](docs/technologydecisions.md) — Technology rationale
+  - [RELEASE_NOTES.md](docs/RELEASE_NOTES.md) — Version history
+
+### Project Status
+
+**Current Phase:** Phase 4A Complete — Code quality improvements
+**Next Phase:** Phase 5 — File operations (copy/move execution)
+
+See [docs/plan.md](docs/plan.md) for the complete 9-phase roadmap.
+
+### License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+Copyright (c) 2026 Placemark Contributors

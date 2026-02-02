@@ -188,7 +188,7 @@ placemark/
 │   └── desktop/       # Electron app
 ├── .vscode/           # VSCode settings
 ├── plan.md            # Implementation roadmap
-├── technologydecisions.md  # Architecture docs
+├── ARCHITECTURE.md         # Architecture docs
 └── projectgoal.md     # Project goals
 ```
 

@@ -2,7 +2,8 @@
  * SettingsToggle - Reusable toggle switch component for Settings
  */
 
-import { type Theme, getThemeColors } from '../../theme';
+import { type Theme } from '../../theme';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 interface SettingsToggleProps {
   label: string;
@@ -19,7 +20,7 @@ export function SettingsToggle({
   onChange,
   theme,
 }: SettingsToggleProps) {
-  const colors = getThemeColors(theme);
+  const colors = useThemeColors(theme);
 
   return (
     <div style={{ marginBottom: '1rem' }}>

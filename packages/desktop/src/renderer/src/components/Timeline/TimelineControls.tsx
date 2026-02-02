@@ -2,7 +2,8 @@
  * TimelineControls - Play/pause controls, speed selector, and close button
  */
 
-import { type Theme, getThemeColors } from '../../theme';
+import { type Theme } from '../../theme';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 export type PlaySpeed = 'week' | 'month' | 'sixMonths';
 
@@ -33,7 +34,7 @@ export function TimelineControls({
   onClose,
   theme,
 }: TimelineControlsProps) {
-  const colors = getThemeColors(theme);
+  const colors = useThemeColors(theme);
 
   return (
     <div

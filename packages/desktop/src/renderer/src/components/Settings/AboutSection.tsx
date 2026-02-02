@@ -3,7 +3,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { type Theme, getThemeColors } from '../../theme';
+import { type Theme } from '../../theme';
+import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
 
 // Get app version from package.json
@@ -13,7 +14,7 @@ const getAppVersion = async (): Promise<string> => {
     return (await window.api?.system?.getAppVersion?.()) || '0.3.2';
   } catch {
     // Fallback for development
-    return '0.3.3';
+    return '0.4.0';
   }
 };
 
@@ -22,7 +23,7 @@ interface AboutSectionProps {
 }
 
 export function AboutSection({ theme }: AboutSectionProps) {
-  const colors = getThemeColors(theme);
+  const colors = useThemeColors(theme);
   const [appVersion, setAppVersion] = useState<string>('0.3.2');
 
   useEffect(() => {

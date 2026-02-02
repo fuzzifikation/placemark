@@ -3,7 +3,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { type Theme, getThemeColors } from '../../theme';
+import { type Theme } from '../../theme';
+import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
 
 interface ThumbnailStats {
@@ -31,7 +32,7 @@ interface StorageSettingsProps {
 }
 
 export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSettingsProps) {
-  const colors = getThemeColors(theme);
+  const colors = useThemeColors(theme);
   const [thumbnailStats, setThumbnailStats] = useState<ThumbnailStats | null>(null);
   const [databaseStats, setDatabaseStats] = useState<DatabaseStats | null>(null);
 

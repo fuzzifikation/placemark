@@ -2,7 +2,8 @@
  * SettingsSection - Collapsible section container for Settings
  */
 
-import { type Theme, getThemeColors } from '../../theme';
+import { type Theme } from '../../theme';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 interface SettingsSectionProps {
   title: string;
@@ -19,7 +20,7 @@ export function SettingsSection({
   theme,
   children,
 }: SettingsSectionProps) {
-  const colors = getThemeColors(theme);
+  const colors = useThemeColors(theme);
 
   return (
     <section style={{ marginBottom: '1.5rem' }}>

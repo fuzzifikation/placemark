@@ -2,7 +2,8 @@
  * TimelineSlider - Draggable date range slider with thumbs and labels
  */
 
-import { type Theme, getThemeColors } from '../../theme';
+import { type Theme } from '../../theme';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 // Format timestamp for display
 function formatDate(timestamp: number): string {
@@ -43,7 +44,7 @@ export function TimelineSlider({
   onThumbPointerDown,
   theme,
 }: TimelineSliderProps) {
-  const colors = getThemeColors(theme);
+  const colors = useThemeColors(theme);
 
   // Convert timestamp to position (0-1)
   const timestampToPosition = (timestamp: number): number => {

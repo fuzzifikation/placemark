@@ -2,7 +2,8 @@
  * SettingsSlider - Reusable slider component for Settings
  */
 
-import { type Theme, getThemeColors } from '../../theme';
+import { type Theme } from '../../theme';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 interface SettingsSliderProps {
   label: string;
@@ -31,7 +32,7 @@ export function SettingsSlider({
   onChange,
   theme,
 }: SettingsSliderProps) {
-  const colors = getThemeColors(theme);
+  const colors = useThemeColors(theme);
 
   return (
     <div style={{ marginBottom: '1rem' }}>
