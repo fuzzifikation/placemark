@@ -5,6 +5,32 @@ All notable changes to Placemark will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-02-02
+
+### Added
+
+- Version management system: Single command to update versions across all files
+- Runtime version reading: App version now read from package.json at runtime instead of hardcoded
+- `pnpm run version:update <version>` script for easy version management
+
+### Changed
+
+- Simplified version management: No more manual updates across multiple files
+
+## [0.3.2] - 2026-02-02
+
+### Fixed
+
+- Timeline playback speed can now be changed during playback without stopping
+- Improved timeline controls UX by allowing speed cycling at any time
+
+## [0.3.1] - 2026-02-02
+
+### Fixed
+
+- Timeline animation bug: End-bars (vertical thumbs) now move synchronously with the horizontal range bar during playback mode
+- Improved timeline UI cohesion by treating all timeline elements as a single animated unit
+
 ## [0.3.0] - 2026-01-31
 
 ### Added

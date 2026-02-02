@@ -18,7 +18,7 @@ interface TimelineProps {
   filteredPhotos: number;
   onRangeChange: (start: number, end: number) => void;
   onClose: () => void;
-  updateInterval?: number; // milliseconds between map updates during playback
+  updateInterval: number; // milliseconds between map updates during playback - from settings
   theme: Theme;
 }
 
@@ -31,7 +31,7 @@ export function Timeline({
   filteredPhotos,
   onRangeChange,
   onClose,
-  updateInterval = 100,
+  updateInterval,
   theme,
 }: TimelineProps) {
   const [localStart, setLocalStart] = useState(startDate);
@@ -113,6 +113,7 @@ export function Timeline({
         localStart={localStart}
         localEnd={localEnd}
         isDragging={isDragging}
+        isPlaying={isPlaying}
         sliderRef={sliderRef}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

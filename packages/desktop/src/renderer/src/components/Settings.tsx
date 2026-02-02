@@ -1,6 +1,11 @@
 /**
  * Settings component - configure app parameters
  * Redesigned with sidebar navigation, search, and better organization
+ *
+ * ⚠️ SINGLE SOURCE OF TRUTH FOR DEFAULTS ⚠️
+ * All default configuration values are defined in DEFAULT_SETTINGS below.
+ * Other components MUST import and use these values - never define their own defaults.
+ * This ensures consistency and eliminates duplicate configuration maintenance.
  */
 
 import { useState, useEffect } from 'react';
@@ -11,6 +16,7 @@ import { SettingsSection } from './Settings/SettingsSection';
 import { StorageSettings } from './Settings/StorageSettings';
 import { AboutSection } from './Settings/AboutSection';
 import { FONT_FAMILY } from '../constants/ui';
+import type { SpiderSettings } from './MapView';
 
 interface SettingsProps {
   onClose: () => void;
@@ -50,7 +56,9 @@ export interface AppSettings {
   spiderClearZoom: number; // Auto-clear spider when zooming below this level
 }
 
-const DEFAULT_SETTINGS: AppSettings = {
+// SINGLE SOURCE OF TRUTH: All default values are defined here
+// Other components should import and use these defaults, never define their own
+export const DEFAULT_SETTINGS: AppSettings = {
   clusteringEnabled: true,
   clusterRadius: 30,
   clusterMaxZoom: 14,
@@ -61,17 +69,27 @@ const DEFAULT_SETTINGS: AppSettings = {
   timelineUpdateInterval: 100,
   autoZoomDuringPlay: true,
   // UI defaults
-  toastDuration: 4000, // 4 seconds
+  toastDuration: 3000, // 3 seconds
   // Developer defaults
   devSettingsEnabled: false,
   tileMaxZoom: 18, // OSM tiles work up to 19, but 18 is safer
   spiderOverlapTolerance: 20, // pixels - roughly size of a photo dot
   spiderRadius: 60, // pixels - visual radius of spider circle on screen
   spiderAnimationDuration: 300,
-  spiderTriggerZoom: 12,
+  spiderTriggerZoom: 6,
   spiderCollapseMargin: 30, // pixels - mouse distance beyond spider before collapse
-  spiderClearZoom: 15, // auto-clear spider when zooming below this
+  spiderClearZoom: 7, // auto-clear spider when zooming below this
 };
+
+// Default spider settings as a SpiderSettings object
+export const getDefaultSpiderSettings = (): SpiderSettings => ({
+  overlapTolerance: DEFAULT_SETTINGS.spiderOverlapTolerance,
+  radius: DEFAULT_SETTINGS.spiderRadius,
+  animationDuration: DEFAULT_SETTINGS.spiderAnimationDuration,
+  triggerZoom: DEFAULT_SETTINGS.spiderTriggerZoom,
+  collapseMargin: DEFAULT_SETTINGS.spiderCollapseMargin,
+  clearZoom: DEFAULT_SETTINGS.spiderClearZoom,
+});
 
 // Settings version for migration
 const SETTINGS_VERSION = 2; // Increment when settings format changes

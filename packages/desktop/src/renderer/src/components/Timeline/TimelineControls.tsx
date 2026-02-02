@@ -48,30 +48,25 @@ export function TimelineControls({
       </span>
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
         <button
-          onClick={isPlaying ? onPlayPause : onSpeedCycle}
-          disabled={isPlaying}
+          onClick={onSpeedCycle}
           style={{
             padding: '0.25rem 0.5rem',
             fontSize: '0.75rem',
-            backgroundColor: isPlaying ? colors.surfaceHover : colors.surface,
+            backgroundColor: colors.surface,
             color: colors.textPrimary,
             border: `1px solid ${colors.border}`,
             borderRadius: '4px',
-            cursor: isPlaying ? 'default' : 'pointer',
+            cursor: 'pointer',
             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             transform: 'scale(1)',
           }}
           onMouseEnter={(e) => {
-            if (!isPlaying) {
-              e.currentTarget.style.transform = 'scale(1.05)';
-              e.currentTarget.style.backgroundColor = colors.surfaceHover;
-            }
+            e.currentTarget.style.transform = 'scale(1.05)';
+            e.currentTarget.style.backgroundColor = colors.surfaceHover;
           }}
           onMouseLeave={(e) => {
-            if (!isPlaying) {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.backgroundColor = colors.surface;
-            }
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.backgroundColor = colors.surface;
           }}
           title="Cycle speed"
         >

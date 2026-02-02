@@ -152,7 +152,7 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 
 **Deferred to later phases:**
 
-- Toast notifications (nice-to-have, current `alert()` is sufficient)
+- Toast notifications ✅ COMPLETED (system implemented and working)
 - Logger file writing (Phase 8 polish)
 - OneDrive integration (Phase 7, after file operations work)
 
@@ -258,7 +258,7 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 **Tasks:**
 
 1. Virtual scrolling for photo grid (handle 100k+ photos)
-2. **Spiderify Refinement:** Adjust activation radius based on zoom level (currently too sensitive when zoomed out)
+2. **Spiderify Refinement:** Adjust activation radius based on zoom level (currently too sensitive when zoomed out) ✅ FIXED
 3. **Multi-threaded Import:** Use worker threads for EXIF/thumbnail generation.
 4. **Timeline Animation:** Visual "swooshes" connecting photos during playback.
 5. Incremental folder scanning (only new files)
@@ -402,5 +402,6 @@ pnpm -r test                           # Test all
 
 ## Backlog / Future Enhancements
 
-- **Timeline Animation Bug:** The end-bars of the timeline do not move with the bar during play mode
-- **About Section Updates:** Update the about section with the correct GitHub link and add a donate button
+- **Timeline Animation Bug:** The end-bars of the timeline do not move with the bar during play mode ✅ FIXED
+- **About Section Updates:** Update the about section with the correct GitHub link and add a donate button ✅ FIXED (GitHub link corrected, donation link removed pending proper sponsor setup)
+- **Settings Architecture Refactor:** Consolidate default values to single source of truth ✅ FIXED

@@ -75,8 +75,7 @@ export async function scanDirectory(
       await processImageFile(filePath, source, result);
       result.processedFiles++;
     } catch (error) {
-      const errorMsg = `Error processing ${filePath}: ${error}`;
-      console.error(errorMsg);
+      const errorMsg = `Error processing ${path.basename(filePath)}: ${error instanceof Error ? error.message : String(error)}`;
       result.errors.push(errorMsg);
     }
   }
@@ -115,7 +114,7 @@ async function findImageFiles(dirPath: string, includeSubdirectories: boolean): 
         }
       }
     } catch (error) {
-      console.warn(`Failed to scan directory ${currentPath}:`, error);
+      // Skip directories that can't be read (permissions, etc.)
     }
   }
 
@@ -151,7 +150,10 @@ async function processImageFile(
   const stats = await fs.stat(filePath);
 
   if (stats.size > MAX_FILE_SIZE) {
-    console.warn(`Skipping large file: ${filePath} (${stats.size} bytes)`);
+    // Track large files that were skipped
+    result.errors.push(
+      `Skipped large file (${Math.round(stats.size / 1024 / 1024)}MB): ${path.basename(filePath)}`
+    );
     return;
   }
 

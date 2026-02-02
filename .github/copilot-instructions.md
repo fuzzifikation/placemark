@@ -1,6 +1,6 @@
 # Copilot Instructions for Placemark
 
-Placemark is a privacy-first, local-first photo organizer. Read [README.md](../README.md) for scope, [docs/plan.md](../docs/plan.md) for roadmap, and [docs/technologydecisions.md](../docs/technologydecisions.md) for architecture.
+Privacy-first, local-first photo organizer. Read [README.md](../README.md) for scope, [docs/plan.md](../docs/plan.md) for roadmap.
 
 ## Technology Stack
 
@@ -55,6 +55,15 @@ pnpm -C packages/desktop dev      # Run desktop app with hot reload
 pnpm -C packages/desktop build    # Production build
 ```
 
+## Version Management
+
+**CRITICAL:** Always use the automated version update script - never manually edit version numbers.
+
+- **Update all versions:** `pnpm run version:update 0.4.0`
+- **Version locations:** Root package.json, packages/core/package.json, packages/desktop/package.json, AboutSection.tsx fallback
+- **Runtime reading:** App version is read from package.json at runtime via IPC (no hardcoded constants)
+- **Validation:** Script validates version format (x.y.z) and updates all locations atomically
+
 ## Privacy & Safety Principles
 
 - **No background operations:** User must explicitly trigger scans and operations
@@ -88,128 +97,60 @@ pnpm -C packages/desktop build    # Production build
 
 **CRITICAL:** Never apply "simple fixes" or workarounds for suspected cache/build issues.
 
-- **If you suspect stale cache:** Clear it properly with `Remove-Item` or rebuild
-- **If modules not found:** Reinstall dependencies with `pnpm install`
-- **If TypeScript errors seem stale:** Run `pnpm tsc --noEmit` to verify actual errors
-- **Never work around suspected benign errors** - fix the root cause
-- **Don't trust hunches** - verify with build tools (tsc, pnpm, etc.)
-
-**Proper fixes:**
+**If you suspect stale cache:**
 
 - Clear Vite cache: `Remove-Item -Recurse -Force packages/desktop/node_modules/.vite`
 - Clear build output: `Remove-Item -Recurse -Force packages/desktop/dist-electron`
 - Reinstall modules: `Remove-Item -Recurse -Force node_modules; pnpm install`
 - Rebuild native modules: `npx @electron/rebuild`
 
-**Never do:**
-
-- Add `// @ts-ignore` to bypass cache errors
-- Add explicit types to "fix" module resolution issues
-- Skip type checking because "it works in the browser"
+**Never work around suspected benign errors** - fix the root cause.
 
 ## Testing
 
 - **Unit tests (Vitest):** Core package filters, validators, query builders
 - **Integration tests:** EXIF extraction with sample photos, SQLite queries
-- **E2E tests (Playwright):** Full desktop app workflow, skip for now until Phase 3+
+- **E2E tests (Playwright):** Full desktop app workflow (Phase 8+)
 
 ## Code Review & Simplification Protocol
 
-**MANDATORY BEFORE EVERY COMMIT:**
+**MANDATORY BEFORE EVERY COMMIT:** Perform this review:
 
-When user requests a commit or says "let's commit", you MUST perform this full review:
+### 1. **Complexity Reduction**
 
-### 1. **Check for Complexity Reduction**
+- Remove unnecessary abstractions and duplicate logic
+- Prefer straightforward solutions over clever code
+- Keep functions under 50 lines
 
-- Remove unnecessary abstractions
-- Eliminate duplicate logic
-- Consolidate similar functions
-- Prefer straightforward code over "clever" solutions
-- Verify average function length is reasonable (< 50 lines ideal)
+### 2. **Logic Validation**
 
-### 2. **Check for Logic Errors**
-
+- Test edge cases and error handling
 - Verify data flow correctness
-- Test edge cases (empty inputs, null values, undefined)
-- Confirm error handling is complete
-- Validate assumptions about inputs/outputs
-- Check for off-by-one errors, null pointer issues
-- Verify loops and conditionals are correct
+- Check for off-by-one errors and null pointer issues
 
-### 3. **Check for Redundancies**
+### 3. **Security & Safety**
 
-- Look for duplicate code that could be extracted
-- Check for repeated patterns across files
-- Identify unnecessary re-fetching of data
-- Find redundant calculations or transformations
+- Validate file paths and user inputs
+- Ensure SQL queries use prepared statements
+- Verify IPC isolation and input sanitization
 
-### 4. **Check for Security Issues**
+### 4. **Code Quality**
 
-- **Path traversal:** Validate all file paths, especially user input
-- **SQL injection:** Confirm all queries use prepared statements
-- **XSS/injection:** Validate any data passed to renderer
-- **Unsafe IPC:** Verify contextBridge properly isolates main/renderer
-- **Input validation:** Check all user inputs are validated
-- **Error messages:** Ensure no sensitive data in error messages
-- **File operations:** Verify no unintended writes/deletes
+- Fix all TypeScript/ESLint errors and warnings
+- Remove unused imports and variables
+- No `any` types without justification
+- Extract magic numbers to named constants
 
-### 5. **Fix All Errors and Warnings**
+### 5. **Version Check**
 
-- Address all TypeScript errors
-- Resolve ESLint warnings
-- Check for unused imports/variables
-- Verify no `any` types unless justified with comment
-- Run `get_errors` tool to verify
-- **Check for package/dependency warnings:**
-  - Review `pnpm install` or `pnpm update` output for warnings
-  - Replace deprecated packages with recommended alternatives
-  - Resolve peer dependency conflicts when possible
-  - Update packages using deprecated subdependencies
-  - Do not ignore warnings if they can reasonably be resolved
+Use `pnpm run version:update x.y.z` for version bumps (patch: bug fixes, minor: features).
 
-### 6. **Check for Maintainability and Structure Improvements**
-
-- **Magic numbers:** Extract hardcoded values into named constants with clear intent
-- **Duplicate code:** Look for repeated blocks that could become helper functions
-- **Function purpose:** Each function should have a single clear responsibility
-- **Constants organization:** Group related constants together with comments
-- **Helper extraction:** Identify reusable logic that appears in multiple places
-- **Code structure:** Related functionality should be grouped and clearly separated
-- **Documentation:** Constants and helpers should explain "why" not just "what"
-
-### 7. **Final Simplification Pass**
-
-- Review with fresh eyes after fixes
-- Can any functions be shorter?
-- Are variable names clear and descriptive?
-- Can complex logic be extracted to well-named functions?
-- Is the code self-documenting?
-
-### 8. **Version Number Check**
-
-Evaluate if changes warrant a version bump:
-
-- **Patch bump (0.2.x → 0.2.x+1):** Bug fixes, minor improvements, refactoring
-- **Minor bump (0.x.0 → 0.x+1.0):** New features, significant UX changes
-- **No bump needed:** Documentation-only, comments, formatting
-
-**Version locations to update (all must match):**
-
-- `package.json` (root)
-- `packages/core/package.json`
-- `packages/desktop/package.json`
-- `packages/desktop/src/renderer/src/components/Settings/AboutSection.tsx` (APP_VERSION const)
-
-**Ask yourself:** Would a user notice these changes? If yes, bump the version.
-
-**Report findings explicitly:** State what you checked and what you found/fixed.
-
-**This is a simple app - keep code simple.** If a file exceeds 200 lines, consider splitting it.
+**Report findings explicitly. Keep code simple - split files over 200 lines.**
 
 ## Implementation Phase
 
-Currently in **Phase 1** (Local File Scanning + EXIF). See [plan.md](../plan.md) for 9-phase roadmap.
+Currently in **Phase 5** (File Operations - Execution). See [docs/plan.md](../docs/plan.md) for 9-phase roadmap.
 
-When in doubt, prioritize: **clarity > performance**, **safety > convenience**, **explicit > automatic**.
+Prioritize: **clarity > performance**, **safety > convenience**, **explicit > automatic**.
 
 Placemark should feel trustworthy, predictable, and calm.

@@ -16,12 +16,10 @@ export function useToast() {
   const addToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Date.now().toString();
     const toast: ToastItem = { id, message, type };
-    console.log('Adding toast:', toast);
     setToasts((prev) => [...prev, toast]);
   }, []);
 
   const removeToast = useCallback((id: string) => {
-    console.log('Removing toast:', id);
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 

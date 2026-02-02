@@ -21,7 +21,6 @@ export function OperationsPanel({ selectedPhotos, onClose, toast }: OperationsPa
   const [opType, setOpType] = useState<OperationType>('copy');
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSelectDest = async () => {
     try {
@@ -32,7 +31,7 @@ export function OperationsPanel({ selectedPhotos, onClose, toast }: OperationsPa
       }
     } catch (err) {
       console.error(err);
-      setError('Failed to select destination');
+      toast.error('Failed to select destination');
     }
   };
 
@@ -40,13 +39,12 @@ export function OperationsPanel({ selectedPhotos, onClose, toast }: OperationsPa
     if (!destPath || selectedPhotos.length === 0) return;
 
     setLoading(true);
-    setError(null);
     try {
       const result = await window.api.ops.generateDryRun(selectedPhotos, destPath, opType);
       setDryRunResult(result);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to generate preview');
+      toast.error(err.message || 'Failed to generate preview');
     } finally {
       setLoading(false);
     }
@@ -206,19 +204,6 @@ export function OperationsPanel({ selectedPhotos, onClose, toast }: OperationsPa
               </div>
             </div>
           </div>
-
-          {error && (
-            <div
-              style={{
-                padding: '1rem',
-                backgroundColor: '#fee2e2',
-                color: '#991b1b',
-                borderRadius: '4px',
-              }}
-            >
-              {error}
-            </div>
-          )}
 
           {/* Action Button: Preview */}
           {!dryRunResult && (

@@ -67,6 +67,8 @@ export interface OperationsAPI {
 
 export interface SystemAPI {
   openAppDataFolder: () => Promise<void>;
+  getAppVersion: () => Promise<string>;
+  openExternal: (url: string) => Promise<void>;
 }
 
 /**

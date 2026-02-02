@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MapView, SelectionMode } from './components/MapView';
 import { Timeline } from './components/Timeline';
-import { Settings, AppSettings } from './components/Settings';
+import { Settings, AppSettings, DEFAULT_SETTINGS } from './components/Settings';
 import { OperationsPanel } from './components/Operations/OperationsPanel';
 import { FloatingHeader } from './components/FloatingHeader';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
@@ -50,15 +50,7 @@ function App() {
   } | null>(null);
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('placemark-settings');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          clusterRadius: 30,
-          clusterMaxZoom: 14,
-          mapTransitionDuration: 200,
-          autoZoomDuringPlay: true,
-          timelineUpdateInterval: 100,
-        };
+    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
   });
 
   const [selectionMode, setSelectionMode] = useState<SelectionMode>('pan');
@@ -80,7 +72,26 @@ function App() {
   }, [photoData.selection, photoData.allPhotos, photoData.mapPhotos]);
 
   const handleScanFolder = async () => {
-    await folderScan.scanFolder(photoData.loadPhotos);
+    try {
+      const result = await folderScan.scanFolder(photoData.loadPhotos);
+
+      // Show success or error toast based on result
+      if (result && !result.canceled) {
+        if (result.errors && result.errors.length > 0) {
+          toast.error(
+            `Scan completed with ${result.errors.length} error(s). Some files could not be processed.`
+          );
+        } else if (result.photosWithLocation === 0) {
+          toast.info('No photos with location data found in this folder.');
+        } else {
+          toast.success(
+            `Found ${result.photosWithLocation} photo${result.photosWithLocation !== 1 ? 's' : ''} with location data.`
+          );
+        }
+      }
+    } catch (error) {
+      toast.error(`Failed to scan folder: ${error}`);
+    }
   };
 
   const handleTimelineToggle = () => {
@@ -252,7 +263,11 @@ function App() {
         )}
 
         {/* Toast Notifications */}
-        <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
+        <ToastContainer
+          toasts={toast.toasts}
+          removeToast={toast.removeToast}
+          duration={settings.toastDuration}
+        />
       </div>
     );
   }

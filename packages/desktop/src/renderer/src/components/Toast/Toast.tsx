@@ -9,10 +9,10 @@ interface ToastProps {
   message: string;
   type: 'success' | 'error' | 'info';
   onClose: () => void;
-  duration?: number; // ms - defaults to 4000
+  duration: number; // ms - from settings.toastDuration
 }
 
-export function Toast({ message, type, onClose, duration = 4000 }: ToastProps) {
+export function Toast({ message, type, onClose, duration }: ToastProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {

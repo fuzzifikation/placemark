@@ -2,11 +2,20 @@
  * AboutSection - App info and legal links
  */
 
+import { useState, useEffect } from 'react';
 import { type Theme, getThemeColors } from '../../theme';
 import { SettingsSection } from './SettingsSection';
 
-// App version - should be synced with package.json
-const APP_VERSION = '0.3.0';
+// Get app version from package.json
+const getAppVersion = async (): Promise<string> => {
+  try {
+    // In production, this will be available via Electron
+    return (await window.api?.system?.getAppVersion?.()) || '0.3.2';
+  } catch {
+    // Fallback for development
+    return '0.3.3';
+  }
+};
 
 interface AboutSectionProps {
   theme: Theme;
@@ -14,12 +23,23 @@ interface AboutSectionProps {
 
 export function AboutSection({ theme }: AboutSectionProps) {
   const colors = getThemeColors(theme);
+  const [appVersion, setAppVersion] = useState<string>('0.3.2');
 
-  // Note: openExternal is not in the preload API yet
-  // For now, we'll just show the links as text
-  const handleOpenLink = (url: string) => {
-    // Open in default browser
-    window.open(url, '_blank', 'noopener,noreferrer');
+  useEffect(() => {
+    getAppVersion()
+      .then(setAppVersion)
+      .catch(() => setAppVersion('0.3.2'));
+  }, []);
+
+  // Open links in system browser
+  const handleOpenLink = async (url: string) => {
+    try {
+      await window.api?.system?.openExternal?.(url);
+    } catch (error) {
+      console.error('Failed to open external link:', error);
+      // Fallback to window.open if IPC fails
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (
@@ -51,7 +71,7 @@ export function AboutSection({ theme }: AboutSectionProps) {
               color: colors.textMuted,
             }}
           >
-            Version {APP_VERSION}
+            Version {appVersion}
           </p>
         </div>
 
@@ -77,10 +97,10 @@ export function AboutSection({ theme }: AboutSectionProps) {
           }}
         >
           <a
-            href="https://github.com/placemark/placemark"
+            href="https://github.com/fuzzifikation/placemark"
             onClick={(e) => {
               e.preventDefault();
-              handleOpenLink('https://github.com/placemark/placemark');
+              handleOpenLink('https://github.com/fuzzifikation/placemark');
             }}
             style={{
               color: colors.primary,
@@ -95,10 +115,10 @@ export function AboutSection({ theme }: AboutSectionProps) {
             <span>📦</span> GitHub
           </a>
           <a
-            href="https://github.com/placemark/placemark/blob/main/LICENSE"
+            href="https://github.com/fuzzifikation/placemark/blob/main/LICENSE"
             onClick={(e) => {
               e.preventDefault();
-              handleOpenLink('https://github.com/placemark/placemark/blob/main/LICENSE');
+              handleOpenLink('https://github.com/fuzzifikation/placemark/blob/main/LICENSE');
             }}
             style={{
               color: colors.primary,

@@ -43,7 +43,7 @@ export async function extractExif(filePath: string): Promise<ExifData> {
 
     return result;
   } catch (error) {
-    console.warn(`Failed to extract EXIF from ${filePath}:`, error);
+    // Silently skip files with unreadable EXIF data
     return {};
   }
 }

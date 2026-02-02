@@ -14,6 +14,7 @@ import { addHeatmapLayer, addClusterLayers } from './Map/mapLayers';
 import { useLassoSelection } from './Map/useLassoSelection';
 import { useMapHover } from './Map/useMapHover';
 import { useSpider, createSpiderLegs, applySpiderOffset } from './Map/useSpider';
+import { getDefaultSpiderSettings } from './Settings';
 
 export type SelectionMode = 'pan' | 'lasso';
 
@@ -27,26 +28,17 @@ export interface SpiderSettings {
   clearZoom: number; // auto-clear spider when zooming below this level
 }
 
-const DEFAULT_SPIDER_SETTINGS: SpiderSettings = {
-  overlapTolerance: 20, // pixels
-  radius: 60, // pixels
-  animationDuration: 300,
-  triggerZoom: 17,
-  collapseMargin: 30, // pixels
-  clearZoom: 15,
-};
-
 interface MapViewProps {
   photos: Photo[];
   onPhotoClick: (photo: Photo) => void;
   onViewChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
-  clusteringEnabled?: boolean;
-  clusterRadius?: number;
-  clusterMaxZoom?: number;
-  transitionDuration?: number;
-  maxZoom?: number;
-  tileMaxZoom?: number;
-  padding?: number;
+  clusteringEnabled: boolean;
+  clusterRadius: number;
+  clusterMaxZoom: number;
+  transitionDuration: number;
+  maxZoom: number;
+  tileMaxZoom: number;
+  padding: number;
   autoFit?: boolean;
   theme?: Theme;
   showHeatmap?: boolean;
@@ -61,13 +53,13 @@ interface MapViewProps {
 export function MapView({
   photos,
   onPhotoClick,
-  clusteringEnabled = true,
-  clusterRadius = 30,
-  clusterMaxZoom = 16,
-  transitionDuration = 200,
-  maxZoom = 15,
-  tileMaxZoom = 18,
-  padding = 50,
+  clusteringEnabled,
+  clusterRadius,
+  clusterMaxZoom,
+  transitionDuration,
+  maxZoom,
+  tileMaxZoom,
+  padding,
   autoFit = true,
   theme = 'light',
   showHeatmap = false,
@@ -76,7 +68,7 @@ export function MapView({
   selectedIds,
   onSelectionChange,
   selectionMode = 'pan',
-  spiderSettings = DEFAULT_SPIDER_SETTINGS,
+  spiderSettings = getDefaultSpiderSettings(),
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -214,7 +206,7 @@ export function MapView({
           });
         }
       } catch (err) {
-        console.warn('Failed to set feature state', err);
+        // Silently handle feature state errors (e.g., source not yet loaded)
       }
     }
   }, [selectedIds, mapLoaded, photos]); // Trigger when source data likely changed
@@ -358,7 +350,7 @@ export function MapView({
           zoom: targetZoom,
         });
       } catch (err) {
-        console.warn('Failed to get cluster expansion zoom:', err);
+        // Silently handle cluster expansion errors
       }
     });
 

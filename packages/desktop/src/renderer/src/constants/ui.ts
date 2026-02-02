@@ -43,23 +43,6 @@ export const Z_INDEX = {
   PHOTO_PREVIEW: 1000,
 } as const;
 
-export const MAP_CONSTANTS = {
-  DEFAULT_ZOOM: 15,
-  MIN_ZOOM: 2,
-  MAX_ZOOM: 20,
-  DEFAULT_CLUSTER_RADIUS: 30,
-  DEFAULT_CLUSTER_MAX_ZOOM: 14,
-  DEFAULT_TRANSITION_DURATION: 200,
-  DEFAULT_PADDING: 50,
-} as const;
-
-export const TIMELINE_CONSTANTS = {
-  DEFAULT_UPDATE_INTERVAL: 100, // milliseconds
-  MIN_PLAY_SPEED: 1,
-  MAX_PLAY_SPEED: 8,
-  DEFAULT_PLAY_SPEED: 1,
-} as const;
-
 export const THUMBNAIL_CONSTANTS = {
   SIZE: 400, // pixels (single size for all contexts)
   QUALITY: 80, // JPEG quality

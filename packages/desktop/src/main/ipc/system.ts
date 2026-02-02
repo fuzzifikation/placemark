@@ -1,5 +1,6 @@
-
 import { ipcMain, shell } from 'electron';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 export function registerSystemHandlers() {
   ipcMain.handle('system:openExternal', async (_event, url: string) => {
@@ -8,14 +9,25 @@ export function registerSystemHandlers() {
       await shell.openExternal(url);
     }
   });
-  
+
   ipcMain.handle('system:openAppDataFolder', async () => {
     // This handler might already exist in photos.ts or similar, moving it here is cleaner for future refactoring
     // But for now, we'll just add the external opener
-    const appDataPath = process.env.PORTABLE_EXECUTABLE_DIR 
+    const appDataPath = process.env.PORTABLE_EXECUTABLE_DIR
       ? require('path').join(process.env.PORTABLE_EXECUTABLE_DIR, 'placemark_data')
       : require('electron').app.getPath('userData');
-      
+
     await shell.openPath(appDataPath);
+  });
+
+  ipcMain.handle('system:getAppVersion', async () => {
+    try {
+      const packageJsonPath = join(process.cwd(), '../../../package.json');
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      return packageJson.version;
+    } catch (error) {
+      console.error('Failed to read app version:', error);
+      return 'unknown';
+    }
   });
 }

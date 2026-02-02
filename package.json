@@ -1,7 +1,7 @@
 {
   "name": "placemark",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.3",
   "description": "Privacy-first, local-first photo organizer",
   "author": "Placemark",
   "homepage": "https://github.com/fuzzifikation/placemark",
@@ -9,7 +9,8 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "dev": "pnpm -C packages/desktop dev"
+    "dev": "pnpm -C packages/desktop dev",
+    "version:update": "node scripts/update-version.js"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -20,7 +21,8 @@
     "typescript": "^5.9.3"
   },
   "resolutions": {
-    "tar": "^7.5.7",
-    "esbuild": "^0.25.0"
+    "tar": "^7.4.3",
+    "esbuild": "^0.25.0",
+    "@electron/rebuild": "^3.2.10"
   }
 }

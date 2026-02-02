@@ -17,7 +17,7 @@ export interface SpiderConfig {
   animationDuration: number; // ms
 }
 
-// Default configuration
+// Internal fallback - actual values come from Settings.DEFAULT_SETTINGS
 const DEFAULT_CONFIG: SpiderConfig = {
   overlapTolerance: 20, // pixels
   radius: 60, // pixels

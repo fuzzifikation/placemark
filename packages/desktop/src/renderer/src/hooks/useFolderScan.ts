@@ -49,7 +49,6 @@ export function useFolderScan() {
 
       return scanResult;
     } catch (error) {
-      console.error('Scan failed:', error);
       setResult({ error: String(error) });
       throw error;
     } finally {

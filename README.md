@@ -94,6 +94,23 @@ pnpm install
 pnpm dev
 ```
 
+### Version Management
+
+To update the app version across all files:
+
+```bash
+pnpm run version:update 0.3.4
+```
+
+This updates:
+
+- Root `package.json`
+- `packages/core/package.json`
+- `packages/desktop/package.json`
+- Fallback version in `AboutSection.tsx`
+
+The app version is read from `package.json` at runtime, so no rebuild is needed for version changes.
+
 ### Documentation
 
 - [docs/plan.md](docs/plan.md) — Implementation roadmap
