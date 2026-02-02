@@ -5,31 +5,23 @@ All notable changes to Placemark will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2026-01-31
 
 ### Added
 
-- Core package filtering modules (`geographic.ts`, `temporal.ts`, `combined.ts`)
-- Storage interface (`IStorage.ts`) for platform-agnostic database operations
-- UI constants module for centralized styling values
-- Type definitions file (`preload.d.ts`) for Window API
-- `FloatingHeader` component extracted from App.tsx
-- `PhotoPreviewModal` component extracted from App.tsx
-- Logger service for structured logging
+- Enhanced UI visual feedback with hover effects and animations across all interactive elements
+- FloatingHeader buttons now scale and change appearance on hover for better user experience
+- Map marker hover states using MapLibre feature-state API for dynamic styling
+- Timeline slider thumbs with drag feedback animations and improved responsiveness
 
 ### Changed
 
-- **BREAKING:** Refactored `usePhotoData` hook to use core package filters
-- Reduced App.tsx complexity from 737 lines to 313 lines (58% reduction)
-- Core package now exports filtering logic for mobile compatibility
-- Improved code organization with single-responsibility components
+- Timeline thumbs reverted to simple vertical bars for cleaner, more consistent design
+- Improved type safety by replacing `any` types with proper `ThemeColors` interface
 
-### Improved
+### Fixed
 
-- Mobile-readiness: All filtering logic now in platform-agnostic core package
-- Maintainability: Eliminated 420+ lines through better component structure
-- Type safety: Centralized Window API types with proper TypeScript definitions
-- Code reusability: Eliminated magic numbers with constants module
+- Type safety issues in FloatingHeader component (colors prop typing)
 
 ## [0.2.0] - 2026-01-28
 
@@ -68,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SQLite storage for metadata
 - Timeline view with date range filtering
 
-[Unreleased]: https://github.com/fuzzifikation/placemark/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/fuzzifikation/placemark/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/fuzzifikation/placemark/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fuzzifikation/placemark/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fuzzifikation/placemark/releases/tag/v0.1.0

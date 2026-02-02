@@ -399,3 +399,8 @@ pnpm -r test                           # Test all
 - Handle 100,000 photos without performance degradation
 - Package size <150MB
 - Cold start <3 seconds
+
+## Backlog / Future Enhancements
+
+- **Timeline Animation Bug:** The end-bars of the timeline do not move with the bar during play mode
+- **About Section Updates:** Update the about section with the correct GitHub link and add a donate button

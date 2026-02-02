@@ -1,6 +1,6 @@
 {
   "name": "@placemark/core",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "private": true,
   "description": "Platform-agnostic core logic for Placemark",
   "main": "./dist/index.js",

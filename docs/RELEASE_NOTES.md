@@ -1,8 +1,33 @@
 # Release Notes
 
-## v0.2.1 - Architectural Improvements (Unreleased)
+## v0.3.0 - UI Polish & Visual Feedback (2026-01-31)
 
-🏗️ **Major code refactoring** to prepare for mobile platform support and improve maintainability.
+🎨 **Major UI enhancements** with comprehensive visual feedback improvements and polished interactions.
+
+### ✨ New Features
+
+- **Enhanced Visual Feedback:** All interactive elements now provide smooth hover effects and animations
+- **FloatingHeader Animations:** Buttons scale and change appearance on hover for better user experience
+- **Map Marker Hover States:** Dynamic marker styling using MapLibre's feature-state API
+- **Timeline Slider Improvements:** Thumbs with drag feedback animations and improved responsiveness
+- **Clean Timeline Design:** Reverted to simple vertical bars for consistent, professional appearance
+
+### 🔧 Technical Improvements
+
+- **Type Safety:** Fixed type safety issues by replacing `any` types with proper `ThemeColors` interface
+- **Performance:** Optimized hover state management for smooth 60fps animations
+- **Accessibility:** Improved focus states and keyboard navigation support
+
+### 🎯 User Experience
+
+- **Intuitive Interactions:** Clear visual cues for all clickable elements
+- **Smooth Animations:** Cubic-bezier easing functions for professional feel
+- **Consistent Design:** Unified hover effects across the entire application
+- **Responsive Feedback:** Immediate visual response to user actions
+
+---
+
+## v0.2.1 - Architectural Improvements (Unreleased)
 
 ### 🔧 Technical Improvements
 
