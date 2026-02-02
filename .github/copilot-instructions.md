@@ -59,7 +59,11 @@ pnpm -C packages/desktop build    # Production build
 
 **CRITICAL:** Always use the automated version update script - never manually edit version numbers.
 
-- **Update all versions:** `pnpm run version:update 0.4.0`
+**Workflow for version bumps:**
+1. **Update RELEASE_NOTES.md first** with the new version entry
+2. Run `pnpm run version:update x.y.z` (patch: bug fixes, minor: features, major: breaking changes)
+3. Commit everything together with a descriptive message
+
 - **Version locations:** Root package.json, packages/core/package.json, packages/desktop/package.json, AboutSection.tsx fallback
 - **Runtime reading:** App version is read from package.json at runtime via IPC (no hardcoded constants)
 - **Validation:** Script validates version format (x.y.z) and updates all locations atomically
