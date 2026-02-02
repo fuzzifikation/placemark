@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Photo, DryRunResult, OperationType } from '@placemark/core';
 import { DryRunPreview } from './DryRunPreview';
 import { SourceSummary } from './SourceSummary';
@@ -7,20 +7,53 @@ import { useTheme } from '../../hooks/useTheme';
 interface OperationsPanelProps {
   selectedPhotos: Photo[];
   onClose: () => void;
+  onRefreshPhotos: () => Promise<void>;
   toast: {
     success: (message: string) => void;
     error: (message: string) => void;
     info: (message: string) => void;
   };
-  // We can use the hook inside, no need to pass theme if we use useTheme
 }
 
-export function OperationsPanel({ selectedPhotos, onClose, toast }: OperationsPanelProps) {
+interface BatchInfo {
+  id: number;
+  operation: OperationType;
+  fileCount: number;
+  timestamp: number;
+}
+
+interface UndoState {
+  canUndo: boolean;
+  batchInfo?: BatchInfo;
+}
+
+export function OperationsPanel({
+  selectedPhotos,
+  onClose,
+  onRefreshPhotos,
+  toast,
+}: OperationsPanelProps) {
   const { colors, theme } = useTheme();
   const [destPath, setDestPath] = useState<string | null>(null);
   const [opType, setOpType] = useState<OperationType>('copy');
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [executing, setExecuting] = useState(false);
+  const [undoState, setUndoState] = useState<UndoState>({ canUndo: false });
+
+  // Check undo availability on mount and after operations
+  const checkUndoState = async () => {
+    try {
+      const state = await window.api.ops.canUndo();
+      setUndoState(state);
+    } catch (err) {
+      console.error('Failed to check undo state:', err);
+    }
+  };
+
+  useEffect(() => {
+    checkUndoState();
+  }, []);
 
   const handleSelectDest = async () => {
     try {
@@ -51,8 +84,56 @@ export function OperationsPanel({ selectedPhotos, onClose, toast }: OperationsPa
     }
   };
 
-  const handleExecute = () => {
-    toast.info('Execution coming in Phase 5!');
+  const handleExecute = async () => {
+    if (!dryRunResult) return;
+
+    const pendingCount = dryRunResult.operations.filter((op) => op.status === 'pending').length;
+    if (pendingCount === 0) {
+      toast.error('No pending operations to execute');
+      return;
+    }
+
+    setExecuting(true);
+    try {
+      const result = await window.api.ops.execute();
+      toast.success(result.message);
+      setDryRunResult(null);
+      await checkUndoState();
+      // Refresh photos to get updated paths (important for move operations)
+      if (opType === 'move') {
+        await onRefreshPhotos();
+      }
+    } catch (err: any) {
+      console.error(err);
+      // Handle conflict errors specially
+      if (err.type === 'conflict') {
+        toast.error(err.message);
+      } else {
+        toast.error(err.message || 'Operation failed');
+      }
+    } finally {
+      setExecuting(false);
+    }
+  };
+
+  const handleUndo = async () => {
+    try {
+      const wasMoveOp = undoState.batchInfo?.operation === 'move';
+      const result = await window.api.ops.undo();
+      if (result.success) {
+        toast.success(result.message);
+        await checkUndoState();
+        // Refresh photos to restore original paths (for move undo)
+        if (wasMoveOp) {
+          await onRefreshPhotos();
+        }
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Undo failed');
+    }
   };
 
   const totalSize = selectedPhotos.reduce((acc, p) => acc + p.fileSize, 0);
@@ -269,18 +350,63 @@ export function OperationsPanel({ selectedPhotos, onClose, toast }: OperationsPa
                   </button>
                   <button
                     onClick={handleExecute}
+                    disabled={
+                      executing ||
+                      dryRunResult.operations.filter((op) => op.status === 'pending').length === 0
+                    }
                     style={{
                       ...styles.actionBtn,
-                      backgroundColor: '#6b7280', // Gray
-                      cursor: 'not-allowed',
-                      opacity: 0.7,
+                      backgroundColor: executing ? colors.textMuted : '#22c55e',
+                      cursor: executing ? 'not-allowed' : 'pointer',
                     }}
-                    disabled={true}
-                    title="File operations are coming in v0.4.0"
                   >
-                    Execute (Coming Soon)
+                    {executing ? 'Executing...' : `Execute ${opType === 'copy' ? 'Copy' : 'Move'}`}
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Undo Section - visible when batch undo is available */}
+          {undoState.canUndo && undoState.batchInfo && (
+            <div
+              style={{
+                borderTop: `1px solid ${colors.border}`,
+                paddingTop: '1rem',
+                marginTop: '0.5rem',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem',
+                  backgroundColor: theme === 'dark' ? 'rgba(255, 193, 7, 0.1)' : '#fef3c7',
+                  borderRadius: '6px',
+                  border: `1px solid ${theme === 'dark' ? 'rgba(255, 193, 7, 0.3)' : '#fcd34d'}`,
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>
+                    Last operation: {undoState.batchInfo.operation} ({undoState.batchInfo.fileCount}{' '}
+                    files)
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: colors.textSecondary }}>
+                    {new Date(undoState.batchInfo.timestamp).toLocaleString()}
+                  </span>
+                </div>
+                <button
+                  onClick={handleUndo}
+                  style={{
+                    ...styles.actionBtn,
+                    backgroundColor: '#f59e0b',
+                    fontSize: '0.875rem',
+                    padding: '0.4rem 1rem',
+                  }}
+                >
+                  Undo Batch
+                </button>
               </div>
             </div>
           )}

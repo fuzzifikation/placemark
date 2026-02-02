@@ -52,6 +52,18 @@ export function SourceSummary({ photos }: SourceSummaryProps) {
     });
   }, [photos]);
 
+  const handleShowInFolder = async (folderPath: string) => {
+    try {
+      // Get all photos from this folder
+      const folderPhotos = photos.filter((photo) => getDirname(photo.path) === folderPath);
+      const filePaths = folderPhotos.map((photo) => photo.path);
+      await window.api.photos.showMultipleInFolder(filePaths);
+    } catch (error) {
+      console.error('Failed to show files in folder:', error);
+      // Could show a toast here, but for now just log
+    }
+  };
+
   const folderCount = stats.length;
   const isMultipleFolders = folderCount > 1;
   const COLLAPSE_LIMIT = 5;
@@ -88,19 +100,32 @@ export function SourceSummary({ photos }: SourceSummaryProps) {
     listItem: {
       display: 'flex',
       justifyContent: 'space-between',
-      padding: '0.25rem 0',
+      alignItems: 'center',
+      padding: '0.5rem 0',
       borderBottom: `1px dashed ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
     },
     path: {
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap' as const,
+      flex: 1,
       marginRight: '1rem',
     },
     count: {
       fontWeight: 600,
       color: colors.primary,
       flexShrink: 0,
+      marginRight: '0.75rem',
+    },
+    showBtn: {
+      padding: '0.2rem 0.5rem',
+      backgroundColor: colors.primary,
+      color: 'white',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '0.75rem',
+      opacity: 0.8,
     },
     toggleBtn: {
       background: 'none',
@@ -142,7 +167,18 @@ export function SourceSummary({ photos }: SourceSummaryProps) {
             <span style={styles.path} title={stat.path}>
               📂 {stat.path}
             </span>
-            <span style={styles.count}>{stat.count}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={styles.count}>{stat.count}</span>
+              <button
+                onClick={() => handleShowInFolder(stat.path)}
+                style={styles.showBtn}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
+                title={`Show selected photos in folder`}
+              >
+                📂 Show
+              </button>
+            </div>
           </li>
         ))}
       </ul>

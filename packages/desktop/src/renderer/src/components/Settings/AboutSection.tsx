@@ -84,7 +84,7 @@ export function AboutSection({ theme }: AboutSectionProps) {
         {/* Privacy Guarantees */}
         <div
           style={{
-            backgroundColor: colors.backgroundAlt,
+            backgroundColor: colors.surfaceHover,
             padding: '0.75rem',
             borderRadius: '6px',
             marginBottom: '1rem',
@@ -98,8 +98,8 @@ export function AboutSection({ theme }: AboutSectionProps) {
               lineHeight: 1.4,
             }}
           >
-            🔒 <strong>No Server Backend:</strong> Placemark does not run a server and does not
-            upload photos or metadata to Placemark-maintained infrastructure.
+            <strong>No Server Backend:</strong> Placemark does not run a server and does not upload
+            photos or metadata to Placemark-maintained infrastructure.
           </p>
           <p
             style={{
@@ -109,8 +109,8 @@ export function AboutSection({ theme }: AboutSectionProps) {
               lineHeight: 1.4,
             }}
           >
-            💾 <strong>Local-Only Storage:</strong> All indexing and thumbnails are stored locally
-            on your device.
+            <strong>Local-Only Storage:</strong> All indexing and thumbnails are stored locally on
+            your device.
           </p>
           <p
             style={{
@@ -120,8 +120,8 @@ export function AboutSection({ theme }: AboutSectionProps) {
               lineHeight: 1.4,
             }}
           >
-            🗺️ <strong>Map Tiles Only:</strong> Map tiles are loaded from the internet
-            (OpenStreetMap), but no photo data or location information is transmitted.
+            <strong>Map Tiles Only:</strong> Map tiles are loaded from the internet (OpenStreetMap),
+            but no photo data or location information is transmitted.
           </p>
         </div>
 

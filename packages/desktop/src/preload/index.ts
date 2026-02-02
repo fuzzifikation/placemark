@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('api', {
     getCountWithLocation: () => ipcRenderer.invoke('photos:getCountWithLocation'),
     openInViewer: (photoId: number) => ipcRenderer.invoke('photos:openInViewer', photoId),
     showInFolder: (photoId: number) => ipcRenderer.invoke('photos:showInFolder', photoId),
+    showMultipleInFolder: (filePaths: string[]) =>
+      ipcRenderer.invoke('photos:showMultipleInFolder', filePaths),
     getDatabaseStats: () => ipcRenderer.invoke('photos:getDatabaseStats'),
     clearDatabase: () => ipcRenderer.invoke('photos:clearDatabase'),
     onScanProgress: (callback: (progress: any) => void) => {
@@ -30,6 +32,14 @@ contextBridge.exposeInMainWorld('api', {
     selectDestination: () => ipcRenderer.invoke('ops:selectDestination'),
     generateDryRun: (photoIds: number[], destPath: string, opType: string) =>
       ipcRenderer.invoke('ops:generateDryRun', photoIds, destPath, opType),
+    execute: () => ipcRenderer.invoke('ops:execute'),
+    undo: () => ipcRenderer.invoke('ops:undo'),
+    canUndo: () => ipcRenderer.invoke('ops:canUndo'),
+    onProgress: (callback: (progress: any) => void) => {
+      const listener = (_event: any, progress: any) => callback(progress);
+      ipcRenderer.on('ops:progress', listener);
+      return () => ipcRenderer.removeListener('ops:progress', listener);
+    },
   },
   system: {
     openAppDataFolder: () => ipcRenderer.invoke('system:openAppDataFolder'),

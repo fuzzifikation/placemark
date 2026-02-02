@@ -4,14 +4,13 @@ Step-by-step roadmap for building Placemark. See [ARCHITECTURE.md](ARCHITECTURE.
 
 Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
 
-**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | ✅ Phase 4A Complete | ⚙️ Phase 5 - Next
+**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | ✅ Phase 4A Complete | ✅ Phase 5 Complete | ⚙️ Phase 6 - Next
 
 **Recent Work:**
 
+- **Phase 5 Complete (v0.5.0):** Full file operations execution with atomic batch semantics, undo support, and database sync. Copy/move operations fully functional with conflict detection, rollback on failure, and OS trash integration for undo.
 - **Phase 4A Complete (v0.2.2):** Major code quality refactoring. Settings.tsx reduced from 854→388 lines (4 panels extracted). MapView.tsx reduced from 868→280 lines (3 hooks extracted). Zero TypeScript errors, all files under 400 lines.
 - **v0.2.2 (Jan 30, 2026):** Code quality improvements: Refactored Settings.tsx (719→357 lines) and MapView.tsx (664→534 lines) by extracting hooks (useMapHover, useSpiderfy). Fixed type safety issues, implemented spiderify for overlapping markers.
-- **v0.2.1 (Jan 29, 2026):** Major architectural refactoring for mobile compatibility. Extracted filtering logic to core package, created storage interface, reduced App.tsx from 737 to 313 lines. Project now ready for React Native port (Phase 9).
-- **v0.2.0 (Jan 29, 2026):** Implemented manual Lasso Selection for photos. Users can now toggle into selection mode, draw a lasso to select multiple photos, and see the selection count in the UI. Refactored `MapView` to use `useLassoSelection` hook.
 
 ---
 
@@ -161,32 +160,35 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 
 ---
 
-### Phase 5: File Operations - Execution
+### Phase 5: File Operations - Execution ✅ COMPLETE
 
 **Goal:** Actually copy/move files with progress tracking.
 
-**Tasks:**
+**Completed Tasks:**
 
-1. Implement `packages/core/src/operations/engine.ts`
-2. Add operation_log table to database
-3. Create progress bar UI with cancel button
-4. Implement file copy/move in main process
-5. Stream progress updates via IPC
-6. Handle errors gracefully (log, skip, retry)
-7. Transaction support: mark operations as pending/completed/failed
-8. **Duplicate Detection:** Background task to identify duplicates (hash/size) and offer cleanup options.
+1. ✅ Implemented `packages/desktop/src/main/services/operations.ts` with atomic batch execution
+2. ✅ Added `operation_batch` and `operation_batch_files` tables (migrations v3, v4)
+3. ✅ Progress tracking with file-by-file updates via IPC
+4. ✅ File copy/move with cross-device support and verification
+5. ✅ Batch undo with OS trash integration (Recycle Bin/Trash)
+6. ✅ Database synchronization: move operations update photo paths
+7. ✅ UI refresh after move/undo operations
+8. ✅ Pre-flight validation: conflict detection, same-file skip
+9. ✅ Rollback on failure: completed files restored if mid-batch error
+10. ✅ Session-based undo: history clears on app restart
 
 **Testing:**
 
-- [ ] Copy operation creates files in destination
-- [ ] Move operation removes source files
-- [ ] Progress bar updates smoothly
-- [ ] Cancel mid-operation stops cleanly
-- [ ] Failed operations are logged with errors
-- [ ] No partial/corrupted files on failure
-- [ ] Can retry failed operations
+- [x] Copy operation creates files in destination
+- [x] Move operation removes source files
+- [x] Progress updates in real-time
+- [x] Conflict detection prevents overwrites
+- [x] Failed operations roll back cleanly
+- [x] No partial/corrupted files on failure
+- [x] Undo restores files (copy→trash, move→original location)
+- [x] Database stays in sync with filesystem after move
 
-**Deliverable:** Fully functional file copy/move.
+**Deliverable:** ✅ Fully functional file copy/move with undo support.
 
 ---
 
@@ -397,3 +399,15 @@ pnpm -r test                           # Test all
 - **Timeline Animation Bug:** The end-bars of the timeline do not move with the bar during play mode ✅ FIXED
 - **About Section Updates:** Update the about section with the correct GitHub link and add a donate button ✅ FIXED (GitHub link corrected, donation link removed pending proper sponsor setup)
 - **Settings Architecture Refactor:** Consolidate default values to single source of truth ✅ FIXED
+- **Moved Photos Scope Decision:** When photos are moved outside originally scanned folders, decide behavior:
+  - Option A: Keep tracking (current behavior) - database-centric, photos stay on map
+  - Option B: Remove from database - folder-centric, clear but loses user's work
+  - Option C (Recommended): Hybrid - keep tracking but mark as "external", show indicator in UI, offer to add destination as source or clean up
+  - Requires UX decision before implementing
+- **Operation History / Tracing UI:** Add visual history of file operations with export capability
+  - Currently: Archived batches persist in database indefinitely, no UI to view them
+  - Proposed: Settings panel showing past operations with "Export to JSON" option
+  - Challenge: Cannot guarantee files still exist/unchanged after days/weeks - history is informational only
+  - Value proposition: Transparency ("where did my photos go?"), audit trail, differentiates from file explorer
+  - Implementation: Auto-prune after configurable period (30 days default), JSON export for long-term records
+  - Requires decision: Is operation history a core feature or unnecessary database bloat?

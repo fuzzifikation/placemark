@@ -46,8 +46,9 @@ export interface PhotosAPI {
   ) => Promise<Photo[]>;
   getDateRange: () => Promise<{ minDate: number | null; maxDate: number | null }>;
   getCountWithLocation: () => Promise<number>;
-  openInViewer: (path: string) => Promise<void>;
-  showInFolder: (path: string) => Promise<void>;
+  openInViewer: (photoId: number) => Promise<void>;
+  showInFolder: (photoId: number) => Promise<void>;
+  showMultipleInFolder: (filePaths: string[]) => Promise<void>;
   getDatabaseStats: () => Promise<DatabaseStats>;
   clearDatabase: () => Promise<void>;
   onScanProgress: (callback: (progress: ScanProgress) => void) => () => void;
@@ -62,7 +63,7 @@ export interface ThumbnailsAPI {
 
 export interface OperationsAPI {
   selectDestination: () => Promise<string | null>;
-  generateDryRun: (photos: Photo[], destPath: string, opType: string) => Promise<any>;
+  generateDryRun: (photoIds: number[], destPath: string, opType: string) => Promise<any>;
 }
 
 export interface SystemAPI {

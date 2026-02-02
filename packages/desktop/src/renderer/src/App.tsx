@@ -253,6 +253,7 @@ function App() {
           <OperationsPanel
             selectedPhotos={photosForOperations}
             onClose={() => setShowOperations(false)}
+            onRefreshPhotos={photoData.loadPhotos}
             toast={toast}
           />
         )}

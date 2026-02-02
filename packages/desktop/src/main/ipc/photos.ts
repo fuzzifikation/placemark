@@ -14,7 +14,7 @@ import {
   getPhotoById,
 } from '../services/storage';
 import { ThumbnailService } from '../services/thumbnails';
-import { promises as fs, constants } from 'fs';
+import { promises as fs, constants, statSync } from 'fs';
 import * as path from 'path';
 
 let thumbnailService: ThumbnailService;
@@ -107,6 +107,69 @@ export function registerPhotoHandlers(): void {
     shell.showItemInFolder(photo.path);
   });
 
+  // Show multiple photos in file explorer
+  ipcMain.handle('photos:showMultipleInFolder', async (_event, filePaths: string[]) => {
+    if (!filePaths || filePaths.length === 0) {
+      throw new Error('No file paths provided');
+    }
+
+    // Validate all paths exist
+    for (const filePath of filePaths) {
+      try {
+        await fs.access(filePath, constants.R_OK);
+      } catch (error) {
+        throw new Error(`File not accessible: ${filePath}`);
+      }
+    }
+
+    // Group files by folder (they should all be in the same folder for this feature)
+    const folders = new Set<string>();
+    filePaths.forEach((filePath) => {
+      const separator = filePath.includes('\\') ? '\\' : '/';
+      const folder = filePath.substring(0, filePath.lastIndexOf(separator)) || filePath;
+      folders.add(folder);
+    });
+
+    if (folders.size > 1) {
+      // If files are in different folders, just show the first one
+      // This shouldn't happen with our current UI, but handle it gracefully
+      shell.showItemInFolder(filePaths[0]);
+      return;
+    }
+
+    const folder = Array.from(folders)[0];
+
+    // Sort files by creation date (oldest first) and select the oldest
+    const filesWithStats = await Promise.all(
+      filePaths.map(async (filePath) => {
+        const stats = await fs.stat(filePath);
+        return { path: filePath, birthtime: stats.birthtime };
+      })
+    );
+
+    filesWithStats.sort((a, b) => a.birthtime.getTime() - b.birthtime.getTime());
+    const oldestFile = filesWithStats[0].path;
+
+    // Platform-specific implementation
+    if (process.platform === 'win32') {
+      // Windows: Use Electron's shell.showItemInFolder which works reliably
+      // This opens the folder and selects the oldest file
+      shell.showItemInFolder(oldestFile);
+    } else if (process.platform === 'darwin') {
+      // macOS: Use open command with -R to reveal first file
+      const { exec } = require('child_process');
+      exec(`open -R "${filePaths[0]}"`, (error: any) => {
+        if (error) {
+          console.error('Failed to open finder:', error);
+          shell.openPath(folder);
+        }
+      });
+    } else {
+      // Linux and others: Use xdg-open to open the folder
+      shell.openPath(folder);
+    }
+  });
+
   // Get database statistics
   ipcMain.handle('photos:getDatabaseStats', async () => {
     const userDataPath = app.getPath('userData');
@@ -115,7 +178,7 @@ export function registerPhotoHandlers(): void {
 
     const getFileSize = (filePath: string): number => {
       try {
-        const stats = fs.statSync(filePath);
+        const stats = statSync(filePath);
         return stats.size / (1024 * 1024); // Convert to MB
       } catch {
         return 0;

@@ -11,6 +11,31 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
 
   const totalMB = (summary.totalSize / (1024 * 1024)).toFixed(1);
 
+  // Group operations by source folder
+  const groupByFolder = (ops: FileOperation[]) => {
+    const groups: { [folder: string]: FileOperation[] } = {};
+    ops.forEach((op) => {
+      // Extract folder path (everything before the last separator)
+      const separator = op.sourcePath.includes('\\') ? '\\' : '/';
+      const folder =
+        op.sourcePath.substring(0, op.sourcePath.lastIndexOf(separator)) || op.sourcePath;
+      if (!groups[folder]) groups[folder] = [];
+      groups[folder].push(op);
+    });
+    return groups;
+  };
+
+  const folderGroups = groupByFolder(operations);
+
+  const handleShowInFolder = async (_folderPath: string, filePaths: string[]) => {
+    try {
+      await window.api.photos.showMultipleInFolder(filePaths);
+    } catch (error) {
+      console.error('Failed to show files in folder:', error);
+      // Could show a toast here, but for now just log
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div
@@ -44,57 +69,112 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
           overflowY: 'auto',
         }}
       >
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-          <thead style={{ position: 'sticky', top: 0, backgroundColor: colors.surfaceHover }}>
-            <tr>
-              <th style={{ textAlign: 'left', padding: '0.75rem', color: colors.textSecondary }}>
-                Source
-              </th>
-              <th style={{ textAlign: 'left', padding: '0.75rem', color: colors.textSecondary }}>
-                Destination
-              </th>
-              <th style={{ textAlign: 'left', padding: '0.75rem', color: colors.textSecondary }}>
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {operations.map((op) => (
-              <tr key={op.id} style={{ borderTop: `1px solid ${colors.border}` }}>
-                <td
+        {Object.entries(folderGroups).map(([folder, ops]) => (
+          <div
+            key={folder}
+            style={{
+              padding: '1rem',
+              borderBottom: `1px solid ${colors.borderLight}`,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.5rem',
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <div
                   style={{
-                    padding: '0.75rem',
-                    maxWidth: '200px',
-                    whiteSpace: 'nowrap',
+                    fontWeight: 'bold',
+                    color: colors.textPrimary,
+                    fontSize: '0.875rem',
+                    marginBottom: '0.25rem',
+                  }}
+                >
+                  📁 {folder.split(/[/\\]/).pop() || folder}
+                </div>
+                <div
+                  style={{
+                    color: colors.textMuted,
+                    fontSize: '0.75rem',
+                    fontFamily: 'monospace',
+                  }}
+                  title={folder}
+                >
+                  {folder.length > 50 ? '...' + folder.slice(-47) : folder}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  {ops.length} file{ops.length !== 1 ? 's' : ''}
+                </span>
+                <button
+                  onClick={() =>
+                    handleShowInFolder(
+                      folder,
+                      ops.map((op) => op.sourcePath)
+                    )
+                  }
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    backgroundColor: colors.primary,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    opacity: 0.8,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
+                  title="Show selected files in folder"
+                >
+                  📂 Show
+                </button>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+              {ops.slice(0, 5).map((op) => (
+                <span
+                  key={op.id}
+                  style={{
+                    fontSize: '0.75rem',
+                    color: colors.textSecondary,
+                    backgroundColor: colors.surfaceHover,
+                    padding: '0.125rem 0.25rem',
+                    borderRadius: '3px',
+                    maxWidth: '120px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    color: colors.textPrimary,
-                  }}
-                  title={op.sourcePath}
-                >
-                  {/* .../filename.ext */}
-                  {op.sourcePath.length > 30 ? '...' + op.sourcePath.slice(-30) : op.sourcePath}
-                </td>
-                <td
-                  style={{
-                    padding: '0.75rem',
-                    maxWidth: '200px',
                     whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    color: colors.textPrimary,
                   }}
-                  title={op.destPath}
+                  title={op.sourcePath.split(/[/\\]/).pop()}
                 >
-                  {op.destPath.length > 30 ? '...' + op.destPath.slice(-30) : op.destPath}
-                </td>
-                <td style={{ padding: '0.75rem' }}>
-                  <StatusBadge op={op} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  {op.sourcePath.split(/[/\\]/).pop()}
+                </span>
+              ))}
+              {ops.length > 5 && (
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    color: colors.textMuted,
+                    padding: '0.125rem 0.25rem',
+                  }}
+                >
+                  +{ops.length - 5} more
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
 
       {summary.warnings.length > 0 && (
@@ -117,38 +197,5 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
         </div>
       )}
     </div>
-  );
-}
-
-function StatusBadge({ op }: { op: FileOperation }) {
-  if (op.error) {
-    return (
-      <span
-        style={{
-          padding: '0.125rem 0.5rem',
-          borderRadius: '9999px',
-          fontSize: '0.75rem',
-          fontWeight: 500,
-          backgroundColor: '#fee2e2',
-          color: '#991b1b',
-        }}
-      >
-        {op.error}
-      </span>
-    );
-  }
-  return (
-    <span
-      style={{
-        padding: '0.125rem 0.5rem',
-        borderRadius: '9999px',
-        fontSize: '0.75rem',
-        fontWeight: 500,
-        backgroundColor: '#d1fae5',
-        color: '#065f46',
-      }}
-    >
-      Ready
-    </span>
   );
 }

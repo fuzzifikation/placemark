@@ -14,6 +14,7 @@ export type OperationStatus =
 
 export interface FileOperation {
   id: string; // Unique ID for tracking
+  photoId: number; // Database photo ID for path updates
   type: OperationType;
   sourcePath: string;
   destPath: string;

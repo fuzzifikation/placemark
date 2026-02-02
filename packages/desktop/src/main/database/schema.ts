@@ -61,6 +61,67 @@ const MIGRATIONS: Array<{ version: number; name: string; sql: string }> = [
       CREATE INDEX IF NOT EXISTS idx_operation_log_status ON operation_log(status);
     `,
   },
+  {
+    version: 2,
+    name: 'add_undone_status',
+    sql: `
+      -- SQLite doesn't support ALTER TABLE to modify constraints
+      -- We need to recreate the table with the new constraint
+      CREATE TABLE IF NOT EXISTS operation_log_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        operation TEXT NOT NULL CHECK(operation IN ('copy', 'move')),
+        source_path TEXT NOT NULL,
+        dest_path TEXT NOT NULL,
+        timestamp INTEGER NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('pending', 'completed', 'failed', 'undone')),
+        error TEXT
+      );
+
+      INSERT INTO operation_log_new SELECT * FROM operation_log;
+      DROP TABLE operation_log;
+      ALTER TABLE operation_log_new RENAME TO operation_log;
+
+      CREATE INDEX IF NOT EXISTS idx_operation_log_timestamp ON operation_log(timestamp);
+      CREATE INDEX IF NOT EXISTS idx_operation_log_status ON operation_log(status);
+    `,
+  },
+  {
+    version: 3,
+    name: 'batch_operations',
+    sql: `
+      -- Add batch operations support
+      -- Each batch has multiple files, enabling atomic undo of entire batches
+
+      CREATE TABLE IF NOT EXISTS operation_batch (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        operation TEXT NOT NULL CHECK(operation IN ('copy', 'move')),
+        timestamp INTEGER NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('pending', 'completed', 'failed', 'undone', 'archived')),
+        error TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS operation_batch_files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        batch_id INTEGER NOT NULL,
+        source_path TEXT NOT NULL,
+        dest_path TEXT NOT NULL,
+        FOREIGN KEY (batch_id) REFERENCES operation_batch(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_operation_batch_timestamp ON operation_batch(timestamp);
+      CREATE INDEX IF NOT EXISTS idx_operation_batch_status ON operation_batch(status);
+      CREATE INDEX IF NOT EXISTS idx_operation_batch_files_batch ON operation_batch_files(batch_id);
+    `,
+  },
+  {
+    version: 4,
+    name: 'batch_files_photo_id',
+    sql: `
+      -- Add photo_id to batch files for updating photo paths after move operations
+      ALTER TABLE operation_batch_files ADD COLUMN photo_id INTEGER;
+      CREATE INDEX IF NOT EXISTS idx_operation_batch_files_photo ON operation_batch_files(photo_id);
+    `,
+  },
 ];
 
 /**

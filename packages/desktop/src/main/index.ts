@@ -96,9 +96,14 @@ app.whenReady().then(async () => {
     closeStorage = storageModule.closeStorage;
     closeThumbnailService = photosModule.closeThumbnailService;
 
+    // Archive old operation batches (clear undo history from previous session)
+    storageModule.archiveCompletedBatches();
+
     // Initialize features
     photosModule.registerPhotoHandlers();
-    opsModule.registerOperationHandlers();
+    // Note: operations handlers need mainWindow for progress events
+    // Pass a getter function so it can access win after createWindow()
+    opsModule.registerOperationHandlers(() => win);
     systemModule.registerSystemHandlers();
 
     createWindow();

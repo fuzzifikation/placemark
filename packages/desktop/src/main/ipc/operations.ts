@@ -2,11 +2,11 @@
  * IPC handlers for file operations
  */
 
-import { ipcMain, dialog } from 'electron';
+import { ipcMain, dialog, app, BrowserWindow } from 'electron';
 import * as fs from 'fs/promises';
 import { constants } from 'fs';
 import {
-  generateDryRun,
+  generateOperationPlan,
   isValidDestination,
   FileOperation,
   DryRunResult,
@@ -14,8 +14,14 @@ import {
   OperationType,
 } from '@placemark/core';
 import * as path from 'path';
+import { getPhotosByIds } from '../services/storage';
+import { executeOperations, undoLastBatch, canUndo } from '../services/operations';
 
-export function registerOperationHandlers(): void {
+// Store the last dry run result for execution
+let lastDryRunResult: DryRunResult | null = null;
+let lastOpType: OperationType | null = null;
+
+export function registerOperationHandlers(getMainWindow: () => BrowserWindow | null): void {
   // Select destination folder
   ipcMain.handle('ops:selectDestination', async () => {
     const result = await dialog.showOpenDialog({
@@ -64,7 +70,7 @@ export function registerOperationHandlers(): void {
       }
 
       // 3. Fetch photos from database (canonical source of truth)
-      const photos = storage.getPhotosByIds(photoIds);
+      const photos = getPhotosByIds(photoIds);
       if (photos.length === 0) {
         throw new Error('No valid photos found for the provided IDs');
       }
@@ -75,7 +81,7 @@ export function registerOperationHandlers(): void {
       }
 
       // 4. Generate plan (pure logic)
-      const plan = generateDryRun(photos, destPath, validatedOpType);
+      const plan = generateOperationPlan(photos, destPath, validatedOpType);
 
       // 5. Enrich plan with reality checks (IO)
       const enrichedOps: FileOperation[] = [];
@@ -128,12 +134,41 @@ export function registerOperationHandlers(): void {
         },
       };
 
+      // Store for potential execution
+      lastDryRunResult = result;
+      lastOpType = validatedOpType;
+
       return result;
     }
   );
 
-  // CRITICAL: Block execution for this preview release
+  // Execute file operations
   ipcMain.handle('ops:execute', async () => {
-    throw new Error('File operations (Copy/Move) are disabled in this preview version for safety.');
+    if (!lastDryRunResult || !lastOpType) {
+      throw new Error('No operation preview available. Please generate a preview first.');
+    }
+
+    const pendingOps = lastDryRunResult.operations.filter((op) => op.status === 'pending');
+    if (pendingOps.length === 0) {
+      throw new Error('No pending operations to execute.');
+    }
+
+    const result = await executeOperations(lastDryRunResult, lastOpType, getMainWindow());
+
+    // Clear stored dry run after execution
+    lastDryRunResult = null;
+    lastOpType = null;
+
+    return result;
+  });
+
+  // Undo last operation
+  ipcMain.handle('ops:undo', async () => {
+    return await undoLastBatch();
+  });
+
+  // Check if undo is available
+  ipcMain.handle('ops:canUndo', async () => {
+    return canUndo();
   });
 }

@@ -1,5 +1,68 @@
 # Release Notes
 
+## v0.5.0 - File Operations Execution (2026-02-02)
+
+✨ **Phase 5 Complete:** Full file copy/move execution with atomic batch operations, undo support, and database sync.
+
+### 🎯 New Features
+
+- **File Operations Execution:**
+  - Copy and move operations now fully functional (Phase 5)
+  - Atomic batch semantics: all files succeed or operation rolls back
+  - Conflict detection: never overwrites existing files
+  - Same-file detection: silently skips files already at destination
+  - Progress tracking with file-by-file updates
+  - Cross-device move support with verification
+
+- **Undo System:**
+  - Batch undo: reverse entire copy/move operation at once
+  - OS Trash integration: undo copy sends files to Recycle Bin/Trash (recoverable)
+  - Move undo: restores files to original location
+  - Session-based: undo history clears on app restart
+  - Automatic archival: old operations marked 'archived' (no indefinite undo stacking)
+
+- **Database Synchronization:**
+  - Move operations update photo paths in database
+  - UI automatically refreshes after move/undo to show correct paths
+  - Photos table stays in sync with actual file locations
+  - Operation batches tracked with photo IDs for reliable updates
+
+### 🏗️ Architecture Improvements
+
+- **Core Package:**
+  - Renamed `dryrun.ts` → `planner.ts` for clarity
+  - Renamed `generateDryRun()` → `generateOperationPlan()`
+  - Added `photoId` field to `FileOperation` type
+  - Updated comments and documentation throughout
+
+- **Database Schema:**
+  - Migration v3: Added `operation_batch` and `operation_batch_files` tables
+  - Migration v4: Added `photo_id` column to batch files
+  - Added 'archived' status for historical operations
+
+- **Safety Mechanisms:**
+  - Pre-flight validation: checks all files before touching anything
+  - Rollback on failure: completed files restored if mid-batch error
+  - Cross-device copy verification: checks file size before deleting source
+  - Graceful error handling: partial failures don't corrupt state
+
+### 📝 Documentation
+
+- **Updated plan.md:** Phase 4A complete, Phase 5 in progress
+- **Added backlog items:**
+  - Moved photos scope decision (keep tracking vs. remove from DB)
+  - Operation history/tracing UI (export capability, auto-prune)
+- **Code comments:** Modernized planner.ts documentation
+
+### 🔧 Technical Details
+
+- Operation flow: validate → log batch → execute → update DB → refresh UI
+- Undo flow: retrieve batch → move files → update DB → mark undone → refresh UI
+- Session cleanup: `archiveCompletedBatches()` runs on app startup
+- UI refresh: `onRefreshPhotos` callback reloads photo data after move operations
+
+---
+
 ## v0.4.1 - Critical Bug Fixes & Security Hardening (2026-02-02)
 
 🔒 **Critical bug fixes and security improvements** - fixed coordinate handling bug, hardened IPC security, and improved version management.

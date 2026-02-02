@@ -6,7 +6,15 @@
 import Database from 'better-sqlite3';
 import { app } from 'electron';
 import * as path from 'path';
-import { Photo, PhotoCreateInput, Source, SourceCreateInput } from '@placemark/core';
+import {
+  Photo,
+  PhotoCreateInput,
+  Source,
+  SourceCreateInput,
+  OperationLogEntry,
+  OperationType,
+  OperationStatus,
+} from '@placemark/core';
 import { initializeDatabase, closeDatabase } from '../database/schema';
 import { logger } from './logger';
 
@@ -113,6 +121,18 @@ export function getPhotosWithLocation(): Photo[] {
 }
 
 /**
+ * Update a photo's path in the database
+ * Used after move operations to keep database in sync with filesystem
+ */
+export function updatePhotoPath(photoId: number, newPath: string): void {
+  const result = getDb().prepare('UPDATE photos SET path = ? WHERE id = ?').run(newPath, photoId);
+
+  if (result.changes === 0) {
+    throw new Error(`Photo not found: ${photoId}`);
+  }
+}
+
+/**
  * Clear all photos from database
  */
 export function clearAllPhotos(): void {
@@ -199,4 +219,219 @@ export function createSource(input: SourceCreateInput): Source {
     lastScan: row.last_scan,
     enabled: row.enabled === 1,
   };
+}
+
+// ============================================================================
+// Operation log
+// ============================================================================
+
+function rowToOperationLogEntry(row: any): OperationLogEntry {
+  return {
+    id: row.id,
+    operation: row.operation as OperationType,
+    sourcePath: row.source_path,
+    destPath: row.dest_path,
+    timestamp: row.timestamp,
+    status: row.status as OperationStatus,
+    error: row.error ?? undefined,
+  };
+}
+
+/**
+ * Log a file operation
+ */
+export function logOperation(entry: Omit<OperationLogEntry, 'id'>): OperationLogEntry {
+  const db = getDb();
+  const result = db
+    .prepare(
+      `INSERT INTO operation_log (operation, source_path, dest_path, timestamp, status, error)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      entry.operation,
+      entry.sourcePath,
+      entry.destPath,
+      entry.timestamp,
+      entry.status,
+      entry.error ?? null
+    );
+
+  return {
+    id: result.lastInsertRowid as number,
+    ...entry,
+  };
+}
+
+/**
+ * Update operation status
+ */
+export function updateOperationStatus(id: number, status: OperationStatus, error?: string): void {
+  getDb()
+    .prepare('UPDATE operation_log SET status = ?, error = ? WHERE id = ?')
+    .run(status, error ?? null, id);
+}
+
+/**
+ * Get the last completed operation (for undo)
+ */
+export function getLastCompletedOperation(): OperationLogEntry | null {
+  const row = getDb()
+    .prepare(
+      `SELECT * FROM operation_log 
+       WHERE status = 'completed' 
+       ORDER BY timestamp DESC 
+       LIMIT 1`
+    )
+    .get();
+  return row ? rowToOperationLogEntry(row) : null;
+}
+
+/**
+ * Get operation by ID
+ */
+export function getOperationById(id: number): OperationLogEntry | null {
+  const row = getDb().prepare('SELECT * FROM operation_log WHERE id = ?').get(id);
+  return row ? rowToOperationLogEntry(row) : null;
+}
+
+/**
+ * Get recent operations (for history)
+ */
+export function getOperationHistory(limit: number = 50): OperationLogEntry[] {
+  const rows = getDb()
+    .prepare('SELECT * FROM operation_log ORDER BY timestamp DESC LIMIT ?')
+    .all(limit);
+  return rows.map(rowToOperationLogEntry);
+}
+
+/**
+ * Mark operation as undone
+ */
+export function markOperationUndone(id: number): void {
+  getDb().prepare('UPDATE operation_log SET status = ? WHERE id = ?').run('undone', id);
+}
+
+// ============================================================================
+// Batch operations (for atomic undo)
+// ============================================================================
+
+export interface BatchFile {
+  photoId: number;
+  sourcePath: string;
+  destPath: string;
+}
+
+export interface OperationBatch {
+  id: number;
+  operation: OperationType;
+  timestamp: number;
+  status: OperationStatus;
+  error?: string;
+  files: BatchFile[];
+}
+
+export interface BatchInput {
+  operation: OperationType;
+  files: BatchFile[];
+  timestamp: number;
+  status: OperationStatus;
+}
+
+/**
+ * Log a batch of file operations
+ * Returns the batch ID
+ * Uses a transaction to ensure atomic insert
+ */
+export function logOperationBatch(input: BatchInput): number {
+  const db = getDb();
+
+  // Use transaction to ensure batch + files are inserted atomically
+  const insertBatch = db.transaction(() => {
+    const batchResult = db
+      .prepare(
+        `INSERT INTO operation_batch (operation, timestamp, status, error)
+         VALUES (?, ?, ?, NULL)`
+      )
+      .run(input.operation, input.timestamp, input.status);
+
+    const batchId = batchResult.lastInsertRowid as number;
+
+    const insertFile = db.prepare(
+      `INSERT INTO operation_batch_files (batch_id, source_path, dest_path, photo_id)
+       VALUES (?, ?, ?, ?)`
+    );
+
+    for (const file of input.files) {
+      insertFile.run(batchId, file.sourcePath, file.destPath, file.photoId);
+    }
+
+    return batchId;
+  });
+
+  return insertBatch();
+}
+
+/**
+ * Update batch status
+ */
+export function updateBatchStatus(batchId: number, status: OperationStatus, error?: string): void {
+  getDb()
+    .prepare('UPDATE operation_batch SET status = ?, error = ? WHERE id = ?')
+    .run(status, error ?? null, batchId);
+}
+
+/**
+ * Get the last completed batch (for undo)
+ */
+export function getLastCompletedBatch(): OperationBatch | null {
+  const db = getDb();
+
+  const batchRow = db
+    .prepare(
+      `SELECT * FROM operation_batch 
+       WHERE status = 'completed' 
+       ORDER BY timestamp DESC 
+       LIMIT 1`
+    )
+    .get() as any;
+
+  if (!batchRow) return null;
+
+  const fileRows = db
+    .prepare('SELECT * FROM operation_batch_files WHERE batch_id = ?')
+    .all(batchRow.id) as any[];
+
+  return {
+    id: batchRow.id,
+    operation: batchRow.operation as OperationType,
+    timestamp: batchRow.timestamp,
+    status: batchRow.status as OperationStatus,
+    error: batchRow.error ?? undefined,
+    files: fileRows.map((row) => ({
+      photoId: row.photo_id,
+      sourcePath: row.source_path,
+      destPath: row.dest_path,
+    })),
+  };
+}
+
+/**
+ * Mark batch as undone
+ */
+export function markBatchUndone(batchId: number): void {
+  getDb().prepare('UPDATE operation_batch SET status = ? WHERE id = ?').run('undone', batchId);
+}
+
+/**
+ * Archive all completed batches (called on app startup)
+ * This clears the undo history - old operations shouldn't be undoable after restart
+ */
+export function archiveCompletedBatches(): void {
+  const result = getDb()
+    .prepare("UPDATE operation_batch SET status = 'archived' WHERE status = 'completed'")
+    .run();
+
+  if (result.changes > 0) {
+    logger.info(`Archived ${result.changes} completed operation batches from previous session`);
+  }
 }
