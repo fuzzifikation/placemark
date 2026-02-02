@@ -1,5 +1,33 @@
 # Release Notes
 
+## v0.4.0 - Documentation Cleanup (2026-02-02)
+
+📚 **Streamlined documentation** for a personal project - removed overkill corporate docs and enhanced architecture visualization.
+
+### 📖 Documentation Changes
+
+- **Removed Overkill Docs:** Deleted CODE_OF_CONDUCT.md, CONTRIBUTING.md, CODE_QUALITY_AUDIT.md, PR template, technologydecisions.md (unnecessary for personal project)
+- **Enhanced ARCHITECTURE.md:** Added 3 professional Mermaid diagrams:
+  - High-level system architecture (Electron processes, IPC flow)
+  - Photo scanning sequence diagram
+  - Settings persistence flow
+- **Streamlined Navigation:** Clean documentation structure with README → ARCHITECTURE → plan → SETUP
+- **Updated Copilot Instructions:** Reflects Phase 4A completion status
+
+### 🎯 Philosophy
+
+**"The architecture should speak for itself"** - Clean code with visual diagrams instead of verbose policy documents. Perfect for a personal project that values simplicity over bureaucracy.
+
+### 📦 What Remains
+
+- **README.md** - User manual + developer quick start
+- **ARCHITECTURE.md** - System design with Mermaid diagrams ⭐
+- **plan.md** - 9-phase implementation roadmap
+- **SETUP.md** - Development environment setup
+- **RELEASE_NOTES.md** - Version history (this file)
+
+---
+
 ## v0.3.0 - UI Polish & Visual Feedback (2026-01-31)
 
 🎨 **Major UI enhancements** with comprehensive visual feedback improvements and polished interactions.
