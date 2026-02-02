@@ -40,7 +40,8 @@ export function OperationsPanel({ selectedPhotos, onClose, toast }: OperationsPa
 
     setLoading(true);
     try {
-      const result = await window.api.ops.generateDryRun(selectedPhotos, destPath, opType);
+      const photoIds = selectedPhotos.map((p) => p.id);
+      const result = await window.api.ops.generateDryRun(photoIds, destPath, opType);
       setDryRunResult(result);
     } catch (err: any) {
       console.error(err);

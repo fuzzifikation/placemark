@@ -1,5 +1,49 @@
 # Release Notes
 
+## v0.4.1 - Critical Bug Fixes & Security Hardening (2026-02-02)
+
+🔒 **Critical bug fixes and security improvements** - fixed coordinate handling bug, hardened IPC security, and improved version management.
+
+### 🐛 Critical Bug Fixes
+
+- **Fixed latitude/longitude 0 bug:** Photos at equator (lat=0) or prime meridian (lon=0) were incorrectly filtered out
+  - Fixed in `filesystem.ts` photo counting
+  - Fixed in `useMapLayerManagement.ts` map filtering
+  - Now correctly handles valid coordinates like (0, 0) Gulf of Guinea
+- **Fixed version reporting:** Replaced brittle `process.cwd()` package.json reads with stable `app.getVersion()`
+  - Removed hardcoded fallback versions from AboutSection.tsx
+  - Version now works reliably in dev and packaged builds
+- **Fixed native dependency builds:** Removed `better-sqlite3` from `ignoredBuiltDependencies`
+  - Added `postinstall` script to rebuild native modules for Electron's Node ABI
+  - Prevents "module version mismatch" errors across Node/Electron updates
+
+### 🔒 Security Improvements
+
+- **IPC attack surface hardening:** Renderer now passes photo IDs instead of raw paths/objects
+  - `photos:openInViewer` and `photos:showInFolder` accept `photoId`, fetch canonical path from SQLite
+  - `ops:generateDryRun` accepts photo IDs array, fetches Photo objects from database
+  - Added strict `opType` validation (only 'copy' or 'move')
+  - Added destination path validation (absolute, writable, not system folders)
+  - Prevents arbitrary path access and object injection attacks
+
+### 📝 Documentation
+
+- **Privacy Guarantees:** Added clear privacy statements to README and About section
+  - No server backend, no uploads to Placemark infrastructure
+  - All data stored locally on device
+  - Map tiles loaded from internet, but no photo data transmitted
+- **Version Management:** Simplified update script (3 files instead of 4)
+  - Removed AboutSection.tsx from update list (uses `app.getVersion()` now)
+  - Updated documentation to reflect streamlined process
+
+### 🛠️ Developer Experience
+
+- **Improved error messages:** IPC handlers now provide clear validation errors
+- **Database helpers:** Added `getPhotoById()` and `getPhotosByIds()` functions
+- **Code quality:** Zero TypeScript errors, all validation logic centralized
+
+---
+
 ## v0.4.0 - Documentation Cleanup (2026-02-02)
 
 📚 **Streamlined documentation** for a personal project - removed overkill corporate docs and enhanced architecture visualization.

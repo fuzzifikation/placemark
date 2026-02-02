@@ -20,6 +20,13 @@ The core idea is to treat geographic location and time as explicit, user-control
 - Avoid background processing, inference, or tracking by default.
 - Be transparent, predictable, and reversible in all operations.
 
+### Privacy Guarantees
+
+- **No Server Backend:** Placemark does not run a server and does not upload photos or metadata to Placemark-maintained infrastructure.
+- **Local-Only Storage:** All indexing and thumbnails are stored locally on your device.
+- **Your Data, Your Control:** Photos never leave your computer unless you explicitly use cloud storage sources like OneDrive.
+- **Map Tiles Only:** Map tiles are loaded from the internet (OpenStreetMap), but no photo data or location information is transmitted.
+
 ---
 
 ## User Manual
@@ -116,13 +123,17 @@ pnpm dev
 
 ### Version Management
 
-To update the app version across all files:
+To update the app version:
 
 ```bash
+# 1. Update RELEASE_NOTES.md first with new version entry
+# 2. Run version update script
 pnpm run version:update 0.4.0
+# 3. Commit everything together
 ```
 
-This updates root `package.json`, core `package.json`, desktop `package.json`, and fallback version in `AboutSection.tsx`.
+This updates root `package.json`, core `package.json`, and desktop `package.json`.
+The app reads version from Electron's `app.getVersion()` at runtime (no hardcoded fallbacks).
 
 ### Documentation
 

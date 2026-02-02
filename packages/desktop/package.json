@@ -1,6 +1,6 @@
 {
   "name": "@placemark/desktop",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Placemark desktop application built with Electron",
   "author": "Placemark",
@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "electron-rebuild"
   },
   "dependencies": {
     "@placemark/core": "workspace:*",

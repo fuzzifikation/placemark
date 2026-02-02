@@ -12,7 +12,6 @@ const filesToUpdate = [
   'package.json',
   'packages/core/package.json',
   'packages/desktop/package.json',
-  'packages/desktop/src/renderer/src/components/Settings/AboutSection.tsx',
 ];
 
 function updateVersionInFile(filePath, newVersion) {
@@ -24,9 +23,6 @@ function updateVersionInFile(filePath, newVersion) {
     const packageJson = JSON.parse(content);
     packageJson.version = newVersion;
     content = JSON.stringify(packageJson, null, 2) + '\n';
-  } else if (filePath.includes('AboutSection.tsx')) {
-    // Update the fallback version in AboutSection.tsx
-    content = content.replace(/return '[\d.]+';/g, `return '${newVersion}';`);
   }
 
   fs.writeFileSync(fullPath, content);
@@ -56,8 +52,11 @@ function main() {
       updateVersionInFile(filePath, newVersion);
     });
 
-    console.log('✅ Version update complete!');
-    console.log('📝 Remember to update CHANGELOG.md manually');
+    console.log('\n✅ Version update complete!');
+    console.log('\n📝 Next steps:');
+    console.log('   1. Verify changes look correct');
+    console.log('   2. Commit with: git commit -m "chore: bump version to ' + newVersion + '"');
+    console.log('\n⚠️  REMINDER: Update RELEASE_NOTES.md BEFORE running this script');
   } catch (error) {
     console.error('❌ Error updating versions:', error.message);
     process.exit(1);

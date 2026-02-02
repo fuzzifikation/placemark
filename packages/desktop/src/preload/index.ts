@@ -9,8 +9,8 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke('photos:getWithLocationInDateRange', startTimestamp, endTimestamp),
     getDateRange: () => ipcRenderer.invoke('photos:getDateRange'),
     getCountWithLocation: () => ipcRenderer.invoke('photos:getCountWithLocation'),
-    openInViewer: (path: string) => ipcRenderer.invoke('photos:openInViewer', path),
-    showInFolder: (path: string) => ipcRenderer.invoke('photos:showInFolder', path),
+    openInViewer: (photoId: number) => ipcRenderer.invoke('photos:openInViewer', photoId),
+    showInFolder: (photoId: number) => ipcRenderer.invoke('photos:showInFolder', photoId),
     getDatabaseStats: () => ipcRenderer.invoke('photos:getDatabaseStats'),
     clearDatabase: () => ipcRenderer.invoke('photos:clearDatabase'),
     onScanProgress: (callback: (progress: any) => void) => {
@@ -28,8 +28,8 @@ contextBridge.exposeInMainWorld('api', {
   },
   ops: {
     selectDestination: () => ipcRenderer.invoke('ops:selectDestination'),
-    generateDryRun: (photos: any[], destPath: string, opType: string) =>
-      ipcRenderer.invoke('ops:generateDryRun', photos, destPath, opType),
+    generateDryRun: (photoIds: number[], destPath: string, opType: string) =>
+      ipcRenderer.invoke('ops:generateDryRun', photoIds, destPath, opType),
   },
   system: {
     openAppDataFolder: () => ipcRenderer.invoke('system:openAppDataFolder'),

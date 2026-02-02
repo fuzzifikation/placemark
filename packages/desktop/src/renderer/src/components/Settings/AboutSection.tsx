@@ -7,15 +7,9 @@ import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
 
-// Get app version from package.json
+// Get app version from Electron (always reliable)
 const getAppVersion = async (): Promise<string> => {
-  try {
-    // In production, this will be available via Electron
-    return (await window.api?.system?.getAppVersion?.()) || '0.3.2';
-  } catch {
-    // Fallback for development
-    return '0.4.0';
-  }
+  return (await window.api?.system?.getAppVersion?.()) || 'unknown';
 };
 
 interface AboutSectionProps {
@@ -24,12 +18,10 @@ interface AboutSectionProps {
 
 export function AboutSection({ theme }: AboutSectionProps) {
   const colors = useThemeColors(theme);
-  const [appVersion, setAppVersion] = useState<string>('0.3.2');
+  const [appVersion, setAppVersion] = useState<string>('unknown');
 
   useEffect(() => {
-    getAppVersion()
-      .then(setAppVersion)
-      .catch(() => setAppVersion('0.3.2'));
+    getAppVersion().then(setAppVersion);
   }, []);
 
   // Open links in system browser
@@ -88,6 +80,50 @@ export function AboutSection({ theme }: AboutSectionProps) {
           Privacy-first, local-first photo organizer. Visualize your photos by where and when they
           were taken, without uploading to the cloud.
         </p>
+
+        {/* Privacy Guarantees */}
+        <div
+          style={{
+            backgroundColor: colors.backgroundAlt,
+            padding: '0.75rem',
+            borderRadius: '6px',
+            marginBottom: '1rem',
+          }}
+        >
+          <p
+            style={{
+              margin: '0 0 0.5rem 0',
+              fontSize: '0.8rem',
+              color: colors.textSecondary,
+              lineHeight: 1.4,
+            }}
+          >
+            🔒 <strong>No Server Backend:</strong> Placemark does not run a server and does not
+            upload photos or metadata to Placemark-maintained infrastructure.
+          </p>
+          <p
+            style={{
+              margin: '0 0 0.5rem 0',
+              fontSize: '0.8rem',
+              color: colors.textSecondary,
+              lineHeight: 1.4,
+            }}
+          >
+            💾 <strong>Local-Only Storage:</strong> All indexing and thumbnails are stored locally
+            on your device.
+          </p>
+          <p
+            style={{
+              margin: 0,
+              fontSize: '0.8rem',
+              color: colors.textSecondary,
+              lineHeight: 1.4,
+            }}
+          >
+            🗺️ <strong>Map Tiles Only:</strong> Map tiles are loaded from the internet
+            (OpenStreetMap), but no photo data or location information is transmitted.
+          </p>
+        </div>
 
         {/* Links */}
         <div

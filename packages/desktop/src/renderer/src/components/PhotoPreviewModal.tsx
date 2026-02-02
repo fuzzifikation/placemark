@@ -165,7 +165,7 @@ export function PhotoPreviewModal({ photo, onClose }: PhotoPreviewModalProps) {
           }}
         >
           <button
-            onClick={() => window.api.photos.openInViewer(photo.path)}
+            onClick={() => window.api.photos.openInViewer(photo.id)}
             style={{
               padding: '0.5rem 1rem',
               backgroundColor: '#0066cc',
@@ -179,7 +179,7 @@ export function PhotoPreviewModal({ photo, onClose }: PhotoPreviewModalProps) {
             Open in Viewer
           </button>
           <button
-            onClick={() => window.api.photos.showInFolder(photo.path)}
+            onClick={() => window.api.photos.showInFolder(photo.id)}
             style={{
               padding: '0.5rem 1rem',
               backgroundColor: '#666',

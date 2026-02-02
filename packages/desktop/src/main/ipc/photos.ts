@@ -11,9 +11,10 @@ import {
   getPhotoDateRange,
   getPhotosWithLocationInDateRange,
   closeStorage,
+  getPhotoById,
 } from '../services/storage';
 import { ThumbnailService } from '../services/thumbnails';
-import * as fs from 'fs';
+import { promises as fs, constants } from 'fs';
 import * as path from 'path';
 
 let thumbnailService: ThumbnailService;
@@ -77,13 +78,33 @@ export function registerPhotoHandlers(): void {
   });
 
   // Open photo in system default viewer
-  ipcMain.handle('photos:openInViewer', async (_event, path: string) => {
-    await shell.openPath(path);
+  ipcMain.handle('photos:openInViewer', async (_event, photoId: number) => {
+    const photo = getPhotoById(photoId);
+    if (!photo) {
+      throw new Error(`Photo not found: ${photoId}`);
+    }
+    // Validate path exists and is readable
+    try {
+      await fs.access(photo.path, constants.R_OK);
+    } catch (error) {
+      throw new Error(`Photo file not accessible: ${photo.path}`);
+    }
+    await shell.openPath(photo.path);
   });
 
   // Show photo in file explorer
-  ipcMain.handle('photos:showInFolder', async (_event, path: string) => {
-    shell.showItemInFolder(path);
+  ipcMain.handle('photos:showInFolder', async (_event, photoId: number) => {
+    const photo = getPhotoById(photoId);
+    if (!photo) {
+      throw new Error(`Photo not found: ${photoId}`);
+    }
+    // Validate path exists
+    try {
+      await fs.access(photo.path, constants.R_OK);
+    } catch (error) {
+      throw new Error(`Photo file not accessible: ${photo.path}`);
+    }
+    shell.showItemInFolder(photo.path);
   });
 
   // Get database statistics

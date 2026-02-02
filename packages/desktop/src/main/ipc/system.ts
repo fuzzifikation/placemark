@@ -1,6 +1,4 @@
-import { ipcMain, shell } from 'electron';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { ipcMain, shell, app } from 'electron';
 
 export function registerSystemHandlers() {
   ipcMain.handle('system:openExternal', async (_event, url: string) => {
@@ -21,13 +19,6 @@ export function registerSystemHandlers() {
   });
 
   ipcMain.handle('system:getAppVersion', async () => {
-    try {
-      const packageJsonPath = join(process.cwd(), '../../../package.json');
-      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-      return packageJson.version;
-    } catch (error) {
-      console.error('Failed to read app version:', error);
-      return 'unknown';
-    }
+    return app.getVersion();
   });
 }

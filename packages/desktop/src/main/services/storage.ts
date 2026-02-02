@@ -81,6 +81,26 @@ export function createPhoto(input: PhotoCreateInput): Photo {
 }
 
 /**
+ * Get a single photo by ID
+ */
+export function getPhotoById(id: number): Photo | null {
+  const row = getDb().prepare('SELECT * FROM photos WHERE id = ?').get(id);
+  return row ? rowToPhoto(row) : null;
+}
+
+/**
+ * Get multiple photos by IDs
+ */
+export function getPhotosByIds(ids: number[]): Photo[] {
+  if (ids.length === 0) return [];
+  const placeholders = ids.map(() => '?').join(',');
+  const rows = getDb()
+    .prepare(`SELECT * FROM photos WHERE id IN (${placeholders})`)
+    .all(...ids);
+  return rows.map(rowToPhoto);
+}
+
+/**
  * Get photos with location data
  */
 export function getPhotosWithLocation(): Photo[] {

@@ -32,17 +32,52 @@ export function registerOperationHandlers(): void {
   // Generate Dry Run
   ipcMain.handle(
     'ops:generateDryRun',
-    async (_event, photos: Photo[], destPath: string, opType: OperationType) => {
-      // 1. Basic validation
+    async (_event, photoIds: number[], destPath: string, opType: string) => {
+      // 1. Validate operation type strictly
+      const validOpTypes: OperationType[] = ['copy', 'move'];
+      if (!validOpTypes.includes(opType as OperationType)) {
+        throw new Error(`Invalid operation type: ${opType}`);
+      }
+      const validatedOpType = opType as OperationType;
+
+      // 2. Validate destination path
+      if (!path.isAbsolute(destPath)) {
+        throw new Error('Destination must be an absolute path');
+      }
+
+      // Prevent operations on system folders
+      const systemFolders = [
+        app.getPath('userData'),
+        app.getPath('appData'),
+        app.getPath('exe'),
+        process.env.WINDIR || 'C:\\Windows',
+        '/System',
+        '/Library',
+      ];
+      if (systemFolders.some((sysPath) => destPath.startsWith(sysPath))) {
+        throw new Error('Cannot perform operations on system folders');
+      }
+
       const validCheck = isValidDestination(destPath);
       if (!validCheck.valid) {
         throw new Error(validCheck.error);
       }
 
-      // 2. Generate plan (pure logic)
-      const plan = generateDryRun(photos, destPath, opType);
+      // 3. Fetch photos from database (canonical source of truth)
+      const photos = storage.getPhotosByIds(photoIds);
+      if (photos.length === 0) {
+        throw new Error('No valid photos found for the provided IDs');
+      }
+      if (photos.length !== photoIds.length) {
+        throw new Error(
+          `Some photo IDs are invalid (requested ${photoIds.length}, found ${photos.length})`
+        );
+      }
 
-      // 3. Enrich plan with reality checks (IO)
+      // 4. Generate plan (pure logic)
+      const plan = generateDryRun(photos, destPath, validatedOpType);
+
+      // 5. Enrich plan with reality checks (IO)
       const enrichedOps: FileOperation[] = [];
       const warnings: string[] = [...plan.summary.warnings];
 
