@@ -88,7 +88,7 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 - [x] Photo markers appear in correct locations
 - [x] Clicking marker shows photo preview
 - [x] Panning/zooming updates visible markers
-- [ ] Performance: 10,000 photos render without lag (use clustering) - defer to Phase 8
+- [x] Performance: 10,000+ photos render without lag (clustering works well)
 - [ ] Works offline with cached tiles - defer to Phase 8
 
 **Deliverable:** ✅ Interactive map showing photos as markers with info modal.
@@ -258,7 +258,7 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 **Tasks:**
 
 1. Virtual scrolling for photo grid (handle 100k+ photos)
-2. Map marker clustering (performance) - _Refine: Dynamic expansion on hover_
+2. **Spiderify Refinement:** Adjust activation radius based on zoom level (currently too sensitive when zoomed out)
 3. **Multi-threaded Import:** Use worker threads for EXIF/thumbnail generation.
 4. **Timeline Animation:** Visual "swooshes" connecting photos during playback.
 5. Incremental folder scanning (only new files)
@@ -267,12 +267,10 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 8. Error boundary and crash reporting
 9. User documentation (help screen)
 10. Packaging with electron-builder (Windows .exe, macOS .dmg)
-11. **Overlapping Points Interaction:** Fix issue where points underneath others are not clickable (refined spiderify or z-index management).
 
 **Testing:**
 
-- [ ] Performance with 100,000 photos
-- [ ] Memory usage stays reasonable (<500MB)
+- [ ] Memory usage stays reasonable (<500MB with large datasets)
 - [ ] App launches in <3 seconds
 - [ ] All features work in packaged app
 - [ ] Installation on fresh machine works
