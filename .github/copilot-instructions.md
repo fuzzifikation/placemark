@@ -60,6 +60,7 @@ pnpm -C packages/desktop build    # Production build
 **CRITICAL:** Always use the automated version update script - never manually edit version numbers.
 
 **Workflow for version bumps:**
+
 1. **Update RELEASE_NOTES.md first** with the new version entry
 2. Run `pnpm run version:update x.y.z` (patch: bug fixes, minor: features, major: breaking changes)
 3. Commit everything together with a descriptive message

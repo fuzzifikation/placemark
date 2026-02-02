@@ -170,7 +170,7 @@ async function processImageFile(
     mimeType: MIME_TYPES[ext] || 'image/jpeg',
   });
 
-  if (exifData.latitude && exifData.longitude) {
+  if (exifData.latitude != null && exifData.longitude != null) {
     result.photosWithLocation++;
   }
 }

@@ -75,7 +75,9 @@ export function useMapLayerManagement({
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
-    const photosWithLocation = photos.filter((photo) => photo.latitude && photo.longitude);
+    const photosWithLocation = photos.filter(
+      (photo) => photo.latitude != null && photo.longitude != null
+    );
 
     if (photosWithLocation.length === 0) {
       // Remove source if no photos
