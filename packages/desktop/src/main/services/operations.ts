@@ -15,6 +15,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { BrowserWindow, shell } from 'electron';
+import { constants as fsConstants } from 'fs';
 import { FileOperation, DryRunResult, OperationType } from '@placemark/core';
 import {
   logOperationBatch,
@@ -26,6 +27,30 @@ import {
 import { logger } from './logger';
 
 // ============================================================================
+// Cancellation + single-operation guard
+// ============================================================================
+
+class CancelledError extends Error {
+  public readonly type = 'cancelled';
+  constructor(message: string) {
+    super(message);
+    this.name = 'CancelledError';
+  }
+}
+
+let activeExecution: {
+  cancelRequested: boolean;
+} | null = null;
+
+export function requestCancel(): { ok: boolean; message: string } {
+  if (!activeExecution) {
+    return { ok: false, message: 'No operation is currently running.' };
+  }
+  activeExecution.cancelRequested = true;
+  return { ok: true, message: 'Cancel requested. Stopping at next safe point…' };
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -34,7 +59,7 @@ export interface ExecutionProgress {
   completedFiles: number;
   currentFile: string;
   percentage: number;
-  phase: 'validating' | 'executing' | 'complete';
+  phase: 'executing' | 'complete';
 }
 
 export interface ExecutionResult {
@@ -45,96 +70,11 @@ export interface ExecutionResult {
   batchId: number;
 }
 
-export interface ConflictError {
-  type: 'conflict';
-  conflicts: string[];
-  message: string;
-}
-
 export interface BatchInfo {
   id: number;
   operation: OperationType;
   fileCount: number;
   timestamp: number;
-}
-
-// ============================================================================
-// Path utilities
-// ============================================================================
-
-/**
- * Normalize path for comparison (lowercase, forward slashes)
- */
-function normalizePath(p: string): string {
-  return p.replace(/\\/g, '/').toLowerCase();
-}
-
-/**
- * Check if two paths refer to the same file
- */
-function isSameFile(source: string, dest: string): boolean {
-  return normalizePath(source) === normalizePath(dest);
-}
-
-// ============================================================================
-// Pre-flight validation
-// ============================================================================
-
-/**
- * Pre-flight validation: Check ALL files before touching anything
- * Returns list of operations to execute (excluding same-file skips)
- * Throws ConflictError if any file would be overwritten
- */
-async function validateBatch(
-  operations: FileOperation[]
-): Promise<{ toExecute: FileOperation[]; skipped: FileOperation[] }> {
-  const toExecute: FileOperation[] = [];
-  const skipped: FileOperation[] = [];
-  const conflicts: string[] = [];
-
-  for (const op of operations) {
-    // Skip same-file operations (source === dest)
-    if (isSameFile(op.sourcePath, op.destPath)) {
-      skipped.push(op);
-      continue;
-    }
-
-    // Check if source still exists
-    try {
-      await fs.access(op.sourcePath);
-    } catch {
-      throw new Error(`Source file no longer exists: ${path.basename(op.sourcePath)}`);
-    }
-
-    // Check if destination already exists (CONFLICT)
-    try {
-      await fs.access(op.destPath);
-      // File exists at destination = CONFLICT
-      conflicts.push(path.basename(op.destPath));
-    } catch (err: any) {
-      if (err.code === 'ENOENT') {
-        // File doesn't exist at destination = OK to proceed
-        toExecute.push(op);
-      } else {
-        throw new Error(`Cannot check destination: ${err.message}`);
-      }
-    }
-  }
-
-  // If ANY conflicts, abort entire batch
-  if (conflicts.length > 0) {
-    const error: ConflictError = {
-      type: 'conflict',
-      conflicts,
-      message:
-        conflicts.length === 1
-          ? `File already exists at destination: "${conflicts[0]}". Operation cancelled.`
-          : `${conflicts.length} files already exist at destination (e.g., "${conflicts[0]}"). Operation cancelled.`,
-    };
-    throw error;
-  }
-
-  return { toExecute, skipped };
 }
 
 // ============================================================================
@@ -145,56 +85,51 @@ async function validateBatch(
  * Execute file operations with ATOMIC batch semantics
  *
  * FLOW:
- * 1. Validate ALL files (pre-flight check) - NO modifications
- * 2. If any conflict → abort with clear message
- * 3. If all clear → execute one by one
- * 4. If any execution fails → rollback all completed files
+ * 1. Get pending operations from dry-run (already validated by IPC handler)
+ * 2. Execute one by one with COPYFILE_EXCL (never overwrites)
+ * 3. If any execution fails → rollback all completed files
+ *
+ * Note: The IPC handler validates files during dry-run. We trust that result
+ * and use COPYFILE_EXCL as a safety net for race conditions.
  */
 export async function executeOperations(
   dryRun: DryRunResult,
   opType: OperationType,
   mainWindow: BrowserWindow | null
 ): Promise<ExecutionResult> {
-  const pendingOps = dryRun.operations.filter((op) => op.status === 'pending');
-
-  sendProgress(mainWindow, {
-    totalFiles: pendingOps.length,
-    completedFiles: 0,
-    currentFile: 'Validating...',
-    percentage: 0,
-    phase: 'validating',
-  });
-
-  // PHASE 1: Pre-flight validation (NO file modifications)
-  let toExecute: FileOperation[];
-  let skipped: FileOperation[];
-
-  try {
-    const validation = await validateBatch(pendingOps);
-    toExecute = validation.toExecute;
-    skipped = validation.skipped;
-  } catch (error: any) {
-    if (error.type === 'conflict') {
-      throw error; // Re-throw ConflictError for UI
-    }
-    throw new Error(`Validation failed: ${error.message}`);
+  if (activeExecution) {
+    throw new Error('Another operation is already running. Please wait for it to finish.');
   }
+  activeExecution = { cancelRequested: false };
 
-  // Nothing to do (all files were same-file skips)
+  // Get operations to execute (already validated by IPC dry-run)
+  const toExecute = dryRun.operations.filter((op) => op.status === 'pending');
+  const skippedCount = dryRun.operations.filter((op) => op.status === 'skipped').length;
+
+  // Nothing to do
   if (toExecute.length === 0) {
+    activeExecution = null;
     return {
       success: true,
       completedCount: 0,
-      skippedCount: skipped.length,
+      skippedCount,
       message:
-        skipped.length > 0
-          ? `All ${skipped.length} files are already in the destination folder.`
+        skippedCount > 0
+          ? `All ${skippedCount} files are already in the destination folder.`
           : 'No files to process.',
       batchId: 0,
     };
   }
 
-  // PHASE 2: Log batch to database BEFORE execution
+  sendProgress(mainWindow, {
+    totalFiles: toExecute.length,
+    completedFiles: 0,
+    currentFile: 'Starting...',
+    percentage: 0,
+    phase: 'executing',
+  });
+
+  // Log batch to database BEFORE execution
   const batchId = logOperationBatch({
     operation: opType,
     files: toExecute.map((op) => ({
@@ -206,11 +141,15 @@ export async function executeOperations(
     status: 'pending',
   });
 
-  // PHASE 3: Execute operations
+  // Execute operations
   const completedOps: FileOperation[] = [];
 
   try {
     for (let i = 0; i < toExecute.length; i++) {
+      if (activeExecution?.cancelRequested) {
+        throw new CancelledError('Operation cancelled by user.');
+      }
+
       const op = toExecute[i];
 
       sendProgress(mainWindow, {
@@ -226,7 +165,8 @@ export async function executeOperations(
       await fs.mkdir(destDir, { recursive: true });
 
       if (opType === 'copy') {
-        await fs.copyFile(op.sourcePath, op.destPath);
+        // Exclusive copy: never overwrite even if dest appears after validation
+        await fs.copyFile(op.sourcePath, op.destPath, fsConstants.COPYFILE_EXCL);
       } else {
         // Move: try rename first (fast), fallback to copy+delete
         try {
@@ -234,7 +174,7 @@ export async function executeOperations(
         } catch (renameError: any) {
           if (renameError.code === 'EXDEV') {
             // Cross-device: copy then verify then delete
-            await fs.copyFile(op.sourcePath, op.destPath);
+            await fs.copyFile(op.sourcePath, op.destPath, fsConstants.COPYFILE_EXCL);
 
             // VERIFY copy succeeded before deleting source
             const srcStat = await fs.stat(op.sourcePath);
@@ -280,25 +220,34 @@ export async function executeOperations(
       phase: 'complete',
     });
 
-    const skippedMsg = skipped.length > 0 ? ` (${skipped.length} already in destination)` : '';
+    const skippedMsg = skippedCount > 0 ? ` (${skippedCount} already in destination)` : '';
     return {
       success: true,
       completedCount: completedOps.length,
-      skippedCount: skipped.length,
+      skippedCount,
       message: `Successfully ${opType === 'copy' ? 'copied' : 'moved'} ${completedOps.length} files.${skippedMsg}`,
       batchId,
     };
   } catch (error: any) {
-    // Execution failed mid-batch - rollback completed operations
-    logger.error(`Operation failed: ${error.message}. Rolling back...`);
+    const wasCancelled = error?.type === 'cancelled';
+    const failureLabel = wasCancelled ? 'Operation cancelled' : 'Operation failed';
+    logger.error(`${failureLabel}: ${error.message}. Rolling back...`);
 
-    await rollbackCompletedOps(completedOps, opType);
-    updateBatchStatus(batchId, 'failed', error.message);
+    const rollbackFailures = await rollbackCompletedOps(completedOps, opType);
+    updateBatchStatus(batchId, wasCancelled ? 'cancelled' : 'failed', error.message);
 
-    throw new Error(
-      `Operation failed: ${error.message}. ` +
-        `${completedOps.length} completed files have been rolled back.`
-    );
+    const rollbackNote =
+      rollbackFailures === 0
+        ? `${completedOps.length} completed files have been rolled back.`
+        : `${completedOps.length - rollbackFailures} rolled back, ${rollbackFailures} rollback steps failed. Manual review recommended.`;
+
+    if (wasCancelled) {
+      throw new CancelledError(`Cancelled. ${rollbackNote}`);
+    }
+
+    throw new Error(`Operation failed: ${error.message}. ${rollbackNote}`);
+  } finally {
+    activeExecution = null;
   }
 }
 
@@ -310,17 +259,33 @@ export async function executeOperations(
 async function rollbackCompletedOps(
   completedOps: FileOperation[],
   opType: OperationType
-): Promise<void> {
+): Promise<number> {
+  let failures = 0;
   for (const op of completedOps) {
     try {
       if (opType === 'copy') {
         await shell.trashItem(op.destPath);
       } else {
+        // Do not overwrite anything that might have appeared at the source path.
+        let sourceExists = true;
+        try {
+          await fs.access(op.sourcePath);
+        } catch (existsError: any) {
+          if (existsError?.code === 'ENOENT') {
+            sourceExists = false;
+          } else {
+            throw existsError;
+          }
+        }
+        if (sourceExists) {
+          throw new Error('Cannot rollback move: source path already exists');
+        }
+
         try {
           await fs.rename(op.destPath, op.sourcePath);
         } catch (renameError: any) {
           if (renameError.code === 'EXDEV') {
-            await fs.copyFile(op.destPath, op.sourcePath);
+            await fs.copyFile(op.destPath, op.sourcePath, fsConstants.COPYFILE_EXCL);
             // Verify before deleting
             const srcStat = await fs.stat(op.sourcePath);
             const destStat = await fs.stat(op.destPath);
@@ -335,9 +300,12 @@ async function rollbackCompletedOps(
       }
       logger.info(`Rollback: restored ${op.sourcePath}`);
     } catch (rollbackError: any) {
+      failures++;
       logger.error(`Rollback failed for ${op.sourcePath}: ${rollbackError.message}`);
     }
   }
+
+  return failures;
 }
 
 // ============================================================================
@@ -396,7 +364,7 @@ export async function undoLastBatch(): Promise<{
           await fs.rename(file.destPath, file.sourcePath);
         } catch (renameError: any) {
           if (renameError.code === 'EXDEV') {
-            await fs.copyFile(file.destPath, file.sourcePath);
+            await fs.copyFile(file.destPath, file.sourcePath, fsConstants.COPYFILE_EXCL);
             // Verify copy before deleting
             const srcStat = await fs.stat(file.sourcePath);
             const destStat = await fs.stat(file.destPath);

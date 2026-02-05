@@ -1,5 +1,33 @@
 # Release Notes
 
+## v0.5.1 - File Operations Simplification (2026-02-05)
+
+🧹 **Code quality refactoring:** Simplified file operations architecture, removed dead code, and fixed identical-file handling.
+
+### 🐛 Bug Fixes
+
+- **Identical file handling:** Files that already exist at destination with the same size are now treated as success (skip) rather than a conflict. This matches the expected behavior of "don't overwrite identical files."
+
+### 🏗️ Architecture Improvements
+
+- **Removed duplicate validation:** The `executeOperations` function no longer re-validates files that were already checked during dry-run. Uses `COPYFILE_EXCL` as a safety net for race conditions.
+- **Removed dead code (~140 lines):**
+  - Deleted unused `OperationLogEntry` interface from core
+  - Deleted 6 unused `operation_log` functions from storage service
+  - Removed obsolete operation log methods from `IStorage` interface
+  - Deleted outdated `PHASE5_FILE_OPERATIONS.md` requirements document
+- **Simplified types:** Removed unused `ConflictError` type and `'validating'` phase
+
+### 📊 Code Metrics
+
+| File                     | Before | After | Reduction |
+| ------------------------ | ------ | ----- | --------- |
+| `services/operations.ts` | 544    | 399   | -27%      |
+| `services/storage.ts`    | 439    | 349   | -20%      |
+| `models/Operation.ts`    | 49     | 38    | -22%      |
+
+---
+
 ## v0.5.0 - File Operations Execution (2026-02-02)
 
 ✨ **Phase 5 Complete:** Full file copy/move execution with atomic batch operations, undo support, and database sync.

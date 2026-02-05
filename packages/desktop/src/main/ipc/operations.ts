@@ -15,11 +15,19 @@ import {
 } from '@placemark/core';
 import * as path from 'path';
 import { getPhotosByIds } from '../services/storage';
-import { executeOperations, undoLastBatch, canUndo } from '../services/operations';
+import { executeOperations, undoLastBatch, canUndo, requestCancel } from '../services/operations';
 
 // Store the last dry run result for execution
 let lastDryRunResult: DryRunResult | null = null;
 let lastOpType: OperationType | null = null;
+
+function normalizeForCompare(p: string): string {
+  return path.resolve(p).replace(/\\/g, '/').toLowerCase();
+}
+
+function isSamePath(a: string, b: string): boolean {
+  return normalizeForCompare(a) === normalizeForCompare(b);
+}
 
 export function registerOperationHandlers(getMainWindow: () => BrowserWindow | null): void {
   // Select destination folder
@@ -60,7 +68,8 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
         '/System',
         '/Library',
       ];
-      if (systemFolders.some((sysPath) => destPath.startsWith(sysPath))) {
+      const nDestPath = normalizeForCompare(destPath);
+      if (systemFolders.some((sysPath) => nDestPath.startsWith(normalizeForCompare(sysPath)))) {
         throw new Error('Cannot perform operations on system folders');
       }
 
@@ -98,24 +107,37 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
         throw new Error(`Destination not writable: ${destPath}`);
       }
 
-      // Check file collisions
+      // Check file status at destination
       for (const op of plan.operations) {
         const enrichedOp: FileOperation = { ...op };
 
-        try {
-          await fs.access(op.destPath);
-          // If access successful, file exists -> CONFLICT
-          enrichedOp.status = 'conflict';
-          enrichedOp.error = 'File already exists at destination';
+        // Same-file operation (source already in destination) is a safe no-op
+        if (isSamePath(op.sourcePath, op.destPath)) {
+          enrichedOp.status = 'skipped';
+          enrichedOps.push(enrichedOp);
+          continue;
+        }
 
-          // Add specific warning
-          warnings.push(`Conflict: ${path.basename(op.destPath)} already exists`);
+        try {
+          const destStat = await fs.stat(op.destPath);
+          // File exists at destination - check if it's identical (same size)
+          // For photos, matching size is a strong indicator of identical content
+          if (destStat.size === op.fileSize) {
+            // Identical file already exists - treat as success, skip copy/move
+            enrichedOp.status = 'skipped';
+          } else {
+            // Different file with same name - real conflict
+            enrichedOp.status = 'conflict';
+            enrichedOp.error = 'Different file already exists at destination';
+            warnings.push(
+              `Conflict: ${path.basename(op.destPath)} already exists (different content)`
+            );
+          }
         } catch (err: any) {
           if (err.code === 'ENOENT') {
-            // File does not exist -> OK
+            // File does not exist -> OK to proceed
             enrichedOp.status = 'pending';
           } else {
-            // Verify permissions errors or other FS issues
             enrichedOp.status = 'failed';
             enrichedOp.error = `Access error: ${err.message}`;
             warnings.push(`Error checking ${path.basename(op.destPath)}: ${err.message}`);
@@ -148,18 +170,42 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
       throw new Error('No operation preview available. Please generate a preview first.');
     }
 
+    // Strict atomic semantics: any conflicts/errors must be resolved before executing.
+    const blocking = lastDryRunResult.operations.filter(
+      (op) => op.status === 'conflict' || op.status === 'failed'
+    );
+    if (blocking.length > 0) {
+      throw new Error(
+        blocking.length === 1
+          ? 'Preview contains a conflict/error. Resolve it before executing.'
+          : `Preview contains ${blocking.length} conflicts/errors. Resolve them before executing.`
+      );
+    }
+
     const pendingOps = lastDryRunResult.operations.filter((op) => op.status === 'pending');
     if (pendingOps.length === 0) {
       throw new Error('No pending operations to execute.');
     }
 
-    const result = await executeOperations(lastDryRunResult, lastOpType, getMainWindow());
+    try {
+      const result = await executeOperations(lastDryRunResult, lastOpType, getMainWindow());
 
-    // Clear stored dry run after execution
-    lastDryRunResult = null;
-    lastOpType = null;
+      // Clear stored dry run after successful execution
+      lastDryRunResult = null;
+      lastOpType = null;
 
-    return result;
+      return result;
+    } catch (err: any) {
+      if (err?.type === 'cancelled' || err?.name === 'CancelledError') {
+        return { success: false, cancelled: true, message: err.message };
+      }
+      throw err;
+    }
+  });
+
+  // Cancel current operation (rolls back in-progress batch)
+  ipcMain.handle('ops:cancel', async () => {
+    return requestCancel();
   });
 
   // Undo last operation

@@ -122,6 +122,34 @@ const MIGRATIONS: Array<{ version: number; name: string; sql: string }> = [
       CREATE INDEX IF NOT EXISTS idx_operation_batch_files_photo ON operation_batch_files(photo_id);
     `,
   },
+  {
+    version: 5,
+    name: 'batch_cancelled_status',
+    sql: `
+      -- Add 'cancelled' status to operation_batch
+      PRAGMA foreign_keys=OFF;
+
+      ALTER TABLE operation_batch RENAME TO operation_batch_old;
+
+      CREATE TABLE IF NOT EXISTS operation_batch (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        operation TEXT NOT NULL CHECK(operation IN ('copy', 'move')),
+        timestamp INTEGER NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('pending', 'completed', 'failed', 'cancelled', 'undone', 'archived')),
+        error TEXT
+      );
+
+      INSERT INTO operation_batch (id, operation, timestamp, status, error)
+        SELECT id, operation, timestamp, status, error FROM operation_batch_old;
+
+      DROP TABLE operation_batch_old;
+
+      CREATE INDEX IF NOT EXISTS idx_operation_batch_timestamp ON operation_batch(timestamp);
+      CREATE INDEX IF NOT EXISTS idx_operation_batch_status ON operation_batch(status);
+
+      PRAGMA foreign_keys=ON;
+    `,
+  },
 ];
 
 /**

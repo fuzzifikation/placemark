@@ -9,8 +9,13 @@ export type OperationStatus =
   | 'in-progress'
   | 'completed'
   | 'failed'
+  | 'cancelled'
   | 'skipped'
   | 'conflict';
+
+// Batch-level statuses used by the desktop app's operation history/undo system.
+// Keeping them in core avoids type drift between core/desktop.
+export type BatchStatus = OperationStatus | 'undone' | 'archived';
 
 export interface FileOperation {
   id: string; // Unique ID for tracking
@@ -30,14 +35,4 @@ export interface DryRunResult {
     totalSize: number;
     warnings: string[];
   };
-}
-
-export interface OperationLogEntry {
-  id: number;
-  operation: OperationType;
-  sourcePath: string;
-  destPath: string;
-  timestamp: number;
-  status: OperationStatus;
-  error?: string;
 }

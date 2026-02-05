@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('api', {
     generateDryRun: (photoIds: number[], destPath: string, opType: string) =>
       ipcRenderer.invoke('ops:generateDryRun', photoIds, destPath, opType),
     execute: () => ipcRenderer.invoke('ops:execute'),
+    cancel: () => ipcRenderer.invoke('ops:cancel'),
     undo: () => ipcRenderer.invoke('ops:undo'),
     canUndo: () => ipcRenderer.invoke('ops:canUndo'),
     onProgress: (callback: (progress: any) => void) => {

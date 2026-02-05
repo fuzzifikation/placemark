@@ -323,12 +323,53 @@ export const DEFAULT_SETTINGS: AppSettings = {
 - Destination folder selection
 - Dry-run preview showing source → destination
 - Conflict detection
-- Progress tracking (Phase 5)
+- Progress tracking
 
 **Sub-components:**
 
 - `SourceSummary` - Selected photos summary
 - `DryRunPreview` - Preview of planned operations
+
+### File Operations Safety Model
+
+File operations follow a **safety-first, atomic batch** design. The goal is to never lose user data.
+
+#### Core Principles
+
+1. **Atomic Batches:** Either ALL files in a batch succeed, or NOTHING is modified. If file #47 of 100 fails, files #1-46 are rolled back.
+
+2. **Never Overwrite:** Operations use `COPYFILE_EXCL` flag - if a file appears at destination between validation and execution, the operation fails safely rather than overwriting.
+
+3. **Identical Files = Skip:** If a file with the same name AND same size exists at destination, it's treated as "already done" (skipped), not a conflict. Different size = real conflict, batch aborts.
+
+4. **Session-Only Undo:** Completed batches can be undone until app restart. On startup, old batches are archived (no indefinite undo stacking).
+
+#### Execution Flow
+
+```
+User selects photos → Choose destination → Preview (dry-run)
+                                              ↓
+                                    IPC validates each file:
+                                    - Same path? → Skip
+                                    - Same size at dest? → Skip (identical)
+                                    - Different file at dest? → Conflict (abort)
+                                    - No file at dest? → Pending (proceed)
+                                              ↓
+                                    User confirms → Execute
+                                              ↓
+                                    For each file:
+                                    - Create dest directory
+                                    - Copy/move with COPYFILE_EXCL
+                                    - On failure: rollback all completed
+                                              ↓
+                                    Update DB paths (move only) → Done
+```
+
+#### Undo Behavior
+
+- **Copy undo:** Sends copied files to OS Trash (recoverable)
+- **Move undo:** Restores files to original location
+- **Partial undo:** If some files can't be restored, batch stays "completed" (user must investigate)
 
 ## State Management
 

@@ -4,6 +4,14 @@ import { DryRunPreview } from './DryRunPreview';
 import { SourceSummary } from './SourceSummary';
 import { useTheme } from '../../hooks/useTheme';
 
+interface ExecutionProgress {
+  totalFiles: number;
+  completedFiles: number;
+  currentFile: string;
+  percentage: number;
+  phase: 'validating' | 'executing' | 'complete';
+}
+
 interface OperationsPanelProps {
   selectedPhotos: Photo[];
   onClose: () => void;
@@ -40,6 +48,7 @@ export function OperationsPanel({
   const [loading, setLoading] = useState(false);
   const [executing, setExecuting] = useState(false);
   const [undoState, setUndoState] = useState<UndoState>({ canUndo: false });
+  const [progress, setProgress] = useState<ExecutionProgress | null>(null);
 
   // Check undo availability on mount and after operations
   const checkUndoState = async () => {
@@ -54,6 +63,22 @@ export function OperationsPanel({
   useEffect(() => {
     checkUndoState();
   }, []);
+
+  // Subscribe to progress events while executing
+  useEffect(() => {
+    if (!executing) {
+      setProgress(null);
+      return;
+    }
+
+    const unsubscribe = window.api.ops.onProgress((p: ExecutionProgress) => {
+      setProgress(p);
+    });
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, [executing]);
 
   const handleSelectDest = async () => {
     try {
@@ -96,12 +121,16 @@ export function OperationsPanel({
     setExecuting(true);
     try {
       const result = await window.api.ops.execute();
-      toast.success(result.message);
-      setDryRunResult(null);
-      await checkUndoState();
-      // Refresh photos to get updated paths (important for move operations)
-      if (opType === 'move') {
-        await onRefreshPhotos();
+      if ((result as any).cancelled) {
+        toast.info(result.message);
+      } else {
+        toast.success(result.message);
+        setDryRunResult(null);
+        await checkUndoState();
+        // Refresh photos to get updated paths (important for move operations)
+        if (opType === 'move') {
+          await onRefreshPhotos();
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -113,6 +142,16 @@ export function OperationsPanel({
       }
     } finally {
       setExecuting(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      const result = await window.api.ops.cancel();
+      toast.info(result.message);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to cancel operation');
     }
   };
 
@@ -316,6 +355,76 @@ export function OperationsPanel({
               }}
             >
               <DryRunPreview result={dryRunResult} colors={colors} />
+
+              {executing && progress && (
+                <div
+                  style={{
+                    padding: '0.75rem',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '6px',
+                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.04)' : '#f9fafb',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 600 }}>
+                      {progress.phase === 'validating' ? 'Validating…' : 'Executing…'}
+                    </span>
+                    <span style={{ color: colors.textSecondary }}>
+                      {progress.completedFiles}/{progress.totalFiles} ({progress.percentage}%)
+                    </span>
+                  </div>
+
+                  {progress.currentFile && (
+                    <div
+                      style={{
+                        color: colors.textSecondary,
+                        fontFamily: 'monospace',
+                        fontSize: '0.8rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title={progress.currentFile}
+                    >
+                      {progress.currentFile}
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      height: '8px',
+                      backgroundColor: colors.borderLight,
+                      borderRadius: '999px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${Math.min(100, Math.max(0, progress.percentage))}%`,
+                        height: '100%',
+                        backgroundColor: colors.primary,
+                        transition: 'width 150ms linear',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={handleCancel}
+                      style={{
+                        ...styles.button,
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                      }}
+                    >
+                      Cancel (Rollback)
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div
                 style={{

@@ -63,7 +63,21 @@ export interface ThumbnailsAPI {
 
 export interface OperationsAPI {
   selectDestination: () => Promise<string | null>;
-  generateDryRun: (photoIds: number[], destPath: string, opType: string) => Promise<any>;
+  generateDryRun: (
+    photoIds: number[],
+    destPath: string,
+    opType: string
+  ) => Promise<import('@placemark/core').DryRunResult>;
+  execute: () => Promise<{
+    success: boolean;
+    message: string;
+    batchId?: number;
+    cancelled?: boolean;
+  }>;
+  cancel: () => Promise<{ ok: boolean; message: string }>;
+  undo: () => Promise<{ success: boolean; message: string; undoneCount?: number }>;
+  canUndo: () => Promise<{ canUndo: boolean; batchInfo?: any }>;
+  onProgress: (callback: (progress: any) => void) => () => void;
 }
 
 export interface SystemAPI {

@@ -5,7 +5,6 @@
 
 import { Photo, PhotoCreateInput } from '../models/Photo';
 import { Source, SourceCreateInput, SourceUpdateInput } from '../models/Source';
-import { OperationLogEntry } from '../models/Operation';
 
 /**
  * Core storage interface that all platforms must implement
@@ -92,25 +91,6 @@ export interface IStorage {
    * Delete source
    */
   deleteSource(id: number): void;
-
-  // ============================================================================
-  // Operation log
-  // ============================================================================
-
-  /**
-   * Log a file operation
-   */
-  logOperation(entry: Omit<OperationLogEntry, 'id'>): OperationLogEntry;
-
-  /**
-   * Get operation history
-   */
-  getOperationHistory(limit?: number): OperationLogEntry[];
-
-  /**
-   * Get pending operations
-   */
-  getPendingOperations(): OperationLogEntry[];
 
   // ============================================================================
   // Lifecycle

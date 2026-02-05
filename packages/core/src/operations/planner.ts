@@ -66,8 +66,10 @@ export function generateOperationPlan(
     let counter = 1;
 
     if (destFilenames.has(uniqueFilename)) {
-      const namePart = filename.substring(0, filename.lastIndexOf('.'));
-      const extPart = filename.substring(filename.lastIndexOf('.'));
+      const dotIndex = filename.lastIndexOf('.');
+      const hasExtension = dotIndex > 0;
+      const namePart = hasExtension ? filename.slice(0, dotIndex) : filename;
+      const extPart = hasExtension ? filename.slice(dotIndex) : '';
 
       while (destFilenames.has(uniqueFilename)) {
         uniqueFilename = `${namePart} (${counter})${extPart}`;

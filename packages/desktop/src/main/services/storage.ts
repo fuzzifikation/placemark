@@ -11,9 +11,8 @@ import {
   PhotoCreateInput,
   Source,
   SourceCreateInput,
-  OperationLogEntry,
   OperationType,
-  OperationStatus,
+  BatchStatus,
 } from '@placemark/core';
 import { initializeDatabase, closeDatabase } from '../database/schema';
 import { logger } from './logger';
@@ -222,96 +221,6 @@ export function createSource(input: SourceCreateInput): Source {
 }
 
 // ============================================================================
-// Operation log
-// ============================================================================
-
-function rowToOperationLogEntry(row: any): OperationLogEntry {
-  return {
-    id: row.id,
-    operation: row.operation as OperationType,
-    sourcePath: row.source_path,
-    destPath: row.dest_path,
-    timestamp: row.timestamp,
-    status: row.status as OperationStatus,
-    error: row.error ?? undefined,
-  };
-}
-
-/**
- * Log a file operation
- */
-export function logOperation(entry: Omit<OperationLogEntry, 'id'>): OperationLogEntry {
-  const db = getDb();
-  const result = db
-    .prepare(
-      `INSERT INTO operation_log (operation, source_path, dest_path, timestamp, status, error)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(
-      entry.operation,
-      entry.sourcePath,
-      entry.destPath,
-      entry.timestamp,
-      entry.status,
-      entry.error ?? null
-    );
-
-  return {
-    id: result.lastInsertRowid as number,
-    ...entry,
-  };
-}
-
-/**
- * Update operation status
- */
-export function updateOperationStatus(id: number, status: OperationStatus, error?: string): void {
-  getDb()
-    .prepare('UPDATE operation_log SET status = ?, error = ? WHERE id = ?')
-    .run(status, error ?? null, id);
-}
-
-/**
- * Get the last completed operation (for undo)
- */
-export function getLastCompletedOperation(): OperationLogEntry | null {
-  const row = getDb()
-    .prepare(
-      `SELECT * FROM operation_log 
-       WHERE status = 'completed' 
-       ORDER BY timestamp DESC 
-       LIMIT 1`
-    )
-    .get();
-  return row ? rowToOperationLogEntry(row) : null;
-}
-
-/**
- * Get operation by ID
- */
-export function getOperationById(id: number): OperationLogEntry | null {
-  const row = getDb().prepare('SELECT * FROM operation_log WHERE id = ?').get(id);
-  return row ? rowToOperationLogEntry(row) : null;
-}
-
-/**
- * Get recent operations (for history)
- */
-export function getOperationHistory(limit: number = 50): OperationLogEntry[] {
-  const rows = getDb()
-    .prepare('SELECT * FROM operation_log ORDER BY timestamp DESC LIMIT ?')
-    .all(limit);
-  return rows.map(rowToOperationLogEntry);
-}
-
-/**
- * Mark operation as undone
- */
-export function markOperationUndone(id: number): void {
-  getDb().prepare('UPDATE operation_log SET status = ? WHERE id = ?').run('undone', id);
-}
-
-// ============================================================================
 // Batch operations (for atomic undo)
 // ============================================================================
 
@@ -325,7 +234,7 @@ export interface OperationBatch {
   id: number;
   operation: OperationType;
   timestamp: number;
-  status: OperationStatus;
+  status: BatchStatus;
   error?: string;
   files: BatchFile[];
 }
@@ -334,7 +243,7 @@ export interface BatchInput {
   operation: OperationType;
   files: BatchFile[];
   timestamp: number;
-  status: OperationStatus;
+  status: BatchStatus;
 }
 
 /**
@@ -374,7 +283,7 @@ export function logOperationBatch(input: BatchInput): number {
 /**
  * Update batch status
  */
-export function updateBatchStatus(batchId: number, status: OperationStatus, error?: string): void {
+export function updateBatchStatus(batchId: number, status: BatchStatus, error?: string): void {
   getDb()
     .prepare('UPDATE operation_batch SET status = ?, error = ? WHERE id = ?')
     .run(status, error ?? null, batchId);
@@ -405,7 +314,7 @@ export function getLastCompletedBatch(): OperationBatch | null {
     id: batchRow.id,
     operation: batchRow.operation as OperationType,
     timestamp: batchRow.timestamp,
-    status: batchRow.status as OperationStatus,
+    status: batchRow.status as BatchStatus,
     error: batchRow.error ?? undefined,
     files: fileRows.map((row) => ({
       photoId: row.photo_id,
