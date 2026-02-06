@@ -253,14 +253,14 @@ export class ThumbnailService {
   /**
    * Set maximum cache size in MB
    */
-  setMaxSizeMB(sizeMB: number): void {
+  async setMaxSizeMB(sizeMB: number): Promise<void> {
     this.db
       .prepare('UPDATE thumbnail_metadata SET value = ? WHERE key = ?')
       .run(sizeMB.toString(), 'max_size_mb');
     logger.info(`Thumbnail cache max size set to ${sizeMB}MB`);
 
     // Evict if new size is smaller than current cache
-    this.evictToFitNewLimit();
+    await this.evictToFitNewLimit();
   }
 
   /**

@@ -15,10 +15,11 @@ import { Photo } from '../models/Photo';
 import { FileOperation, DryRunResult, OperationType } from '../models/Operation';
 
 /**
- * Generate a unique tracking ID for an operation
+ * Generate a unique tracking ID for an operation.
+ * Uses crypto.randomUUID() — available in Node 19+, modern browsers, and React Native.
  */
 function generateOpId(): string {
-  return Math.random().toString(36).substring(2, 11);
+  return crypto.randomUUID();
 }
 
 /**

@@ -152,9 +152,17 @@ Use `pnpm run version:update x.y.z` for version bumps (patch: bug fixes, minor: 
 
 **Report findings explicitly. Keep code simple - split files over 200 lines.**
 
+## Database Compatibility
+
+**Placemark is in alpha.** There is no database migration compatibility guarantee across versions. Schema migrations may be stubbed or destructive.
+
+- If a version changes the database schema, **instruct users to delete and rebuild** their database (`placemark.db` and `thumbnails.db` in the app data folder).
+- Do not invest effort in backward-compatible migrations until post-1.0.
+- Photo data is always rebuildable by re-scanning source folders.
+
 ## Implementation Phase
 
-Currently in **Phase 4A Complete** - clean, maintainable codebase ready. Phase 5 (File Operations - Execution) is next. See [docs/plan.md](../docs/plan.md) for 9-phase roadmap.
+Currently in **Phase 5 Complete** — full file operations with atomic batch semantics and undo. Phase 6 (Network Shares) is next. See [docs/plan.md](../docs/plan.md) for 9-phase roadmap.
 
 Prioritize: **clarity > performance**, **safety > convenience**, **explicit > automatic**.
 

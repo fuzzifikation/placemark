@@ -110,49 +110,6 @@ export interface StorageOptions {
   readonly?: boolean;
 }
 
-/**
- * Query builder helpers for SQL construction
- */
-export class QueryBuilder {
-  /**
-   * Build WHERE clause for location filtering
-   */
-  static buildLocationFilter(): string {
-    return 'latitude IS NOT NULL AND longitude IS NOT NULL';
-  }
-
-  /**
-   * Build WHERE clause for date range filtering
-   */
-  static buildDateRangeFilter(
-    startTimestamp: number,
-    endTimestamp: number
-  ): { sql: string; params: number[] } {
-    return {
-      sql: 'timestamp BETWEEN ? AND ?',
-      params: [startTimestamp, endTimestamp],
-    };
-  }
-
-  /**
-   * Build WHERE clause for bounding box (handles IDL crossing)
-   */
-  static buildBoundsFilter(bounds: { north: number; south: number; east: number; west: number }): {
-    sql: string;
-    params: number[];
-  } {
-    const crossesIdl = bounds.west > bounds.east;
-
-    if (crossesIdl) {
-      return {
-        sql: 'latitude BETWEEN ? AND ? AND (longitude >= ? OR longitude <= ?)',
-        params: [bounds.south, bounds.north, bounds.west, bounds.east],
-      };
-    } else {
-      return {
-        sql: 'latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?',
-        params: [bounds.south, bounds.north, bounds.west, bounds.east],
-      };
-    }
-  }
-}
+// Query builder helpers live in filters/geographic.ts (buildBoundsQuery),
+// filters/temporal.ts (buildDateRangeQuery), and filters/combined.ts (buildCombinedQuery).
+// Use those directly — they are the single source of truth for SQL clause construction.

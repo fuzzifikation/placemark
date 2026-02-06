@@ -220,7 +220,7 @@ export function registerPhotoHandlers(): void {
 
   // Set maximum cache size
   ipcMain.handle('thumbnails:setMaxSize', async (_event, sizeMB: number) => {
-    thumbnailService.setMaxSizeMB(sizeMB);
+    await thumbnailService.setMaxSizeMB(sizeMB);
   });
 }
 

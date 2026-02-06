@@ -4,8 +4,8 @@
  */
 
 import { Photo } from '../models/Photo';
-import { BoundingBox, isPhotoInBounds } from './geographic';
-import { DateRange, isPhotoInDateRange } from './temporal';
+import { BoundingBox, isPhotoInBounds, buildBoundsQuery } from './geographic';
+import { DateRange, isPhotoInDateRange, buildDateRangeQuery } from './temporal';
 
 export interface CombinedFilter {
   bounds?: BoundingBox;
@@ -41,8 +41,8 @@ export function filterPhotos(photos: Photo[], filter: CombinedFilter): Photo[] {
 }
 
 /**
- * Build SQL WHERE clause for combined filtering
- * Returns SQL fragment and parameter array for prepared statements
+ * Build SQL WHERE clause for combined filtering.
+ * Composes from geographic and temporal query builders — single source of truth.
  */
 export function buildCombinedQuery(filter: CombinedFilter): {
   sql: string;
@@ -51,27 +51,18 @@ export function buildCombinedQuery(filter: CombinedFilter): {
   const clauses: string[] = [];
   const params: number[] = [];
 
-  // Add bounds filter if present
+  // Compose from geographic query builder
   if (filter.bounds) {
-    const { bounds } = filter;
-    const crossesIdl = bounds.west > bounds.east;
-
-    clauses.push('latitude BETWEEN ? AND ?');
-    params.push(bounds.south, bounds.north);
-
-    if (crossesIdl) {
-      clauses.push('(longitude >= ? OR longitude <= ?)');
-      params.push(bounds.west, bounds.east);
-    } else {
-      clauses.push('longitude BETWEEN ? AND ?');
-      params.push(bounds.west, bounds.east);
-    }
+    const boundsQuery = buildBoundsQuery(filter.bounds);
+    clauses.push(boundsQuery.sql);
+    params.push(...boundsQuery.params);
   }
 
-  // Add date range filter if present
+  // Compose from temporal query builder
   if (filter.dateRange) {
-    clauses.push('timestamp BETWEEN ? AND ?');
-    params.push(filter.dateRange.start, filter.dateRange.end);
+    const dateQuery = buildDateRangeQuery(filter.dateRange);
+    clauses.push(dateQuery.sql);
+    params.push(...dateQuery.params);
   }
 
   // Always require location data
