@@ -117,6 +117,21 @@ pnpm -C packages/desktop build    # Production build
 - **Integration tests:** EXIF extraction with sample photos, SQLite queries
 - **E2E tests (Playwright):** Full desktop app workflow (Phase 8+)
 
+**Run before every commit:**
+
+```bash
+pnpm -C packages/core test              # Core unit tests (must pass)
+```
+
+**Current test coverage (packages/core):**
+
+- `filters/geographic.test.ts` — bounding box filtering, IDL crossing, null coords, SQL generation
+- `filters/combined.test.ts` — composed query delegation, NOT NULL clauses, empty filter
+- `operations/planner.test.ts` — batch filename collisions, path separators, empty input, size sums
+- `operations/validator.test.ts` — same-path rejection, dest-inside-source, mixed separators, root/empty paths
+
+When modifying core logic, **add or update tests** for the changed behavior.
+
 ## Code Review & Simplification Protocol
 
 **MANDATORY BEFORE EVERY COMMIT:** Perform this review:
@@ -146,7 +161,12 @@ pnpm -C packages/desktop build    # Production build
 - No `any` types without justification
 - Extract magic numbers to named constants
 
-### 5. **Version Check**
+### 5. **Run Tests**
+
+- Run `pnpm -C packages/core test` — all tests must pass before committing.
+- If core logic was changed, add or update relevant tests.
+
+### 6. **Version Check**
 
 Use `pnpm run version:update x.y.z` for version bumps (patch: bug fixes, minor: features).
 

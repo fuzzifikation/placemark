@@ -342,9 +342,10 @@ pnpm -r test                           # Test all
 
 ## Testing Strategy
 
-**Unit Tests (Vitest):**
+**Unit Tests (Vitest) — ✅ Implemented:**
 
-- Core package: filter logic, query builders, validation
+- Core package: geographic filters (IDL crossing), combined query composition, operation planner (filename collisions), path/operation validators
+- Run with `pnpm -C packages/core test` — must pass before every commit
 - Run fast (<1s), no I/O
 
 **Integration Tests:**
