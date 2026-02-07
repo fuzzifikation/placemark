@@ -1,5 +1,32 @@
 # Release Notes
 
+## v0.5.2 - Security & Quality Updates (2026-02-07)
+
+🔒 **Dependency updates, security fixes, and GPS data validation.**
+
+### 🔒 Security
+
+- **Resolved `@isaacs/brace-expansion` vulnerability** (high severity — uncontrolled resource consumption). Added resolution override to force patched version 5.0.1.
+- **Updated all dependencies** to latest versions: Electron 40.2.1, React 19.2.4, MapLibre GL 5.17.0, electron-builder 26.7.0, and more.
+- **Zero known vulnerabilities** per `pnpm audit`.
+
+### 🐛 Bug Fixes
+
+- **GPS (0, 0) rejection:** Photos with exactly (0.000000, 0.000000) coordinates are now treated as having no GPS data. This coordinate is almost always a firmware/metadata error, not a real photo location.
+
+### 📝 Documentation
+
+- **Product Requirements Document (PRD):** Added comprehensive `prd.md` covering all functional and non-functional requirements with completion status.
+- **Removed network share requirements** from PRD — the OS folder picker already handles mounted drives and UNC paths transparently.
+- **Updated MV-9 requirement** to accurately reflect implemented map style support (light/dark tile adaptation).
+
+### 🔧 Technical
+
+- **Core package purity:** Replaced `crypto.randomUUID()` with pure JS UUID generator in core package (no Node.js dependency).
+- **Dependency updates:** electron-builder-squirrel-windows 26.7.0, @electron/rebuild 4.0.3, @types/node 25.2.1, @vitejs/plugin-react 5.1.3, @types/react 19.2.13.
+
+---
+
 ## v0.5.1 - File Operations Simplification (2026-02-05)
 
 🧹 **Code quality refactoring:** Simplified file operations architecture, removed dead code, and fixed identical-file handling.

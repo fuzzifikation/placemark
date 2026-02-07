@@ -27,10 +27,12 @@ export async function extractExif(filePath: string): Promise<ExifData> {
 
     const result: ExifData = {};
 
-    // GPS coordinates
+    // GPS coordinates — reject (0, 0) as implausible (default/error value from faulty firmware)
     if (gpsData && gpsData.latitude !== undefined && gpsData.longitude !== undefined) {
-      result.latitude = gpsData.latitude;
-      result.longitude = gpsData.longitude;
+      if (gpsData.latitude !== 0 || gpsData.longitude !== 0) {
+        result.latitude = gpsData.latitude;
+        result.longitude = gpsData.longitude;
+      }
     }
 
     // Timestamp

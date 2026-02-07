@@ -1,9 +1,12 @@
 packages:
   - packages/*
 
-# Only ignore dev-time tools that don't ship to production
-# better-sqlite3 must be rebuilt for Electron's Node ABI
 ignoredBuiltDependencies:
   - esbuild
   - electron
   - electron-winstaller
+
+overrides:
+  '@electron/rebuild': ^3.2.10
+  esbuild: ^0.25.0
+  tar: ^7.4.3

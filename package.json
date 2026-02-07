@@ -1,7 +1,7 @@
 {
   "name": "placemark",
   "private": true,
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Privacy-first, local-first photo organizer",
   "author": "Placemark",
   "homepage": "https://github.com/fuzzifikation/placemark",
@@ -23,6 +23,7 @@
   "resolutions": {
     "tar": "^7.4.3",
     "esbuild": "^0.25.0",
-    "@electron/rebuild": "^3.2.10"
+    "@electron/rebuild": "^4.0.3",
+    "@isaacs/brace-expansion": "5.0.1"
   }
 }
