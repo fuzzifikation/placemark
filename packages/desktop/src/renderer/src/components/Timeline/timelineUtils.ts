@@ -6,12 +6,13 @@
 export const MIN_RANGE_GAP_MS = 1000; // Minimum 1 second gap between start and end
 export const DEBOUNCE_DELAY_MS = 100; // Debounce delay for range change notifications
 
+import { formatDateWithOptions } from '../../utils/formatLocale';
+
 /**
  * Format timestamp for display
  */
 export function formatDate(timestamp: number): string {
-  const date = new Date(timestamp);
-  return date.toLocaleDateString('en-US', {
+  return formatDateWithOptions(timestamp, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

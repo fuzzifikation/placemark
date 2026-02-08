@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
+import { formatNumber } from '../../utils/formatLocale';
 
 interface ThumbnailStats {
   totalSizeMB: number;
@@ -155,7 +156,7 @@ export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSet
           >
             <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
               <p style={{ margin: '0.25rem 0' }}>
-                <strong>Total Photos:</strong> {databaseStats.totalPhotoCount.toLocaleString()}
+                <strong>Total Photos:</strong> {formatNumber(databaseStats.totalPhotoCount)}
               </p>
               <p style={{ margin: '0.25rem 0' }}>
                 <strong>Photos Database:</strong> {databaseStats.photosDbSizeMB.toFixed(1)} MB
@@ -332,7 +333,7 @@ export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSet
         >
           <div style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
             <p style={{ margin: '0.25rem 0' }}>
-              <strong>Total Photos:</strong> {databaseStats.totalPhotoCount.toLocaleString()}
+              <strong>Total Photos:</strong> {formatNumber(databaseStats.totalPhotoCount)}
             </p>
             <p style={{ margin: '0.25rem 0' }}>
               <strong>Photos Database:</strong> {databaseStats.photosDbSizeMB.toFixed(1)} MB
@@ -360,7 +361,7 @@ export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSet
               Thumbnail Cache
             </div>
             <div style={{ fontSize: '0.75rem', color: colors.textMuted, marginTop: '0.25rem' }}>
-              {thumbnailStats.thumbnailCount.toLocaleString()} thumbnails •{' '}
+              {formatNumber(thumbnailStats.thumbnailCount)} thumbnails •{' '}
               {thumbnailStats.totalSizeMB.toFixed(1)} MB used
             </div>
           </div>

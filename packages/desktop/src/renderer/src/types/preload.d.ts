@@ -83,6 +83,7 @@ export interface OperationsAPI {
 export interface SystemAPI {
   openAppDataFolder: () => Promise<void>;
   getAppVersion: () => Promise<string>;
+  getSystemLocale: () => Promise<string>;
   openExternal: (url: string) => Promise<void>;
 }
 

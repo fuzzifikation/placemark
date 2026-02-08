@@ -3,6 +3,7 @@ import type { Photo, DryRunResult, OperationType } from '@placemark/core';
 import { DryRunPreview } from './DryRunPreview';
 import { SourceSummary } from './SourceSummary';
 import { useTheme } from '../../hooks/useTheme';
+import { formatDateTime } from '../../utils/formatLocale';
 
 interface ExecutionProgress {
   totalFiles: number;
@@ -502,7 +503,7 @@ export function OperationsPanel({
                     files)
                   </span>
                   <span style={{ fontSize: '0.75rem', color: colors.textSecondary }}>
-                    {new Date(undoState.batchInfo.timestamp).toLocaleString()}
+                    {formatDateTime(undoState.batchInfo.timestamp)}
                   </span>
                 </div>
                 <button

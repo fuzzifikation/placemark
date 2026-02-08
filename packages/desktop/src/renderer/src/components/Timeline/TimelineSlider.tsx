@@ -4,11 +4,11 @@
 
 import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { formatDateWithOptions } from '../../utils/formatLocale';
 
 // Format timestamp for display
 function formatDate(timestamp: number): string {
-  const date = new Date(timestamp);
-  return date.toLocaleDateString('en-US', {
+  return formatDateWithOptions(timestamp, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

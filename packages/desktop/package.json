@@ -1,6 +1,6 @@
 {
   "name": "@placemark/desktop",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "private": true,
   "description": "Placemark desktop application built with Electron",
   "author": "Placemark",
@@ -14,6 +14,7 @@
     "postinstall": "electron-rebuild"
   },
   "dependencies": {
+    "@img/sharp-win32-x64": "^0.34.5",
     "@placemark/core": "workspace:*",
     "better-sqlite3": "^12.6.2",
     "exifr": "^7.1.3",

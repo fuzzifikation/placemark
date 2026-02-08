@@ -21,4 +21,10 @@ export function registerSystemHandlers() {
   ipcMain.handle('system:getAppVersion', async () => {
     return app.getVersion();
   });
+
+  ipcMain.handle('system:getSystemLocale', async () => {
+    // Returns the OS regional-format locale (e.g. 'de-DE' even when
+    // the display language is 'en-US').  Available since Electron 21.
+    return app.getSystemLocale();
+  });
 }

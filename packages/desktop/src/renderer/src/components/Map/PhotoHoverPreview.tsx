@@ -4,6 +4,7 @@
 
 import type { Photo } from '@placemark/core';
 import type { Theme } from '../../theme';
+import { formatDate } from '../../utils/formatLocale';
 
 interface PhotoHoverPreviewProps {
   photo: Photo;
@@ -29,7 +30,7 @@ export function PhotoHoverPreview({
   const placeholderText = isDark ? '#888' : '#666';
 
   const filename = photo.path.split(/[\\/]/).pop();
-  const formattedDate = photo.timestamp ? new Date(photo.timestamp).toLocaleDateString() : null;
+  const formattedDate = photo.timestamp ? formatDate(photo.timestamp) : null;
 
   return (
     <div

@@ -63,9 +63,9 @@ export function getLocationStatus(photo: Photo): string {
 /**
  * Get human-readable date from timestamp
  */
-export function getDateString(photo: Photo): string {
+export function getDateString(photo: Photo, locale?: string): string {
   if (!hasTimestamp(photo)) {
     return 'No date';
   }
-  return new Date(photo.timestamp!).toLocaleDateString();
+  return new Date(photo.timestamp!).toLocaleDateString(locale);
 }

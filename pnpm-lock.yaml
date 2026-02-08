@@ -32,6 +32,9 @@ importers:
 
   packages/desktop:
     dependencies:
+      '@img/sharp-win32-x64':
+        specifier: ^0.34.5
+        version: 0.34.5
       '@placemark/core':
         specifier: workspace:*
         version: link:../core
@@ -2761,8 +2764,7 @@ snapshots:
   '@img/sharp-win32-ia32@0.34.5':
     optional: true
 
-  '@img/sharp-win32-x64@0.34.5':
-    optional: true
+  '@img/sharp-win32-x64@0.34.5': {}
 
   '@isaacs/balanced-match@4.0.1': {}
 

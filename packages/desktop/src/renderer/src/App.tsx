@@ -12,6 +12,7 @@ import { useFolderScan } from './hooks/useFolderScan';
 import { useToast } from './hooks/useToast';
 import { FONT_FAMILY } from './constants/ui';
 import { ToastContainer } from './components/Toast/ToastContainer';
+import { initSystemLocale } from './utils/formatLocale';
 import './types/preload.d'; // Import type definitions
 
 function App() {
@@ -31,6 +32,11 @@ function App() {
     return () => {
       document.head.removeChild(style);
     };
+  }, []);
+
+  // Resolve OS regional-format locale for date/number formatting
+  useEffect(() => {
+    initSystemLocale();
   }, []);
 
   // Custom hooks

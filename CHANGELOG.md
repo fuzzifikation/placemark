@@ -5,6 +5,20 @@ All notable changes to Placemark will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-02-08
+
+### Added
+
+- Locale-aware date/time/number formatting using OS regional format setting
+- New `formatLocale.ts` utility with `formatDate()`, `formatDateTime()`, `formatDateWithOptions()`, `formatNumber()` helpers
+- New `system:getSystemLocale` IPC channel exposing `app.getSystemLocale()`
+- System locale initialization on app startup via `initSystemLocale()`
+
+### Changed
+
+- All renderer date formatting now uses centralised locale-aware helpers
+- Core `getDateString()` accepts optional `locale` parameter
+
 ## [0.3.3] - 2026-02-02
 
 ### Added
@@ -86,7 +100,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SQLite storage for metadata
 - Timeline view with date range filtering
 
-[Unreleased]: https://github.com/fuzzifikation/placemark/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/fuzzifikation/placemark/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/fuzzifikation/placemark/compare/v0.5.2...v0.6.0
+[0.3.3]: https://github.com/fuzzifikation/placemark/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/fuzzifikation/placemark/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/fuzzifikation/placemark/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/fuzzifikation/placemark/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fuzzifikation/placemark/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fuzzifikation/placemark/releases/tag/v0.1.0

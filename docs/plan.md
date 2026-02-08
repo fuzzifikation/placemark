@@ -8,6 +8,7 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 
 **Recent Work:**
 
+- **v0.6.0 — Locale-aware formatting:** All dates/numbers respect the OS regional format setting (e.g. German date format with English UI). New `formatLocale.ts` utility, `system:getSystemLocale` IPC channel.
 - **Phase 5 Complete (v0.5.0):** Full file operations execution with atomic batch semantics, undo support, and database sync. Copy/move operations fully functional with conflict detection, rollback on failure, and OS trash integration for undo.
 - **Phase 4A Complete (v0.2.2):** Major code quality refactoring. Settings.tsx reduced from 854→388 lines (4 panels extracted). MapView.tsx reduced from 868→280 lines (3 hooks extracted). Zero TypeScript errors, all files under 400 lines.
 - **v0.2.2 (Jan 30, 2026):** Code quality improvements: Refactored Settings.tsx (719→357 lines) and MapView.tsx (664→534 lines) by extracting hooks (useMapHover, useSpiderfy). Fixed type safety issues, implemented spiderify for overlapping markers.

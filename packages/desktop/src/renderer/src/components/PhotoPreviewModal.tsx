@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { Photo } from '@placemark/core';
+import { formatDateTime } from '../utils/formatLocale';
 
 interface PhotoPreviewModalProps {
   photo: Photo;
@@ -147,7 +148,7 @@ export function PhotoPreviewModal({ photo, onClose }: PhotoPreviewModalProps) {
           </p>
           {photo.timestamp && (
             <p style={{ margin: '0.25rem 0' }}>
-              <strong>Date:</strong> {new Date(photo.timestamp).toLocaleString()}
+              <strong>Date:</strong> {formatDateTime(photo.timestamp)}
             </p>
           )}
           <p style={{ margin: '0.25rem 0' }}>

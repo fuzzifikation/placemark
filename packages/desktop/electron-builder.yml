@@ -4,14 +4,21 @@ directories:
   buildResources: build
   output: release
 icon: ../../icon.png
+electronLanguages:
+  - en-US
 files:
   - dist/**/*
   - dist-electron/**/*
   - build/icon.png
   - package.json
-  - '!node_modules/@img/sharp-{darwin,linux,win32-arm64,win32-ia32,linuxmusl,wasm32}*/**'
-  - '!node_modules/@img/sharp-libvips-{darwin,linux,linuxmusl}*/**'
-  - '!node_modules/@emnapi/runtime/**'
+  # Sharp: only include win32-x64 platform binary (explicitly added as dependency)
+  - '!node_modules/@img/sharp-{darwin,linux,linuxmusl,wasm32}*/**'
+  - '!node_modules/@img/sharp-win32-{arm64,ia32}*/**'
+  - '!node_modules/@img/sharp-libvips-*/**'
+  # better-sqlite3: keep only lib/binding/*.node, exclude build artifacts
+  - '!node_modules/better-sqlite3/build/**'
+  - '!node_modules/better-sqlite3/deps/**'
+  - '!node_modules/better-sqlite3/src/**'
 win:
   target:
     - target: portable

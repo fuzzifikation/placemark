@@ -45,6 +45,7 @@ contextBridge.exposeInMainWorld('api', {
   system: {
     openAppDataFolder: () => ipcRenderer.invoke('system:openAppDataFolder'),
     getAppVersion: () => ipcRenderer.invoke('system:getAppVersion'),
+    getSystemLocale: () => ipcRenderer.invoke('system:getSystemLocale'),
     openExternal: (url: string) => ipcRenderer.invoke('system:openExternal', url),
   },
 });

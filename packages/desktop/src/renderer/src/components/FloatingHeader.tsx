@@ -66,7 +66,7 @@ export function FloatingHeader({
       {/* Title */}
       <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.SM }}>
         <img
-          src="/icon.png"
+          src="./icon.png"
           alt="Placemark"
           style={{
             width: 32,

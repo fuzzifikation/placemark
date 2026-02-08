@@ -1,5 +1,28 @@
 # Release Notes
 
+## v0.6.0 - Locale-Aware Formatting (2026-02-08)
+
+🌍 **Dates and numbers now respect the OS regional format setting**, not just the display language.
+
+### ✨ New Features
+
+- **System locale detection:** Electron's `app.getSystemLocale()` is used to detect the OS regional format (e.g. `de-DE` for German date format even when the UI language is `en-US`).
+- **Locale-aware date/time formatting:** All user-facing dates use the system locale — timeline labels, photo hover previews, photo detail modals, and undo timestamps.
+- **Locale-aware number formatting:** Photo counts and thumbnail statistics use locale-appropriate grouping separators.
+
+### 🏗️ Architecture
+
+- **New `formatLocale.ts` utility:** Centralised `formatDate()`, `formatDateTime()`, `formatDateWithOptions()`, and `formatNumber()` helpers that pass the system locale explicitly.
+- **New IPC channel `system:getSystemLocale`:** Exposes `app.getSystemLocale()` from main process to renderer via the preload bridge.
+- **Core `getDateString()` updated:** Accepts an optional `locale` parameter while remaining platform-agnostic.
+
+### 📝 Notes
+
+- Chromium (and standard Electron) derives `navigator.language` from the OS _display language_, not the regional format. Edge has special Microsoft integration; Placemark now bridges this gap explicitly.
+- No database schema changes. No migration needed.
+
+---
+
 ## v0.5.2 - Security & Quality Updates (2026-02-07)
 
 🔒 **Dependency updates, security fixes, and GPS data validation.**
