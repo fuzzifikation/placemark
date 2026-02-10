@@ -79,8 +79,8 @@ export const lightTheme: ThemeColors = {
   modalBackground: '#ffffff',
 
   // Glassmorphism (Light)
-  glassSurface: 'rgba(255, 255, 255, 0.85)',
-  glassBorder: 'rgba(255, 255, 255, 0.5)',
+  glassSurface: 'rgba(255, 255, 255, 0.7)',
+  glassBorder: 'rgba(255, 255, 255, 0.3)',
   shadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
 };
 
@@ -119,8 +119,8 @@ export const darkTheme: ThemeColors = {
   modalBackground: '#1e293b',
 
   // Glassmorphism (Dark)
-  glassSurface: 'rgba(30, 41, 59, 0.75)',
-  glassBorder: 'rgba(255, 255, 255, 0.1)',
+  glassSurface: 'rgba(30, 41, 59, 0.6)',
+  glassBorder: 'rgba(255, 255, 255, 0.08)',
   shadow: '0 10px 15px -3px rgb(0 0 0 / 0.5)',
 };
 

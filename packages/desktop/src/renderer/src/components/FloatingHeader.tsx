@@ -22,6 +22,8 @@ interface FloatingHeaderProps {
   showTimeline: boolean;
   scanning: boolean;
   colors: ThemeColors;
+  glassBlur: number; // blur in pixels
+  glassSurfaceOpacity: number; // 0-100
   onSelectionModeToggle: () => void;
   onOperationsOpen: () => void;
   onSettingsOpen: () => void;
@@ -37,6 +39,8 @@ export function FloatingHeader({
   showTimeline,
   scanning,
   colors,
+  glassBlur,
+  glassSurfaceOpacity,
   onSelectionModeToggle,
   onOperationsOpen,
   onSettingsOpen,
@@ -50,9 +54,11 @@ export function FloatingHeader({
         top: SPACING.LG,
         left: SPACING.LG,
         padding: `${SPACING.MD} ${SPACING.XL}`,
-        backgroundColor: colors.glassSurface,
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        backgroundColor: `rgba(${
+          colors.glassSurface.includes('255') ? '255, 255, 255' : '30, 41, 59'
+        }, ${glassSurfaceOpacity / 100})`,
+        backdropFilter: `blur(${glassBlur}px)`,
+        WebkitBackdropFilter: `blur(${glassBlur}px)`,
         border: `1px solid ${colors.glassBorder}`,
         borderRadius: BORDER_RADIUS.XL,
         boxShadow: colors.shadow,

@@ -20,6 +20,8 @@ interface TimelineProps {
   onClose: () => void;
   updateInterval: number; // milliseconds between map updates during playback - from settings
   theme: Theme;
+  autoZoomDuringPlay: boolean;
+  onAutoZoomToggle: () => void;
 }
 
 export function Timeline({
@@ -33,6 +35,8 @@ export function Timeline({
   onClose,
   updateInterval,
   theme,
+  autoZoomDuringPlay,
+  onAutoZoomToggle,
 }: TimelineProps) {
   const [localStart, setLocalStart] = useState(startDate);
   const [localEnd, setLocalEnd] = useState(endDate);
@@ -106,6 +110,8 @@ export function Timeline({
         onSpeedCycle={handleSpeedCycle}
         onClose={onClose}
         theme={theme}
+        autoZoomDuringPlay={autoZoomDuringPlay}
+        onAutoZoomToggle={onAutoZoomToggle}
       />
       <TimelineSlider
         minDate={minDate}

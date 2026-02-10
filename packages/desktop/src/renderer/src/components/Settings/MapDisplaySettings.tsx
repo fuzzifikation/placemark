@@ -2,6 +2,7 @@
  * MapDisplaySettings - Map clustering and display configuration
  */
 
+import { useState } from 'react';
 import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
@@ -23,6 +24,17 @@ export function MapDisplaySettings({
   onReset,
 }: MapDisplaySettingsProps) {
   const colors = useThemeColors(theme);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    clustering: false,
+    display: false,
+  });
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
 
   return (
     <div>
@@ -63,8 +75,8 @@ export function MapDisplaySettings({
         {/* Clustering */}
         <SettingsSection
           title="Marker Clustering"
-          expanded={true}
-          onToggle={() => {}}
+          expanded={expandedSections.clustering}
+          onToggle={() => toggleSection('clustering')}
           theme={theme}
         >
           <SettingsToggle
@@ -72,6 +84,13 @@ export function MapDisplaySettings({
             value={settings.clusteringEnabled}
             description="Group nearby photos into clusters to improve performance with many photos"
             onChange={(val) => onSettingChange('clusteringEnabled', val)}
+            theme={theme}
+          />
+          <SettingsToggle
+            label="Show Heatmap"
+            value={settings.showHeatmap}
+            description="Display photo density as a colored heat map overlay"
+            onChange={(val) => onSettingChange('showHeatmap', val)}
             theme={theme}
           />
           {settings.clusteringEnabled && (
@@ -89,7 +108,7 @@ export function MapDisplaySettings({
                 theme={theme}
               />
               <SettingsSlider
-                label="Stop Clustering At Zoom"
+                label="Stop Clustering at Zoom"
                 value={settings.clusterMaxZoom}
                 min={10}
                 max={20}
@@ -99,30 +118,41 @@ export function MapDisplaySettings({
                 onChange={(val) => onSettingChange('clusterMaxZoom', val)}
                 theme={theme}
               />
+              <SettingsSlider
+                label="Cluster Circle Opacity"
+                value={Math.round(settings.clusterOpacity * 100)}
+                min={10}
+                max={100}
+                step={5}
+                unit="%"
+                minLabel="Very Transparent (10%)"
+                maxLabel="Opaque (100%)"
+                onChange={(val) => onSettingChange('clusterOpacity', val / 100)}
+                theme={theme}
+              />
+              <SettingsSlider
+                label="Photo Point Opacity"
+                value={Math.round(settings.unclusteredPointOpacity * 100)}
+                min={10}
+                max={100}
+                step={5}
+                unit="%"
+                minLabel="Very Transparent (10%)"
+                maxLabel="Opaque (100%)"
+                onChange={(val) => onSettingChange('unclusteredPointOpacity', val / 100)}
+                theme={theme}
+              />
             </>
           )}
         </SettingsSection>
 
         {/* Display Options */}
-        <SettingsSection title="Display Options" expanded={true} onToggle={() => {}} theme={theme}>
-          <SettingsToggle
-            label="Show Heatmap"
-            value={settings.showHeatmap}
-            description="Display photo density as a colored heat map overlay"
-            onChange={(val) => onSettingChange('showHeatmap', val)}
-            theme={theme}
-          />
-          <SettingsSlider
-            label="Maximum Zoom Level"
-            value={settings.mapMaxZoom}
-            min={10}
-            max={settings.tileMaxZoom}
-            step={1}
-            minLabel="Zoomed out (10)"
-            maxLabel={`Zoomed in (${settings.tileMaxZoom})`}
-            onChange={(val) => onSettingChange('mapMaxZoom', val)}
-            theme={theme}
-          />
+        <SettingsSection
+          title="Display Options"
+          expanded={expandedSections.display}
+          onToggle={() => toggleSection('display')}
+          theme={theme}
+        >
           <SettingsSlider
             label="Map Padding"
             value={settings.mapPadding}

@@ -12,6 +12,8 @@ interface PhotoHoverPreviewProps {
   thumbnailUrl: string | null;
   loading: boolean;
   theme: Theme;
+  glassBlur?: number;
+  glassSurfaceOpacity?: number;
 }
 
 export function PhotoHoverPreview({
@@ -20,11 +22,15 @@ export function PhotoHoverPreview({
   thumbnailUrl,
   loading,
   theme,
+  glassBlur = 12,
+  glassSurfaceOpacity = 70,
 }: PhotoHoverPreviewProps) {
   const isDark = theme === 'dark';
-  const backgroundColor = isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+  const backgroundColor = isDark
+    ? `rgba(30, 41, 59, ${glassSurfaceOpacity / 100})`
+    : `rgba(255, 255, 255, ${glassSurfaceOpacity / 100})`;
   const textColor = isDark ? '#ffffff' : '#000000';
-  const borderColor = isDark ? '#444' : '#ccc';
+  const borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)';
   const mutedColor = isDark ? '#aaa' : '#666';
   const placeholderBg = isDark ? '#222' : '#f0f0f0';
   const placeholderText = isDark ? '#888' : '#666';
@@ -39,11 +45,13 @@ export function PhotoHoverPreview({
         left: position.x + 15,
         top: position.y + 15,
         backgroundColor,
+        backdropFilter: `blur(${glassBlur}px)`,
+        WebkitBackdropFilter: `blur(${glassBlur}px)`,
         color: textColor,
         border: `1px solid ${borderColor}`,
-        borderRadius: '4px',
+        borderRadius: '8px',
         padding: '0.5rem',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
         pointerEvents: 'none',
         zIndex: 999,
         maxWidth: '180px',

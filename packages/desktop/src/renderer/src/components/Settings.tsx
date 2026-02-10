@@ -37,8 +37,9 @@ export interface AppSettings {
   clusteringEnabled: boolean;
   clusterRadius: number;
   clusterMaxZoom: number;
+  clusterOpacity: number; // Opacity for cluster circles (0-1)
+  unclusteredPointOpacity: number; // Opacity for individual photo points (0-1)
   // Map Display
-  mapMaxZoom: number;
   mapPadding: number;
   mapTransitionDuration: number;
   showHeatmap: boolean;
@@ -49,13 +50,16 @@ export interface AppSettings {
   toastDuration: number; // ms - how long toasts stay visible
   // Developer Settings (fine-tuning)
   devSettingsEnabled: boolean;
-  tileMaxZoom: number; // Max zoom level for map tiles
+  tileMaxZoom: number; // Absolute max zoom limit for manual zooming (map tile availability limit)
   spiderOverlapTolerance: number; // Pixels - how close points must be visually to overlap
   spiderRadius: number; // Pixels - visual radius of spider circle on screen
   spiderAnimationDuration: number; // ms - spider expand/collapse animation
   spiderTriggerZoom: number; // Zoom level at which clusters spider instead of zoom
   spiderCollapseMargin: number; // Pixels - how far mouse can leave spider before it closes
   spiderClearZoom: number; // Auto-clear spider when zooming below this level
+  // Glassmorphism UI Effects
+  glassBlur: number; // Backdrop blur in pixels (0-30)
+  glassSurfaceOpacity: number; // Glass surface opacity 0-100 (%)
 }
 
 // SINGLE SOURCE OF TRUTH: All default values are defined here
@@ -64,7 +68,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   clusteringEnabled: true,
   clusterRadius: 30,
   clusterMaxZoom: 14,
-  mapMaxZoom: 15,
+  clusterOpacity: 0.85,
+  unclusteredPointOpacity: 0.9,
   mapPadding: 50,
   mapTransitionDuration: 200,
   showHeatmap: false,
@@ -81,6 +86,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   spiderTriggerZoom: 6,
   spiderCollapseMargin: 30, // pixels - mouse distance beyond spider before collapse
   spiderClearZoom: 7, // auto-clear spider when zooming below this
+  // Glassmorphism defaults
+  glassBlur: 12, // 12px blur
+  glassSurfaceOpacity: 70, // 70% opacity
 };
 
 // Default spider settings as a SpiderSettings object
@@ -177,7 +185,8 @@ export function Settings({
     updateSetting('clusteringEnabled', DEFAULT_SETTINGS.clusteringEnabled);
     updateSetting('clusterRadius', DEFAULT_SETTINGS.clusterRadius);
     updateSetting('clusterMaxZoom', DEFAULT_SETTINGS.clusterMaxZoom);
-    updateSetting('mapMaxZoom', DEFAULT_SETTINGS.mapMaxZoom);
+    updateSetting('clusterOpacity', DEFAULT_SETTINGS.clusterOpacity);
+    updateSetting('unclusteredPointOpacity', DEFAULT_SETTINGS.unclusteredPointOpacity);
     updateSetting('mapPadding', DEFAULT_SETTINGS.mapPadding);
     updateSetting('mapTransitionDuration', DEFAULT_SETTINGS.mapTransitionDuration);
     updateSetting('showHeatmap', DEFAULT_SETTINGS.showHeatmap);
@@ -199,6 +208,8 @@ export function Settings({
     updateSetting('spiderTriggerZoom', DEFAULT_SETTINGS.spiderTriggerZoom);
     updateSetting('spiderCollapseMargin', DEFAULT_SETTINGS.spiderCollapseMargin);
     updateSetting('spiderClearZoom', DEFAULT_SETTINGS.spiderClearZoom);
+    updateSetting('glassBlur', DEFAULT_SETTINGS.glassBlur);
+    updateSetting('glassSurfaceOpacity', DEFAULT_SETTINGS.glassSurfaceOpacity);
     toast.success('Advanced settings reset');
   };
 
@@ -252,7 +263,7 @@ export function Settings({
           </div>
 
           {/* Navigation */}
-          <nav style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0' }}>
+          <nav style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0.5rem 0.5rem 0' }}>
             {sections.map((section) => (
               <button
                 key={section.id}
@@ -271,8 +282,8 @@ export function Settings({
                   fontSize: '0.875rem',
                   fontWeight: activeSection === section.id ? 600 : 400,
                   borderRadius: '0 6px 6px 0',
-                  marginRight: '0.5rem',
                   transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 <span style={{ fontSize: '1rem' }}>{section.icon}</span>

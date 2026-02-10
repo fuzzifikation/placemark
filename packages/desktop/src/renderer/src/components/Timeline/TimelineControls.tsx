@@ -22,6 +22,8 @@ interface TimelineControlsProps {
   onSpeedCycle: () => void;
   onClose: () => void;
   theme: Theme;
+  autoZoomDuringPlay: boolean;
+  onAutoZoomToggle: () => void;
 }
 
 export function TimelineControls({
@@ -33,8 +35,15 @@ export function TimelineControls({
   onSpeedCycle,
   onClose,
   theme,
+  autoZoomDuringPlay,
+  onAutoZoomToggle,
 }: TimelineControlsProps) {
   const colors = useThemeColors(theme);
+  const isDark = theme === 'dark';
+
+  // Toggle switch colors
+  const trackBg = autoZoomDuringPlay ? '#0066cc' : isDark ? '#334155' : '#cbd5e1';
+  const knobColor = '#ffffff';
 
   return (
     <div
@@ -47,7 +56,48 @@ export function TimelineControls({
       <span style={{ fontSize: '0.875rem', fontWeight: 500, color: colors.textPrimary }}>
         Timeline: {filteredPhotos} of {totalPhotos} photos
       </span>
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        {/* Auto Zoom Toggle */}
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.75rem',
+            color: colors.textPrimary,
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+          onClick={onAutoZoomToggle}
+          title="Automatically zoom and pan map to follow your journey during playback"
+        >
+          <div
+            style={{
+              position: 'relative',
+              width: '36px',
+              height: '20px',
+              backgroundColor: trackBg,
+              borderRadius: '10px',
+              transition: 'background-color 0.2s ease',
+              flexShrink: 0,
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: '2px',
+                left: autoZoomDuringPlay ? '18px' : '2px',
+                width: '16px',
+                height: '16px',
+                backgroundColor: knobColor,
+                borderRadius: '50%',
+                transition: 'left 0.2s ease',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }}
+            />
+          </div>
+          <span>Auto Zoom</span>
+        </label>
         <button
           onClick={onSpeedCycle}
           style={{

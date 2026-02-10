@@ -26,13 +26,14 @@ interface UseMapLayerManagementProps {
   clusterRadius: number;
   clusterMaxZoom: number;
   transitionDuration: number;
-  maxZoom: number;
   padding: number;
   autoFit: boolean;
   showHeatmap: boolean;
   selectionMode: SelectionMode;
   spiderState: any;
   selectedIds?: Set<number>;
+  clusterOpacity?: number;
+  unclusteredPointOpacity?: number;
 }
 
 export function useMapLayerManagement({
@@ -43,13 +44,14 @@ export function useMapLayerManagement({
   clusterRadius,
   clusterMaxZoom,
   transitionDuration,
-  maxZoom,
   padding,
   autoFit,
   showHeatmap,
   selectionMode,
   spiderState,
   selectedIds,
+  clusterOpacity,
+  unclusteredPointOpacity,
 }: UseMapLayerManagementProps) {
   const hasInitialFit = useRef(false);
 
@@ -147,7 +149,7 @@ export function useMapLayerManagement({
       }
 
       // Add all cluster layers on top
-      addClusterLayers(mapRef.current, showHeatmap);
+      addClusterLayers(mapRef.current, showHeatmap, clusterOpacity, unclusteredPointOpacity);
     } else {
       // Update existing source data
       const source = mapRef.current.getSource('photos') as maplibregl.GeoJSONSource;
@@ -216,7 +218,7 @@ export function useMapLayerManagement({
         photosWithLocation.forEach((photo) => {
           bounds.extend([photo.longitude!, photo.latitude!]);
         });
-        mapRef.current.fitBounds(bounds, { padding, maxZoom, duration: transitionDuration });
+        mapRef.current.fitBounds(bounds, { padding, duration: transitionDuration });
         hasInitialFit.current = true;
       }
     }
@@ -227,7 +229,6 @@ export function useMapLayerManagement({
     clusterRadius,
     clusterMaxZoom,
     transitionDuration,
-    maxZoom,
     padding,
     autoFit,
     showHeatmap,

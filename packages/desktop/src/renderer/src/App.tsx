@@ -156,7 +156,6 @@ function App() {
             clusterRadius={settings.clusterRadius}
             clusterMaxZoom={settings.clusterMaxZoom}
             transitionDuration={settings.mapTransitionDuration}
-            maxZoom={settings.mapMaxZoom}
             tileMaxZoom={settings.tileMaxZoom}
             padding={settings.mapPadding}
             autoFit={
@@ -175,6 +174,10 @@ function App() {
               collapseMargin: settings.spiderCollapseMargin,
               clearZoom: settings.spiderClearZoom,
             }}
+            glassBlur={settings.glassBlur}
+            glassSurfaceOpacity={settings.glassSurfaceOpacity}
+            clusterOpacity={settings.clusterOpacity}
+            unclusteredPointOpacity={settings.unclusteredPointOpacity}
           />
         </div>
 
@@ -187,6 +190,8 @@ function App() {
           showTimeline={showTimeline}
           scanning={folderScan.scanning}
           colors={colors}
+          glassBlur={settings.glassBlur}
+          glassSurfaceOpacity={settings.glassSurfaceOpacity}
           onSelectionModeToggle={handleSelectionModeToggle}
           onOperationsOpen={() => setShowOperations(true)}
           onSettingsOpen={() => setShowSettings(true)}
@@ -203,9 +208,11 @@ function App() {
               left: '2rem',
               right: '2rem',
               zIndex: 10,
-              backgroundColor: colors.glassSurface,
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
+              backgroundColor: `rgba(${
+                colors.glassSurface.includes('255') ? '255, 255, 255' : '30, 41, 59'
+              }, ${settings.glassSurfaceOpacity / 100})`,
+              backdropFilter: `blur(${settings.glassBlur}px)`,
+              WebkitBackdropFilter: `blur(${settings.glassBlur}px)`,
               border: `1px solid ${colors.glassBorder}`,
               borderRadius: '16px',
               boxShadow: colors.shadow,
@@ -239,6 +246,10 @@ function App() {
               onClose={handleTimelineClose}
               updateInterval={settings.timelineUpdateInterval}
               theme={theme}
+              autoZoomDuringPlay={settings.autoZoomDuringPlay}
+              onAutoZoomToggle={() =>
+                setSettings((prev) => ({ ...prev, autoZoomDuringPlay: !prev.autoZoomDuringPlay }))
+              }
             />
           </div>
         )}
@@ -266,7 +277,11 @@ function App() {
 
         {/* Photo Preview Modal */}
         {selectedPhoto && (
-          <PhotoPreviewModal photo={selectedPhoto} onClose={() => setSelectedPhoto(null)} />
+          <PhotoPreviewModal
+            photo={selectedPhoto}
+            onClose={() => setSelectedPhoto(null)}
+            theme={theme}
+          />
         )}
 
         {/* Toast Notifications */}
@@ -298,17 +313,38 @@ function App() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.5rem',
+          gap: '0.75rem',
           marginTop: '1.5rem',
           cursor: 'pointer',
         }}
+        onClick={() => folderScan.setIncludeSubdirectories(!folderScan.includeSubdirectories)}
       >
-        <input
-          type="checkbox"
-          checked={folderScan.includeSubdirectories}
-          onChange={(e) => folderScan.setIncludeSubdirectories(e.target.checked)}
-          style={{ cursor: 'pointer' }}
-        />
+        {/* Toggle Switch */}
+        <div
+          style={{
+            position: 'relative',
+            width: '44px',
+            height: '24px',
+            backgroundColor: folderScan.includeSubdirectories ? '#0066cc' : '#cbd5e1',
+            borderRadius: '12px',
+            transition: 'background-color 0.2s ease',
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: '2px',
+              left: folderScan.includeSubdirectories ? '22px' : '2px',
+              width: '20px',
+              height: '20px',
+              backgroundColor: '#ffffff',
+              borderRadius: '50%',
+              transition: 'left 0.2s ease',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            }}
+          />
+        </div>
         <span>Include subdirectories</span>
       </label>
 

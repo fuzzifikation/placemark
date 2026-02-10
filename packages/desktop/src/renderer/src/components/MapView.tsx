@@ -37,7 +37,6 @@ interface MapViewProps {
   clusterRadius: number;
   clusterMaxZoom: number;
   transitionDuration: number;
-  maxZoom: number;
   tileMaxZoom: number;
   padding: number;
   autoFit?: boolean;
@@ -49,6 +48,12 @@ interface MapViewProps {
   selectionMode?: SelectionMode;
   // Spider settings
   spiderSettings?: SpiderSettings;
+  // Glassmorphism settings
+  glassBlur?: number;
+  glassSurfaceOpacity?: number;
+  // Cluster opacity settings
+  clusterOpacity?: number;
+  unclusteredPointOpacity?: number;
 }
 
 export function MapView({
@@ -58,7 +63,6 @@ export function MapView({
   clusterRadius,
   clusterMaxZoom,
   transitionDuration,
-  maxZoom,
   tileMaxZoom,
   padding,
   autoFit = true,
@@ -70,6 +74,10 @@ export function MapView({
   onSelectionChange,
   selectionMode = 'pan',
   spiderSettings = getDefaultSpiderSettings(),
+  glassBlur = 12,
+  glassSurfaceOpacity = 70,
+  clusterOpacity = 0.85,
+  unclusteredPointOpacity = 0.9,
 }: MapViewProps) {
   // ========== STATE ==========
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -174,13 +182,14 @@ export function MapView({
     clusterRadius,
     clusterMaxZoom,
     transitionDuration,
-    maxZoom,
     padding,
     autoFit,
     showHeatmap,
     selectionMode,
     spiderState,
     selectedIds,
+    clusterOpacity,
+    unclusteredPointOpacity,
   });
 
   // ========== MAP EVENT HANDLERS ==========
@@ -272,6 +281,8 @@ export function MapView({
           thumbnailUrl={hoverState.thumbnailUrl}
           loading={hoverState.loading}
           theme={theme}
+          glassBlur={glassBlur}
+          glassSurfaceOpacity={glassSurfaceOpacity}
         />
       )}
     </div>

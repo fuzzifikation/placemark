@@ -23,7 +23,15 @@ export function SettingsSection({
   const colors = useThemeColors(theme);
 
   return (
-    <section style={{ marginBottom: '1.5rem' }}>
+    <section
+      style={{
+        marginBottom: '1.5rem',
+        border: `1px solid ${colors.border}`,
+        borderRadius: '8px',
+        overflow: 'hidden',
+        transition: 'all 0.2s ease',
+      }}
+    >
       <button
         onClick={onToggle}
         style={{
@@ -33,8 +41,8 @@ export function SettingsSection({
           alignItems: 'center',
           padding: '0.75rem 1rem',
           backgroundColor: colors.surface,
-          border: `1px solid ${colors.border}`,
-          borderRadius: '6px',
+          border: 'none',
+          borderBottom: expanded ? `1px solid ${colors.border}` : 'none',
           fontSize: '1rem',
           fontWeight: 600,
           color: colors.textPrimary,
@@ -49,6 +57,7 @@ export function SettingsSection({
           style={{
             transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s ease',
+            color: colors.textSecondary,
           }}
         >
           ▶
@@ -58,8 +67,11 @@ export function SettingsSection({
       {expanded && (
         <div
           style={{
-            marginTop: '1rem',
-            paddingLeft: '1rem',
+            padding: '1rem',
+            backgroundColor: colors.background,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
           }}
         >
           {children}

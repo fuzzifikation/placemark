@@ -2,6 +2,7 @@
  * TimelineSettings - Timeline playback configuration
  */
 
+import { useState } from 'react';
 import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
@@ -22,6 +23,16 @@ export function TimelineSettings({
   onReset,
 }: TimelineSettingsProps) {
   const colors = useThemeColors(theme);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    playback: false,
+  });
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
 
   return (
     <div>
@@ -61,17 +72,10 @@ export function TimelineSettings({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <SettingsSection
           title="Playback Settings"
-          expanded={true}
-          onToggle={() => {}}
+          expanded={expandedSections.playback}
+          onToggle={() => toggleSection('playback')}
           theme={theme}
         >
-          <SettingsToggle
-            label="Auto-fit map during playback"
-            value={settings.autoZoomDuringPlay}
-            description="Map will automatically zoom and pan to follow your journey"
-            onChange={(value) => onSettingChange('autoZoomDuringPlay', value)}
-            theme={theme}
-          />
           <div>
             <label
               style={{

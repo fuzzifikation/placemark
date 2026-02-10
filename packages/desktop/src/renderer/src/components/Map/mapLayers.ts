@@ -60,7 +60,12 @@ export function addHeatmapLayer(map: maplibregl.Map) {
 /**
  * Add cluster layers to map (circles, labels, unclustered points)
  */
-export function addClusterLayers(map: maplibregl.Map, showHeatmap: boolean = false) {
+export function addClusterLayers(
+  map: maplibregl.Map,
+  showHeatmap: boolean = false,
+  clusterOpacity: number = 0.85,
+  unclusteredPointOpacity: number = 0.9
+) {
   // Layer for cluster circles
   map.addLayer({
     id: 'clusters',
@@ -86,6 +91,7 @@ export function addClusterLayers(map: maplibregl.Map, showHeatmap: boolean = fal
         CLUSTER_THRESHOLDS.MEDIUM,
         CLUSTER_RADII.LARGE,
       ],
+      'circle-opacity': clusterOpacity,
     },
   });
 
@@ -163,6 +169,7 @@ export function addClusterLayers(map: maplibregl.Map, showHeatmap: boolean = fal
         SELECTED_STYLE.STROKE_COLOR,
         UNCLUSTERED_STYLE.STROKE_COLOR,
       ],
+      'circle-opacity': unclusteredPointOpacity,
     },
   });
 

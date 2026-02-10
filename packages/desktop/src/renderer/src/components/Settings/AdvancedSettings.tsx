@@ -2,6 +2,7 @@
  * AdvancedSettings - Developer and fine-tuning options
  */
 
+import { useState } from 'react';
 import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
@@ -22,6 +23,19 @@ export function AdvancedSettings({
   onReset,
 }: AdvancedSettingsProps) {
   const colors = useThemeColors(theme);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    ui: false,
+    spider: false,
+    tiles: false,
+    glass: false,
+  });
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
 
   return (
     <div>
@@ -83,7 +97,12 @@ export function AdvancedSettings({
           </div>
         </div>
 
-        <SettingsSection title="UI Settings" expanded={true} onToggle={() => {}} theme={theme}>
+        <SettingsSection
+          title="UI Settings"
+          expanded={expandedSections.ui}
+          onToggle={() => toggleSection('ui')}
+          theme={theme}
+        >
           <SettingsSlider
             label="Toast Duration"
             value={settings.toastDuration}
@@ -98,7 +117,12 @@ export function AdvancedSettings({
           />
         </SettingsSection>
 
-        <SettingsSection title="Spider Settings" expanded={true} onToggle={() => {}} theme={theme}>
+        <SettingsSection
+          title="Spider Settings"
+          expanded={expandedSections.spider}
+          onToggle={() => toggleSection('spider')}
+          theme={theme}
+        >
           <SettingsSlider
             label="Spider Trigger Zoom"
             value={settings.spiderTriggerZoom}
@@ -171,21 +195,67 @@ export function AdvancedSettings({
           />
         </SettingsSection>
 
-        <SettingsSection title="Tile Settings" expanded={true} onToggle={() => {}} theme={theme}>
+        <SettingsSection
+          title="Tile Settings"
+          expanded={expandedSections.tiles}
+          onToggle={() => toggleSection('tiles')}
+          theme={theme}
+        >
+          <div>
+            <SettingsSlider
+              label="Manual Zoom Limit (Tile Max Zoom)"
+              value={settings.tileMaxZoom}
+              min={15}
+              max={19}
+              step={1}
+              minLabel="Conservative (15)"
+              maxLabel="Maximum (19)"
+              onChange={(val) => onSettingChange('tileMaxZoom', val)}
+              theme={theme}
+            />
+            <p
+              style={{
+                fontSize: '0.7rem',
+                color: colors.textMuted,
+                margin: '0.25rem 0 0 0',
+                fontStyle: 'italic',
+              }}
+            >
+              Maximum zoom level for map tiles. Limits how far you can manually zoom with
+              mouse/trackpad. Also limits auto-fit zoom. OSM tiles go to 19, but 18 is safer to
+              avoid missing tiles.
+            </p>
+          </div>
+        </SettingsSection>
+
+        <SettingsSection
+          title="Glassmorphism Effects"
+          expanded={expandedSections.glass}
+          onToggle={() => toggleSection('glass')}
+          theme={theme}
+        >
           <SettingsSlider
-            label="Tile Max Zoom"
-            value={settings.tileMaxZoom}
-            min={15}
-            max={19}
+            label="Glass Blur"
+            value={settings.glassBlur}
+            min={0}
+            max={30}
             step={1}
-            minLabel="Conservative (15)"
-            maxLabel="Maximum (19)"
-            onChange={(val) => {
-              onSettingChange('tileMaxZoom', val);
-              if (settings.mapMaxZoom > val) {
-                onSettingChange('mapMaxZoom', val);
-              }
-            }}
+            unit="px"
+            minLabel="None (0px)"
+            maxLabel="Maximum (30px)"
+            onChange={(val) => onSettingChange('glassBlur', val)}
+            theme={theme}
+          />
+          <SettingsSlider
+            label="Glass Surface Opacity"
+            value={settings.glassSurfaceOpacity}
+            min={20}
+            max={100}
+            step={5}
+            unit="%"
+            minLabel="Transparent (20%)"
+            maxLabel="Opaque (100%)"
+            onChange={(val) => onSettingChange('glassSurfaceOpacity', val)}
             theme={theme}
           />
         </SettingsSection>
