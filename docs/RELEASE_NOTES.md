@@ -1,5 +1,18 @@
 # Release Notes
 
+## v0.6.1 - Spider & Icon Fixes (2026-02-10)
+
+### 🐛 Bug Fixes
+
+- **Spider: hovering a second stack now works.** Previously, when a spider was open, hovering a nearby un-spidered stack was blocked. Now the current spider collapses instantly and the new stack opens.
+- **Windows icon: `.exe` and taskbar now show the Placemark icon.** Added a proper multi-resolution `.ico` for the Windows build and set `AppUserModelId` so the taskbar groups correctly instead of showing the default Electron icon.
+
+### 📝 Notes
+
+- No database schema changes. No migration needed.
+
+---
+
 ## v0.6.0 - Locale-Aware Formatting (2026-02-08)
 
 🌍 **Dates and numbers now respect the OS regional format setting**, not just the display language.

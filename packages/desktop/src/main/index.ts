@@ -11,6 +11,10 @@ import { existsSync } from 'fs';
 let closeStorage: (() => void) | undefined;
 let closeThumbnailService: (() => void) | undefined;
 
+// Set AppUserModelId so Windows groups the taskbar icon correctly
+// Must match appId in electron-builder.yml
+app.setAppUserModelId('com.placemark.desktop');
+
 // Override userData path for portable mode
 // In portable builds, databases live next to the .exe
 // In dev mode, use standard AppData location

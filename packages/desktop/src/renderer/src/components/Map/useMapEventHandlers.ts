@@ -255,10 +255,17 @@ export function useMapEventHandlers({
       // Show hover preview
       hoverHandlersRef.current.onMouseMove(props, e.originalEvent.clientX, e.originalEvent.clientY);
 
-      // If at high zoom and spider not already active, check for overlaps and spider on hover
-      if (mapRef.current && !isSpiderActiveRef.current) {
+      // If at high zoom, check for overlaps and spider on hover
+      // Allow spidering a new stack even if a different spider is already active
+      if (mapRef.current) {
         const currentZoom = mapRef.current.getZoom();
         if (currentZoom >= spiderSettingsRef.current.triggerZoom) {
+          // Skip if this photo is already part of the active spider
+          const currentSpider = spiderStateRef.current;
+          if (currentSpider && currentSpider.photoIds.has(props.id)) {
+            return;
+          }
+
           const photo: Photo = {
             id: props.id,
             path: props.path,
@@ -279,6 +286,10 @@ export function useMapEventHandlers({
           );
 
           if (overlapping.length > 1) {
+            // Collapse the current spider instantly before opening the new one
+            if (currentSpider) {
+              clearSpiderRef.current(false);
+            }
             spiderAtPointRef.current(photo);
           }
         }
