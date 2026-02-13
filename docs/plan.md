@@ -4,7 +4,7 @@ Step-by-step roadmap for building Placemark. See [ARCHITECTURE.md](ARCHITECTURE.
 
 Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
 
-**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | ✅ Phase 4A Complete | ✅ Phase 5 Complete | ⚙️ Phase 6 - Next
+**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | ✅ Phase 4A Complete | ✅ Phase 5 Complete | ⚙️ Phase 5.5 - Next (RAW support) | Phase 6 queued
 
 **Recent Work:**
 
@@ -193,6 +193,99 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 
 ---
 
+### Phase 5.5: Camera RAW Format Support
+
+**Goal:** Support professional camera RAW formats for EXIF extraction and thumbnail preview. Immediate priority — expands the audience to serious photographers.
+
+**Context:** Currently Placemark only supports JPEG, PNG, HEIC/HEIF, TIFF, and WebP. Professional photographers shoot in RAW. Windows 10/11 natively supports RAW previews via the free "Raw Image Extension" from the Microsoft Store, so users already expect these formats to work.
+
+#### New Formats to Support
+
+| Format                  | Extension(s) | Camera Brand                    |
+| ----------------------- | ------------ | ------------------------------- |
+| Canon RAW 2             | `.cr2`       | Canon (older)                   |
+| Canon RAW 3             | `.cr3`       | Canon (newer)                   |
+| Nikon Electronic Format | `.nef`       | Nikon                           |
+| Nikon RAW               | `.nrw`       | Nikon (consumer)                |
+| Sony Alpha RAW          | `.arw`       | Sony                            |
+| Digital Negative        | `.dng`       | Adobe / Leica / Google / others |
+| Fujifilm RAW            | `.raf`       | Fujifilm                        |
+| Olympus RAW             | `.orf`       | Olympus / OM System             |
+| Panasonic RAW           | `.rw2`       | Panasonic / Lumix               |
+| Pentax RAW              | `.pef`       | Pentax / Ricoh                  |
+| Samsung RAW             | `.srw`       | Samsung                         |
+| Leica RAW               | `.rwl`       | Leica                           |
+
+#### Implementation
+
+**No new dependencies required.** Both existing libraries handle RAW files:
+
+**1. EXIF extraction (exifr — already installed)**
+
+exifr natively reads EXIF/GPS/timestamp metadata from all TIFF-based RAW formats (which is virtually all of them). No code changes needed in the parsing logic — only the file extension filter needs updating.
+
+**2. Thumbnail generation — Embedded JPEG Preview Strategy**
+
+Sharp cannot decode RAW sensor data directly. However, every modern RAW file embeds a JPEG preview (typically 1536×1024 or larger) in its EXIF data. The strategy:
+
+1. Use `exifr.thumbnail(buffer)` to extract the embedded JPEG preview from the RAW file
+2. Pass the extracted JPEG buffer to Sharp for resizing to 400×400 thumbnail
+3. If no embedded thumbnail exists (rare), skip thumbnail generation — photo still appears on map, just without hover preview
+
+This approach is fast (no RAW decode), requires zero new dependencies, and produces good quality previews.
+
+**Alternatives evaluated and rejected:**
+
+| Alternative                             | Why rejected                                                                                      |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **dcraw.js** (Emscripten port of dcraw) | GPL-2.0 license — incompatible with Store distribution. 8 years unmaintained. Large WASM payload. |
+| **LibRaw native addon**                 | Requires per-platform native compilation. LGPL/CDDL dual license. Heavy dependency.               |
+| **Windows WIC via COM/PowerShell**      | Windows-only. Slow (process spawn per file). Complex IPC. Breaks cross-platform goal.             |
+| **Full Sharp RAW decode**               | Not supported — Sharp/libvips cannot decode RAW sensor data.                                      |
+
+#### Tasks
+
+1. **Update file extension filter** in `exif.ts`:
+   - Add `.cr2`, `.cr3`, `.nef`, `.nrw`, `.arw`, `.dng`, `.raf`, `.orf`, `.rw2`, `.pef`, `.srw`, `.rwl` to `isSupportedImageFile()`
+2. **Update thumbnail service** in `thumbnails.ts`:
+   - Before calling `sharp(filePath)`, check if the file is a RAW format
+   - If RAW: read file into buffer → `exifr.thumbnail(buffer)` → pass JPEG buffer to `sharp(buffer).resize(400, 400)`
+   - If standard format: existing `sharp(filePath)` path (unchanged)
+   - Handle missing embedded thumbnail gracefully (return null, photo still works on map)
+3. **Update MIME type mapping** — add `image/x-canon-cr2`, `image/x-nikon-nef`, `image/x-adobe-dng`, etc. or use generic `image/x-raw` for all RAW types
+4. **Test with real RAW files** — need sample `.cr2`, `.nef`, `.arw`, `.dng` files
+5. **Update documentation** — README, beta_testing.md supported format list
+
+#### Estimated Effort
+
+| Task                        | Complexity | Time          |
+| --------------------------- | ---------- | ------------- |
+| Extension filter update     | Trivial    | 10 min        |
+| RAW thumbnail extraction    | Low-Medium | 1–2 hours     |
+| MIME type mapping           | Trivial    | 15 min        |
+| Testing with real RAW files | Medium     | 1–2 hours     |
+| Documentation updates       | Low        | 30 min        |
+| **Total**                   |            | **~half day** |
+
+#### Testing
+
+- [ ] `.cr2` file scanned → GPS extracted correctly
+- [ ] `.nef` file scanned → GPS extracted correctly
+- [ ] `.arw` file scanned → GPS extracted correctly
+- [ ] `.dng` file scanned → GPS and timestamp extracted
+- [ ] `.raf`, `.orf`, `.rw2` scanned → metadata extracted
+- [ ] RAW thumbnail hover preview shows embedded JPEG preview
+- [ ] RAW file without embedded thumbnail → no crash, marker works, no preview
+- [ ] RAW files counted correctly in scan results
+- [ ] Copy/move operations work for RAW files
+- [ ] Mixed scan (JPEG + RAW in same folder) → all processed
+- [ ] Performance: scanning folder with 200 RAW files (50MB+ each) completes in reasonable time
+- [ ] 100MB file size limit still enforced for RAW files
+
+**Deliverable:** Professional camera RAW files appear on the map with thumbnails, using zero new dependencies.
+
+---
+
 ### Phase 6: Network Shares
 
 **Goal:** Support network-mounted folders (e.g., NAS).
@@ -308,16 +401,148 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 
 ---
 
-### Phase 10: AI & Location Inference (Future)
+### Phase 10: GPS Editing (Pro Feature)
 
-**Goal:** Infer locations for photos without GPS data.
+**Goal:** Allow users to view, add, correct, and remove GPS coordinates on photos — both in the database and written back to the EXIF data in the actual file. This is a Pro-only feature (see [business_model.md](business_model.md)).
+
+**Why This Matters:**
+
+- Many older photos, scanned images, and some camera models produce photos with no GPS data. These photos are currently invisible on the map.
+- GPS coordinates are sometimes wrong (firmware bugs, indoor shots geotagged to cell tower, travel photos tagged to home location).
+- Users want to place vacation photos at the right landmark, not just "somewhere in Paris."
+
+#### 10.1 Core: EXIF GPS Writing
 
 **Tasks:**
 
-1. **Hierarchy-based Inference:** Guess location from folder names (e.g., "Paris 2022").
-2. **Opt-in Geocoding:** Integration with privacy-respecting geocoding APIs.
-3. **Manual Tagging:** UI to drag-and-drop non-located photos onto the map.
-4. **Transparency:** Log all inferred locations; distinguish distinctively from real EXIF data.
+1. Add an EXIF writing library to the desktop package. Options:
+   - [`piexifjs`](https://github.com/nicerday/piexif) — pure JS, JPEG only, reads/writes EXIF
+   - [`exif-writer`](https://github.com/nicerday/piexif) — lightweight GPS-focused writer
+   - Write GPS tags directly using `sharp` metadata API (`sharp().withMetadata({ exif })`) — already a dependency
+   - **Recommendation:** Use `sharp` for JPEG/TIFF/WebP (already installed). For HEIC, evaluate `piexifjs` or defer HEIC writing.
+2. Implement `packages/desktop/src/main/services/exifWriter.ts`:
+   - `writeGpsToFile(filePath: string, lat: number, lng: number): Promise<void>`
+   - `removeGpsFromFile(filePath: string): Promise<void>`
+   - Write to a temp file first, verify, then replace original (atomic write — never corrupt the original)
+   - Preserve all other EXIF tags (camera model, exposure, etc.)
+3. Add IPC handlers:
+   - `photos:setLocation` — accepts `{ photoId: number, latitude: number, longitude: number }`
+   - `photos:removeLocation` — accepts `{ photoId: number }`
+   - `photos:setLocationBatch` — accepts `{ photoIds: number[], latitude: number, longitude: number }`
+4. Update database after EXIF write succeeds (not before).
+5. Add `location_source` column to photos table:
+   - `'exif'` — original EXIF GPS data from scan
+   - `'manual'` — user-set via drag/drop or address
+   - `'inferred'` — guessed from folder name or other heuristic (Phase 10.4)
+   - This column is informational — all sources are treated equally on the map, but the UI can show a badge.
+
+**Safety:**
+
+- Always back up original EXIF before overwriting (store original lat/lng in a `gps_edit_history` table)
+- Support undo: restore original GPS from history table + rewrite EXIF
+- Never write to files on read-only mounts or network shares without explicit user confirmation
+
+**Testing:**
+
+- [ ] Write GPS to JPEG → re-read with exifr → coordinates match
+- [ ] Write GPS to TIFF/WebP → re-read → coordinates match
+- [ ] Other EXIF tags preserved after GPS write
+- [ ] Atomic write: original file intact if write fails mid-way
+- [ ] Undo restores original coordinates in both DB and file
+
+#### 10.2 UI: Drag-to-Locate
+
+**Tasks:**
+
+1. Add a "Place on Map" mode (toggle button in header, or context menu on photo detail modal)
+2. When active:
+   - Photos without GPS appear in a sidebar list (scrollable, with thumbnails)
+   - User drags a photo from the list onto the map → drops at a location
+   - Drop point coordinates are written to the photo (EXIF + DB)
+   - Photo marker appears on map immediately
+3. For photos already on the map:
+   - Click a marker → "Edit Location" button in the detail modal
+   - Enters a drag mode: marker follows cursor until user clicks to confirm
+   - Or: show coordinate input fields for precise entry
+4. Batch placement:
+   - Select multiple photos (lasso or list multi-select)
+   - "Set Location for All" → click a point on the map → all selected photos get that coordinate
+   - Use case: 50 photos from the same restaurant/venue
+
+**UX:**
+
+- Show a confirmation toast: "Location set for 12 photos"
+- Show undo button in toast (reverts all 12)
+- Photos that were manually placed show a small badge/icon on their marker (e.g., a pencil dot) to distinguish from EXIF-original locations
+
+**Testing:**
+
+- [ ] Drag from sidebar → photo appears on map at correct location
+- [ ] Existing marker can be dragged to new location
+- [ ] Batch placement writes to all selected photos
+- [ ] Undo reverts all photos in batch
+- [ ] Sidebar updates (photo removed from "unlocated" list after placement)
+
+#### 10.3 UI: Address / Place Search
+
+**Tasks:**
+
+1. Add a search bar (visible in "Place on Map" mode or always available)
+2. Integrate a geocoding API to convert address → coordinates:
+   - **Nominatim** (OpenStreetMap) — free, no API key, rate-limited (1 req/sec)
+   - Privacy-compatible: only the search query is sent, no photo data
+3. User types "Eiffel Tower, Paris" → suggestions appear → select one → map centers on location
+4. Then: click "Apply to selected photos" or drag photos to that point
+5. Reverse geocoding (optional): when hovering a map location, show the nearest address/place name in a tooltip
+
+**Privacy note:** Geocoding sends the _search query_ to Nominatim, not any photo data. This should be clearly communicated in the UI ("Address lookup uses OpenStreetMap. No photo data is sent.").
+
+**Testing:**
+
+- [ ] Search "Paris" → map centers on Paris
+- [ ] Search "1600 Pennsylvania Ave" → correct coordinates returned
+- [ ] Rate limiting respected (no API abuse)
+- [ ] Works offline: graceful error message when no network
+- [ ] Privacy disclaimer visible in UI
+
+#### 10.4 Folder-Name Inference (Optional Enhancement)
+
+**Tasks:**
+
+1. When scanning a folder named e.g. "Paris 2022" or "Tokyo Trip":
+   - Extract location-like strings from folder path
+   - Geocode via Nominatim → suggest coordinates
+   - Offer to apply to all photos in that folder that lack GPS data
+2. Show as a suggestion, never auto-apply:
+   - "12 photos in folder 'Paris 2022' have no GPS. Place them in Paris, France?"
+   - User confirms or dismisses
+3. Mark these as `location_source = 'inferred'` with a distinct visual badge
+
+**Testing:**
+
+- [ ] Folder "Paris 2022" → suggests Paris coordinates
+- [ ] Folder "IMG_20230415" → no suggestion (not a place name)
+- [ ] User can accept or dismiss suggestion
+- [ ] Inferred locations visually distinct from EXIF locations
+
+#### Implementation Order
+
+| Step | What                               | Depends On                        |
+| ---- | ---------------------------------- | --------------------------------- |
+| 10.1 | EXIF GPS writing + IPC + DB column | Nothing (can start independently) |
+| 10.2 | Drag-to-locate UI                  | 10.1 (needs write capability)     |
+| 10.3 | Address search + geocoding         | 10.1 (needs write capability)     |
+| 10.4 | Folder-name inference              | 10.3 (needs geocoding)            |
+
+#### Estimated Effort
+
+| Sub-phase             | Complexity  | Effort        |
+| --------------------- | ----------- | ------------- |
+| 10.1 EXIF writing     | Medium      | 2–3 days      |
+| 10.2 Drag-to-locate   | Medium-High | 3–4 days      |
+| 10.3 Address search   | Medium      | 2–3 days      |
+| 10.4 Folder inference | Low         | 1 day         |
+| **Total**             |             | **8–11 days** |
 
 ---
 
