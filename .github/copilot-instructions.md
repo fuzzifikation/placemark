@@ -182,7 +182,10 @@ Use `pnpm run version:update x.y.z` for version bumps (patch: bug fixes, minor: 
 
 ## Implementation Phase
 
-Currently in **Phase 5 Complete** — full file operations with atomic batch semantics and undo. Phase 6 (Network Shares) is next. See [docs/plan.md](../docs/plan.md) for 9-phase roadmap.
+Currently in **Phase 5 Complete** — full file operations with atomic batch semantics and undo. Phase 5.5 (RAW support) is next. See [docs/plan.md](../docs/plan.md) for 17-phase roadmap.
+
+**Pre-store:** Phase 5.5 (RAW) → Phase 6 (Export) → Phase 7 (Collections & Stats) → Phase 8 (Polish & Store Readiness) → 🏪 **v1.0 Microsoft Store Launch**
+**Post-store:** Phase 9 (Trip Detection) → Phase 10 (GPS Editing) → Phase 11–17 (Duplicates, Network, Import, Timestamps, OneDrive, Advanced, Mobile)
 
 Prioritize: **clarity > performance**, **safety > convenience**, **explicit > automatic**.
 

@@ -4,7 +4,7 @@ Step-by-step roadmap for building Placemark. See [ARCHITECTURE.md](ARCHITECTURE.
 
 Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
 
-**Current Status:** ✅ Phase 0 Complete | ✅ Phase 1 Complete | ✅ Phase 2 Complete | ✅ Phase 3 Complete | ✅ Phase 4A Complete | ✅ Phase 5 Complete | ⚙️ Phase 5.5 - Next (RAW support) | Phase 6 queued
+**Current Status:** ✅ Phase 0–5 Complete | ⚙️ Phase 5.5 Next (RAW support) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
 
 **Recent Work:**
 
@@ -230,7 +230,7 @@ Sharp cannot decode RAW sensor data directly. However, every modern RAW file emb
 
 1. Use `exifr.thumbnail(buffer)` to extract the embedded JPEG preview from the RAW file
 2. Pass the extracted JPEG buffer to Sharp for resizing to 400×400 thumbnail
-3. If no embedded thumbnail exists (rare), skip thumbnail generation — photo still appears on map, just without hover preview
+3. If no embedded thumbnail exists (rare), skip thumbnail generation — photo still appears on map, just with hover preview saying: RAW file, no preview
 
 This approach is fast (no RAW decode), requires zero new dependencies, and produces good quality previews.
 
@@ -286,118 +286,203 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 ---
 
-### Phase 6: Network Shares
+### Phase 6: Export & Data Portability
 
-**Goal:** Support network-mounted folders (e.g., NAS).
-
-**Tasks:**
-
-1. Add "Network Share" source type
-2. Handle UNC paths on Windows (\\server\share)
-3. Handle SMB/NFS mounts on macOS/Linux
-4. Test with slow network connections
-5. Add retry logic for network timeouts
-6. Cache scanned metadata (don't re-scan network on every launch)
-
-**Testing:**
-
-- [ ] Can scan network share via UNC path
-- [ ] Handles network disconnection gracefully
-- [ ] Performance acceptable on slow networks
-- [ ] Cached metadata works when network unavailable
-
-**Deliverable:** Network shares work like local folders.
-
----
-
-### Phase 7: OneDrive Integration
-
-**Goal:** Scan OneDrive photos via Microsoft Graph API.
+**Goal:** Let users get their data out. Export photo metadata and locations in standard formats. Reinforces Placemark's trust promise ("your data, your control") and provides immediate value for the Store listing.
 
 **Tasks:**
 
-1. Register app in Azure AD Portal
-2. Implement OAuth flow with localhost redirect
-3. Implement `packages/desktop/src/main/services/oauth.ts`
-4. Implement `packages/desktop/src/main/services/onedrive.ts`
-5. Paginate through OneDrive photos (Graph API)
-6. Download EXIF metadata (no full file download)
-7. Store with source='onedrive', path=OneDrive item ID
-8. Add "Connect OneDrive" button in settings
-9. Refresh token handling
+1. **GeoJSON export** — photo locations as a GeoJSON FeatureCollection (importable in QGIS, Google Earth, Mapbox)
+2. **KML/KMZ export** — Google Earth format with photo thumbnails embedded (KMZ) or referenced (KML)
+3. **GPX export** — photo locations as waypoints, importable in hiking/GPS apps
+4. **CSV export** — tabular format: filename, date, latitude, longitude, camera make/model, folder path
+5. **Self-contained HTML map** — generates a single `.html` file with Leaflet + embedded markers, viewable in any browser, shareable without Placemark installed
+6. Add "Export" button to the toolbar with format picker
+7. Export respects current filters (date range + map bounds) — export only what's visible
+
+**Privacy note:** All exports are local file writes. No data leaves the device.
 
 **Testing:**
 
-- [ ] OAuth flow completes successfully
-- [ ] Can list OneDrive photos
-- [ ] EXIF data extracted without downloading full files
-- [ ] Tokens stored securely (safeStorage API)
-- [ ] Token refresh works automatically
-- [ ] Handles OneDrive API rate limits
+- [ ] GeoJSON export opens correctly in geojson.io
+- [ ] KML export opens in Google Earth
+- [ ] GPX export imports into a GPS app
+- [ ] CSV opens in Excel/LibreOffice with correct columns
+- [ ] HTML map displays markers in a browser without internet (embedded tiles optional)
+- [ ] Filtered export only includes visible photos
+- [ ] Export 10,000 photos in <5 seconds
 
-**Deliverable:** OneDrive photos appear on map alongside local photos.
+**Estimated Effort:** 2–3 days
+
+**Deliverable:** Users can export their photo data in 5 standard formats.
 
 ---
 
-### Phase 8: Polish & Performance
+### Phase 7: Smart Collections & Library Insights
 
-**Goal:** Production-ready quality.
+**Goal:** Give users persistent filter shortcuts and statistics about their photo library. Makes the free tier feel polished and complete before Store launch.
+
+#### 7.1 Saved Filter Collections
+
+**Tasks:**
+
+1. Allow saving current filter state (date range + map bounds + name) as a "Collection"
+2. Store collections in SQLite (`collections` table: id, name, bounds, date_start, date_end)
+3. Collections sidebar in the UI — click to instantly apply that filter
+4. Built-in smart collections (auto-generated, read-only):
+   - "All Photos" — no filter
+   - "No GPS" — photos without location data
+   - "This Year" — current calendar year
+5. User can create, rename, and delete custom collections
+
+#### 7.2 Photo Statistics Dashboard
+
+**Tasks:**
+
+1. "Library Stats" panel accessible from Settings or a dedicated tab
+2. Statistics computed from SQLite:
+   - Total photo count (with GPS / without GPS)
+   - Photos per year (bar chart)
+   - Top 10 locations by photo density (reverse geocode cluster centers)
+   - Camera make/model breakdown (from EXIF `Make` and `Model` fields)
+   - File format distribution (JPEG vs RAW vs HEIC etc.)
+   - Total storage scanned (sum of file sizes)
+3. Render charts with a lightweight library (e.g., `recharts` — React-compatible) or simple CSS bar charts (zero additional dependencies)
+
+**Testing:**
+
+- [ ] Saved collection restores exact filter state
+- [ ] Deleting a collection doesn't affect photos
+- [ ] Smart collections update automatically when new photos are scanned
+- [ ] Statistics dashboard loads in <1 second for 50,000 photos
+- [ ] Camera breakdown shows correct make/model from EXIF
+- [ ] Photos-per-year chart renders correctly with sparse data (gaps in years)
+
+**Estimated Effort:** 3–4 days
+
+**Deliverable:** Saved filter collections and a library statistics overview.
+
+---
+
+### Phase 8: Polish & Store Readiness
+
+**Goal:** Production-quality app ready for Microsoft Store submission. Combines performance work, freemium gating, and packaging.
+
+#### 8.1 Performance & Stability
 
 **Tasks:**
 
 1. Virtual scrolling for photo grid (handle 100k+ photos)
-2. **Spiderify Refinement:** Adjust activation radius based on zoom level (currently too sensitive when zoomed out) ✅ FIXED
-3. **Multi-threaded Import:** Use worker threads for EXIF/thumbnail generation.
-4. **Timeline Animation:** Visual "swooshes" connecting photos during playback.
-5. Incremental folder scanning (only new files)
-6. File hash deduplication (same photo in multiple sources)
-7. Settings: cache location, map tile source, scan schedule
-8. Error boundary and crash reporting
-9. User documentation (help screen)
-10. Packaging with electron-builder (Windows .exe, macOS .dmg)
+2. Multi-threaded import: use worker threads for EXIF extraction and thumbnail generation
+3. Incremental folder scanning (only new/modified files since last scan)
+4. Memory profiling — stay under 500MB with large datasets
+5. Error boundary with user-friendly crash screen
+6. Cold start optimization — target <3 seconds
 
-**Testing:**
-
-- [ ] Memory usage stays reasonable (<500MB with large datasets)
-- [ ] App launches in <3 seconds
-- [ ] All features work in packaged app
-- [ ] Installation on fresh machine works
-
-**Deliverable:** Installable desktop application.
-
----
-
-### Phase 9: Mobile Foundation (Future)
-
-**Goal:** Port core logic to React Native, basic photo display.
+#### 8.2 Freemium Gating
 
 **Tasks:**
 
-1. Create `packages/mobile` with React Native
-2. Implement mobile storage service (react-native-sqlite-storage)
-3. Implement photo library access (expo-media-library)
-4. Extract EXIF from device photos
-5. Display photos on map using react-native-maplibre
-6. OneDrive OAuth via deep links
+1. Implement free tier photo limit (1,000 photos as defined in [business_model.md](business_model.md))
+2. Gate Pro features: file operations, lasso selection, GPS editing, advanced settings
+3. Implement respectful upgrade modal (no dark patterns, "Not now" always available)
+4. Microsoft Store durable add-on licensing integration
+5. License check: periodic Store API query, cache locally, degrade gracefully if Store unavailable
 
-**Key Differences from Desktop:**
+#### 8.3 Store Packaging & Assets
 
-- No direct filesystem access (must use photo library APIs)
-- All I/O is asynchronous
-- Limited file operations (can't copy to arbitrary folders)
-- OneDrive likely primary source on mobile
-- Need location permissions from OS
-- No network share support
+**Tasks:**
+
+1. Build as MSIX package (required for Microsoft Store)
+2. Test in Windows Sandbox (clean install behavior)
+3. Prepare Store listing assets:
+   - 5 screenshots (map view, timeline, hover preview, settings, file operations)
+   - 1 hero image (1920×1080)
+   - App icon at required sizes
+   - Store description (see [business_model.md](business_model.md) §4.2)
+4. Privacy policy page (GitHub Pages or similar)
+5. App signing certificate
+6. User documentation / in-app help screen
 
 **Testing:**
 
-- [ ] Can access device photo library
-- [ ] EXIF extraction works on iOS and Android
-- [ ] Map displays with device photos
-- [ ] OneDrive auth flow works on mobile
-- [ ] App size <30MB
+- [ ] MSIX installs and runs correctly on clean Windows 10/11
+- [ ] Free tier limits enforced correctly (1,000 photo cap)
+- [ ] Pro unlock activates immediately after purchase
+- [ ] Pro features disabled on refund / license expiry
+- [ ] App launches in <3 seconds
+- [ ] Memory usage <500MB with 100,000 photos
+- [ ] Incremental scan only processes new files
+- [ ] All features work in packaged (non-dev) build
 
-**Deliverable:** Mobile app showing device photos on map.
+**Estimated Effort:** 5–7 days
+
+**Deliverable:** Store-ready MSIX package with freemium licensing.
+
+---
+
+### 🏪 MILESTONE: Microsoft Store Launch (v1.0)
+
+**At this point, Placemark ships to the Microsoft Store.**
+
+The app includes: local folder scanning, RAW format support, interactive map with clustering, timeline with playback, file operations (copy/move/undo), export in 5 formats, saved collections, library statistics, and a clean freemium model.
+
+**Launch checklist:**
+
+- [ ] All Phase 0–8 features working and tested
+- [ ] MSIX package passes Windows App Certification Kit (WACK)
+- [ ] Store listing submitted with screenshots, description, privacy policy
+- [ ] Landing page live on GitHub Pages
+- [ ] 60-second demo video uploaded to YouTube
+- [ ] Launch posts prepared for 2–3 communities (see [business_model.md](business_model.md) §7)
+
+**Post-launch priority:** Respond to Store reviews, fix critical bugs, then proceed with Phase 9+.
+
+---
+
+_All phases below are post-Store-launch. Priority order may shift based on user feedback, Store analytics, and community requests._
+
+---
+
+### Phase 9: Trip Detection & Route Visualization
+
+**Goal:** Automatically group photos into "trips" and visualize travel routes on the map. This is Placemark's strongest differentiator — turning a photo map into a travel narrative.
+
+#### 9.1 Trip Detection
+
+**Tasks:**
+
+1. Implement trip detection algorithm in `packages/core`:
+   - Sort photos chronologically
+   - Detect trip boundaries: temporal gap >24 hours OR geographic distance >50km between consecutive photos
+   - Configurable thresholds in settings
+2. Store trips in SQLite (`trips` table: id, name, start_date, end_date, photo_count, bounds)
+3. Auto-name trips via reverse geocoding of the geographic center (Nominatim): "Berlin, Jan 2024"
+4. Trips sidebar: list of detected trips, click to filter map + timeline to that trip
+5. Manual trip editing: merge, split, rename, delete trips
+
+#### 9.2 Route Visualization
+
+**Tasks:**
+
+1. Connect photos within a trip chronologically with polylines on the map
+2. Line styling: color by speed/density, animate during timeline playback
+3. Route playback: "Watch your trip unfold" — animated marker moves along the route
+4. Export trip route as GPX track (builds on Phase 6 export infrastructure)
+
+**Testing:**
+
+- [ ] Trip detection correctly separates a Europe trip from daily home photos
+- [ ] Trips with <3 photos are handled (single-point "trips" vs. minimum threshold)
+- [ ] Route lines connect photos in correct chronological order
+- [ ] Route animation plays smoothly during timeline playback
+- [ ] Trip rename and merge work correctly
+- [ ] GPX export of trip route imports into hiking apps
+- [ ] Performance: trip detection on 50,000 photos completes in <5 seconds
+
+**Estimated Effort:** 4–5 days
+
+**Deliverable:** Automatic trip detection with route visualization on the map.
 
 ---
 
@@ -546,6 +631,263 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 ---
 
+### Phase 11: Duplicate Detection (Pro Feature)
+
+**Goal:** Find and manage duplicate photos across scanned folders. Common problem for photographers who import to multiple locations or maintain multiple backups.
+
+**Tasks:**
+
+1. **Exact duplicate detection** — SHA-256 hash of file content. Fast, no false positives.
+2. **Near-duplicate detection** — Perceptual hash (pHash or dHash) to find visually similar photos (different resolution, re-encoded, slightly cropped). Use a lightweight JS implementation (e.g., `imghash` or custom dHash).
+3. Store hashes in the photos table (`file_hash` TEXT, `perceptual_hash` TEXT columns)
+4. Compute hashes during scan (or as a separate "Find Duplicates" action)
+5. **Duplicate review UI:**
+   - Group duplicates in a list/grid view
+   - Side-by-side comparison: resolution, file size, date, format, folder
+   - "Keep best quality" suggestion (highest resolution, largest file size)
+   - Bulk action: move duplicates to trash or a designated folder
+6. Dry-run preview before any deletion (consistent with file operations UX)
+
+**Testing:**
+
+- [ ] Exact duplicates (same file copied to two folders) detected correctly
+- [ ] Near-duplicates (same photo at different resolutions) detected
+- [ ] Non-duplicates with similar content (e.g., burst shots) not falsely flagged
+- [ ] Performance: hashing 10,000 photos in <2 minutes
+- [ ] Duplicate removal uses trash (reversible)
+- [ ] Stats shown: "Found 342 duplicates using 2.1 GB"
+
+**Estimated Effort:** 3–4 days
+
+**Deliverable:** Duplicate detection with review UI and safe removal.
+
+---
+
+### Phase 12: Network Shares & Folder Watch
+
+**Goal:** Support network-mounted folders (NAS) and opt-in automatic detection of new photos.
+
+#### 12.1 Network Shares
+
+**Tasks:**
+
+1. Add "Network Share" source type
+2. Handle UNC paths on Windows (`\\server\share`)
+3. Handle SMB/NFS mounts on macOS/Linux
+4. Test with slow network connections
+5. Add retry logic for network timeouts
+6. Cache scanned metadata locally (don't re-scan network on every launch)
+
+#### 12.2 Folder Watch (Auto-Scan)
+
+**Tasks:**
+
+1. Use `fs.watch` or `chokidar` to monitor scanned folders for new files
+2. When new photos detected, show a non-intrusive notification: "12 new photos in D:\Photos. Scan now?"
+3. User must click to trigger scan (respects "no background operations" principle)
+4. Toggle per folder in Settings
+5. Handle folder deletion and rename gracefully
+
+**Testing:**
+
+- [ ] Can scan network share via UNC path
+- [ ] Handles network disconnection gracefully
+- [ ] Cache works when network is unavailable
+- [ ] Folder watch detects new files within 5 seconds
+- [ ] No automatic scanning — only notification + user-triggered
+- [ ] Watch survives app minimize/restore
+
+**Estimated Effort:** 3–4 days
+
+**Deliverable:** Network share support and opt-in folder monitoring.
+
+---
+
+### Phase 13: Import & Integrations
+
+**Goal:** Import photo metadata from external sources, making Placemark a natural landing place for users leaving other platforms.
+
+#### 13.1 Google Takeout Import
+
+**Tasks:**
+
+1. Parse Google Takeout `.json` sidecar files that accompany exported photos
+2. Extract GPS coordinates, timestamps, and descriptions from JSON
+3. Match JSON sidecars to photo files by filename
+4. Apply imported metadata to photos already in the database (or import new)
+5. Handle edge cases: mismatched filenames, missing JSON files, duplicate entries
+
+#### 13.2 Apple Photos Export Import
+
+**Tasks:**
+
+1. Parse Apple Photos library export structure
+2. Handle `.AAE` edit sidecar files
+3. Map Apple's metadata format to Placemark's schema
+
+#### 13.3 XMP Sidecar Support
+
+**Tasks:**
+
+1. Read `.xmp` sidecar files alongside RAW/JPEG files
+2. Extract: star ratings, color labels, keywords/tags, GPS corrections
+3. Display imported tags in photo detail modal (read-only initially)
+4. XMP GPS data overrides embedded EXIF GPS when present (user-configurable)
+
+**Testing:**
+
+- [ ] Google Takeout JSON → GPS applied to matching photos
+- [ ] Handles Takeout exports with thousands of JSON files
+- [ ] XMP sidecar GPS data read correctly
+- [ ] XMP star ratings visible in photo detail
+- [ ] Graceful handling of malformed/missing sidecar files
+- [ ] Mixed import: folder with photos + JSON + XMP all processed correctly
+
+**Estimated Effort:** 4–5 days
+
+**Deliverable:** Import from Google Takeout, Apple Photos, and XMP sidecars.
+
+---
+
+### Phase 14: Bulk Timestamp Correction (Pro Feature)
+
+**Goal:** Fix incorrect photo timestamps — a common problem when camera clocks are wrong or timezone wasn't updated during travel.
+
+**Tasks:**
+
+1. Select photos → "Adjust Timestamps" action
+2. **Time shift:** Add or subtract hours/minutes from all selected photos (e.g., "camera was 6 hours behind")
+3. **Timezone correction:** Change the timezone interpretation without altering the local time (e.g., photos taken in Tokyo but tagged as UTC)
+4. Dry-run preview: show before/after timestamps for all affected photos
+5. Write corrected timestamps to EXIF data in files (atomic write, same safety as GPS editing in Phase 10)
+6. Update database after successful EXIF write
+7. Undo support: restore original timestamps from history
+
+**Testing:**
+
+- [ ] Shift +6 hours → re-read EXIF → timestamps correct
+- [ ] Timezone change doesn't alter local time appearance
+- [ ] Batch of 500 photos corrected in <30 seconds
+- [ ] Undo restores original timestamps
+- [ ] Dry-run shows accurate before/after preview
+- [ ] Other EXIF fields preserved after timestamp write
+
+**Estimated Effort:** 2–3 days
+
+**Deliverable:** Batch timestamp correction with EXIF writeback and undo.
+
+---
+
+### Phase 15: OneDrive Integration
+
+**Goal:** Scan OneDrive photos via Microsoft Graph API.
+
+**Tasks:**
+
+1. Register app in Azure AD Portal
+2. Implement OAuth flow with localhost redirect
+3. Implement `packages/desktop/src/main/services/oauth.ts`
+4. Implement `packages/desktop/src/main/services/onedrive.ts`
+5. Paginate through OneDrive photos (Graph API)
+6. Download EXIF metadata (no full file download)
+7. Store with source='onedrive', path=OneDrive item ID
+8. Add "Connect OneDrive" button in settings
+9. Refresh token handling
+
+**Testing:**
+
+- [ ] OAuth flow completes successfully
+- [ ] Can list OneDrive photos
+- [ ] EXIF data extracted without downloading full files
+- [ ] Tokens stored securely (safeStorage API)
+- [ ] Token refresh works automatically
+- [ ] Handles OneDrive API rate limits
+
+**Estimated Effort:** 4–5 days
+
+**Deliverable:** OneDrive photos appear on map alongside local photos.
+
+---
+
+### Phase 16: Advanced Features
+
+**Goal:** Quality-of-life features for power users and specific use cases.
+
+#### 16.1 Offline Map Tiles
+
+**Tasks:**
+
+1. Download map tile regions for offline use (e.g., "Download Europe at zoom 1–12")
+2. Switch between online and offline tile sources in Settings
+3. Store tiles in a local directory (configurable location)
+4. Essential for air-gapped setups or NAS-only users
+
+#### 16.2 Multi-Library Support
+
+**Tasks:**
+
+1. Support multiple independent databases (e.g., "Family Photos" vs. "Professional Work")
+2. Each library has its own SQLite file and scanned folder list
+3. Library switcher in the app header
+4. Libraries are fully isolated — no cross-library queries
+
+#### 16.3 Photo Calendar View
+
+**Tasks:**
+
+1. Month/year grid showing days with photos highlighted
+2. Click a day → filter map to that day's photos
+3. Heat-map coloring (more photos = darker cell)
+4. Complements the timeline slider with a different temporal navigation style
+
+**Testing:**
+
+- [ ] Offline tiles render when network is disconnected
+- [ ] Tile download progress shown with cancellation support
+- [ ] Library switch loads correct database and folders
+- [ ] Calendar highlights match actual photo dates
+- [ ] Calendar view handles years with no photos gracefully
+
+**Estimated Effort:** 5–7 days
+
+**Deliverable:** Offline maps, multi-library support, and calendar navigation.
+
+---
+
+### Phase 17: Mobile Foundation (Future)
+
+**Goal:** Port core logic to React Native, basic photo display.
+
+**Tasks:**
+
+1. Create `packages/mobile` with React Native
+2. Implement mobile storage service (react-native-sqlite-storage)
+3. Implement photo library access (expo-media-library)
+4. Extract EXIF from device photos
+5. Display photos on map using react-native-maplibre
+6. OneDrive OAuth via deep links
+
+**Key Differences from Desktop:**
+
+- No direct filesystem access (must use photo library APIs)
+- All I/O is asynchronous
+- Limited file operations (can't copy to arbitrary folders)
+- OneDrive likely primary source on mobile
+- Need location permissions from OS
+- No network share support
+
+**Testing:**
+
+- [ ] Can access device photo library
+- [ ] EXIF extraction works on iOS and Android
+- [ ] Map displays with device photos
+- [ ] OneDrive auth flow works on mobile
+- [ ] App size <30MB
+
+**Deliverable:** Mobile app showing device photos on map.
+
+---
+
 ## Development Commands
 
 ```bash
@@ -604,22 +946,23 @@ pnpm -r test                           # Test all
 
 ## Success Metrics
 
-**Phase 1-3 (MVP):**
+**Phase 1–3 (MVP):**
 
 - Scan 10,000 photos in <30 seconds
 - Map renders 10,000 markers with clustering
 - Filter 10,000 photos in <100ms
 
-**Phase 7 (OneDrive):**
-
-- Connect to OneDrive in <30 seconds
-- Scan 1,000 OneDrive photos in <2 minutes
-
-**Phase 8 (Production):**
+**Phase 8 (Store Launch):**
 
 - Handle 100,000 photos without performance degradation
 - Package size <150MB
 - Cold start <3 seconds
+- Free→Pro conversion rate ≥1%
+
+**Phase 15 (OneDrive):**
+
+- Connect to OneDrive in <30 seconds
+- Scan 1,000 OneDrive photos in <2 minutes
 
 ## Backlog / Future Enhancements
 
@@ -638,3 +981,4 @@ pnpm -r test                           # Test all
   - Value proposition: Transparency ("where did my photos go?"), audit trail, differentiates from file explorer
   - Implementation: Auto-prune after configurable period (30 days default), JSON export for long-term records
   - Requires decision: Is operation history a core feature or unnecessary database bloat?
+- **macOS App Store:** Revisit if Windows Store traction exceeds 1,000 downloads/month (see [business_model.md](business_model.md) §9)
