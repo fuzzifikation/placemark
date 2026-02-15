@@ -29,6 +29,35 @@ The core idea is to treat geographic location and time as explicit, user-control
 
 ---
 
+## Supported Formats
+
+Placemark reads EXIF metadata (GPS coordinates, timestamps) and generates thumbnails for the following image formats:
+
+**Standard Formats:**
+
+- JPEG (`.jpg`, `.jpeg`)
+- PNG (`.png`)
+- HEIC/HEIF (`.heic`, `.heif`) — Apple Photos format
+- TIFF (`.tiff`, `.tif`)
+- WebP (`.webp`)
+
+**Professional RAW Formats:**
+
+- **Canon:** CR2, CR3
+- **Nikon:** NEF, NRW
+- **Sony:** ARW
+- **Adobe/Universal:** DNG
+- **Fujifilm:** RAF
+- **Olympus/OM System:** ORF
+- **Panasonic/Lumix:** RW2
+- **Pentax/Ricoh:** PEF
+- **Samsung:** SRW
+- **Leica:** RWL
+
+RAW files are supported through embedded JPEG thumbnail extraction — no external dependencies required.
+
+---
+
 ## User Manual
 
 ### 1. Getting Started

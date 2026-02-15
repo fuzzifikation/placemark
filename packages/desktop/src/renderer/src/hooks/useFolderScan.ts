@@ -18,7 +18,7 @@ export function useFolderScan() {
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
   const [includeSubdirectories, setIncludeSubdirectories] = useState(true);
 
-  const scanFolder = async (onComplete?: () => Promise<void>) => {
+  const scanFolder = async (onComplete?: () => Promise<void>, maxFileSizeMB: number = 150) => {
     setScanning(true);
     setResult(null);
     setScanProgress(null);
@@ -39,7 +39,7 @@ export function useFolderScan() {
     });
 
     try {
-      const scanResult = await window.api.photos.scanFolder(includeSubdirectories);
+      const scanResult = await window.api.photos.scanFolder(includeSubdirectories, maxFileSizeMB);
       setResult(scanResult);
 
       // Call onComplete callback if provided

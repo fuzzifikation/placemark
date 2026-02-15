@@ -1,9 +1,11 @@
 import Database from 'better-sqlite3';
 import sharp from 'sharp';
+import exifr from 'exifr';
 import path from 'path';
 import fs from 'fs/promises';
 import { app } from 'electron';
 import { logger } from './logger';
+import { isRawFile } from './formats';
 
 const THUMBNAIL_CONFIG = {
   size: 400, // Single size for all contexts
@@ -56,8 +58,13 @@ export class ThumbnailService {
 
   /**
    * Generate and cache thumbnail for a photo
+   *
+   * Safety: This function only READS from photo files, never writes or modifies them.
+   * Thumbnails are stored in a separate SQLite database (thumbnails.db).
+   *
+   * @returns Buffer containing JPEG thumbnail data, or null if thumbnail cannot be generated
    */
-  async generateThumbnail(photoId: number, photoPath: string): Promise<Buffer> {
+  async generateThumbnail(photoId: number, photoPath: string): Promise<Buffer | null> {
     try {
       // Check if thumbnail already exists
       const existing = this.getThumbnail(photoId);
@@ -73,9 +80,33 @@ export class ThumbnailService {
         throw new Error(`Photo file not accessible: ${photoPath} (${errorMessage})`);
       }
 
+      // For RAW files, extract embedded JPEG thumbnail first
+      let inputForSharp: Buffer | string = photoPath;
+
+      if (isRawFile(photoPath)) {
+        try {
+          // exifr.thumbnail() extracts the embedded JPEG preview from RAW files
+          // This is fast (~10-50ms) because it only reads the thumbnail bytes, not the full sensor data
+          const embeddedThumbnail = await exifr.thumbnail(photoPath);
+
+          if (embeddedThumbnail) {
+            inputForSharp = embeddedThumbnail;
+          } else {
+            // No embedded thumbnail found - return null and let UI show fallback
+            logger.warn(`RAW file has no embedded thumbnail: ${path.basename(photoPath)}`);
+            return null;
+          }
+        } catch (error) {
+          // sharp cannot decode RAW sensor data (CR2, NEF, ARW, etc.) directly —
+          // the embedded JPEG preview via exifr is the only viable path
+          logger.warn(`Failed to extract RAW thumbnail: ${path.basename(photoPath)} — ${error}`);
+          return null;
+        }
+      }
+
       // Generate thumbnail using sharp
-      const thumbnailBuffer = await sharp(photoPath, {
-        failOnError: false,
+      const thumbnailBuffer = await sharp(inputForSharp, {
+        failOn: 'none',
       })
         .rotate() // Auto-orient based on EXIF Orientation tag
         .resize(THUMBNAIL_CONFIG.size, THUMBNAIL_CONFIG.size, {

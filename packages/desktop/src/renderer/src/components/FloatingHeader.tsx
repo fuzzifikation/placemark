@@ -11,7 +11,7 @@ import {
   FONT_FAMILY,
   Z_INDEX,
 } from '../constants/ui';
-import { Lasso, Folder, Settings, History } from 'lucide-react';
+import { Lasso, Folder, Settings, History, BarChart3 } from 'lucide-react';
 import type { ThemeColors } from '../theme';
 
 interface FloatingHeaderProps {
@@ -27,6 +27,7 @@ interface FloatingHeaderProps {
   onSelectionModeToggle: () => void;
   onOperationsOpen: () => void;
   onSettingsOpen: () => void;
+  onStatsOpen: () => void;
   onTimelineToggle: () => void;
   onScanFolder: () => void;
 }
@@ -44,6 +45,7 @@ export function FloatingHeader({
   onSelectionModeToggle,
   onOperationsOpen,
   onSettingsOpen,
+  onStatsOpen,
   onTimelineToggle,
   onScanFolder,
 }: FloatingHeaderProps) {
@@ -190,6 +192,41 @@ export function FloatingHeader({
         >
           <Folder size={16} />
           Organize ({selectionCount > 0 ? selectionCount : 0})
+        </button>
+
+        {/* Stats Button */}
+        <button
+          onClick={onStatsOpen}
+          className="floating-header-button"
+          style={{
+            padding: SPACING.SM,
+            fontSize: FONT_SIZE.LG,
+            backgroundColor: 'transparent',
+            color: colors.textPrimary,
+            border: 'none',
+            borderRadius: BORDER_RADIUS.FULL,
+            cursor: 'pointer',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px',
+            transform: 'scale(1)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = colors.surfaceHover;
+            e.currentTarget.style.transform = 'scale(1.05)';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+          title="Library Statistics"
+        >
+          <BarChart3 size={20} />
         </button>
 
         {/* Settings Button */}

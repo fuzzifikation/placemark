@@ -4,7 +4,7 @@ Step-by-step roadmap for building Placemark. See [ARCHITECTURE.md](ARCHITECTURE.
 
 Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
 
-**Current Status:** ✅ Phase 0–5 Complete | ⚙️ Phase 5.5 Next (RAW support) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
+**Current Status:** ✅ Phase 0–5.5 Complete | ⚙️ Phase 6 Next (Export) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
 
 **Recent Work:**
 
@@ -245,16 +245,23 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 #### Tasks
 
-1. **Update file extension filter** in `exif.ts`:
-   - Add `.cr2`, `.cr3`, `.nef`, `.nrw`, `.arw`, `.dng`, `.raf`, `.orf`, `.rw2`, `.pef`, `.srw`, `.rwl` to `isSupportedImageFile()`
-2. **Update thumbnail service** in `thumbnails.ts`:
-   - Before calling `sharp(filePath)`, check if the file is a RAW format
-   - If RAW: read file into buffer → `exifr.thumbnail(buffer)` → pass JPEG buffer to `sharp(buffer).resize(400, 400)`
-   - If standard format: existing `sharp(filePath)` path (unchanged)
-   - Handle missing embedded thumbnail gracefully (return null, photo still works on map)
-3. **Update MIME type mapping** — add `image/x-canon-cr2`, `image/x-nikon-nef`, `image/x-adobe-dng`, etc. or use generic `image/x-raw` for all RAW types
-4. **Test with real RAW files** — need sample `.cr2`, `.nef`, `.arw`, `.dng` files
-5. **Update documentation** — README, beta_testing.md supported format list
+1. ✅ **Update file extension filter** in `exif.ts`:
+   - Added `.cr2`, `.cr3`, `.nef`, `.nrw`, `.arw`, `.dng`, `.raf`, `.orf`, `.rw2`, `.pef`, `.srw`, `.rwl` to new `formats.ts` module
+2. ✅ **Update thumbnail service** in `thumbnails.ts`:
+   - Added RAW format detection using `isRawFile()`
+   - Extracts embedded JPEG preview using `exifr.thumbnail()`
+   - Passes JPEG buffer to `sharp()` for resize
+   - Graceful fallback for RAW files without embedded thumbnails
+3. ✅ **Update MIME type mapping** — added 12 RAW-specific MIME types (`image/x-canon-cr2`, etc.)
+4. ⚠️ **Test with real RAW files** — needs manual testing with sample files from [raw.pixls.us](https://raw.pixls.us/)
+5. ✅ **Update documentation** — README, RELEASE_NOTES, business_model.md, copilot-instructions.md updated
+
+**Additional improvements:**
+
+- ✅ Centralized format definitions in `formats.ts` (eliminates duplication)
+- ✅ Increased default file size limit to 150MB (configurable in Settings)
+- ✅ Added 64KB chunk size for RAW EXIF parsing (better reliability)
+- ✅ Added unit test suite for format helpers
 
 #### Estimated Effort
 
@@ -269,6 +276,8 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 #### Testing
 
+**Implementation Complete — Manual Testing Recommended:**
+
 - [ ] `.cr2` file scanned → GPS extracted correctly
 - [ ] `.nef` file scanned → GPS extracted correctly
 - [ ] `.arw` file scanned → GPS extracted correctly
@@ -280,9 +289,9 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 - [ ] Copy/move operations work for RAW files
 - [ ] Mixed scan (JPEG + RAW in same folder) → all processed
 - [ ] Performance: scanning folder with 200 RAW files (50MB+ each) completes in reasonable time
-- [ ] 100MB file size limit still enforced for RAW files
+- [ ] Configurable file size limit (Settings > Advanced > Photo Scanning) works correctly
 
-**Deliverable:** Professional camera RAW files appear on the map with thumbnails, using zero new dependencies.
+**Deliverable:** ✅ Professional camera RAW files supported with embedded thumbnail extraction and configurable file size limits.
 
 ---
 

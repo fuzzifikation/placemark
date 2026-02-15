@@ -27,6 +27,7 @@ export function AdvancedSettings({
     ui: false,
     spider: false,
     tiles: false,
+    scanning: false,
     glass: false,
   });
 
@@ -224,6 +225,39 @@ export function AdvancedSettings({
               Maximum zoom level for map tiles. Limits how far you can manually zoom with
               mouse/trackpad. Also limits auto-fit zoom. OSM tiles go to 19, but 18 is safer to
               avoid missing tiles.
+            </p>
+          </div>
+        </SettingsSection>
+
+        <SettingsSection
+          title="Photo Scanning"
+          expanded={expandedSections.scanning}
+          onToggle={() => toggleSection('scanning')}
+          theme={theme}
+        >
+          <div>
+            <SettingsSlider
+              label="Maximum File Size"
+              value={settings.maxFileSizeMB}
+              min={50}
+              max={300}
+              step={10}
+              unit="MB"
+              minLabel="Small (50MB)"
+              maxLabel="Large (300MB)"
+              onChange={(val) => onSettingChange('maxFileSizeMB', val)}
+              theme={theme}
+            />
+            <p
+              style={{
+                fontSize: '0.7rem',
+                color: colors.textMuted,
+                margin: '0.25rem 0 0 0',
+                fontStyle: 'italic',
+              }}
+            >
+              Maximum individual file size to process during folder scanning. Larger files (e.g.,
+              professional medium-format RAW files) require more memory. Default: 150MB.
             </p>
           </div>
         </SettingsSection>

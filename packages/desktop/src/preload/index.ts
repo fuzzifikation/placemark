@@ -2,8 +2,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('api', {
   photos: {
-    scanFolder: (includeSubdirectories: boolean) =>
-      ipcRenderer.invoke('photos:scanFolder', includeSubdirectories),
+    scanFolder: (includeSubdirectories: boolean, maxFileSizeMB: number) =>
+      ipcRenderer.invoke('photos:scanFolder', includeSubdirectories, maxFileSizeMB),
     getWithLocation: () => ipcRenderer.invoke('photos:getWithLocation'),
     getWithLocationInDateRange: (startTimestamp: number | null, endTimestamp: number | null) =>
       ipcRenderer.invoke('photos:getWithLocationInDateRange', startTimestamp, endTimestamp),
@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('api', {
     showMultipleInFolder: (filePaths: string[]) =>
       ipcRenderer.invoke('photos:showMultipleInFolder', filePaths),
     getDatabaseStats: () => ipcRenderer.invoke('photos:getDatabaseStats'),
+    getLibraryStats: () => ipcRenderer.invoke('photos:getLibraryStats'),
     clearDatabase: () => ipcRenderer.invoke('photos:clearDatabase'),
     onScanProgress: (callback: (progress: any) => void) => {
       const listener = (_event: any, progress: any) => callback(progress);

@@ -48,6 +48,8 @@ export interface AppSettings {
   autoZoomDuringPlay: boolean;
   // UI Settings
   toastDuration: number; // ms - how long toasts stay visible
+  // Scanning Settings
+  maxFileSizeMB: number; // Maximum file size in MB for photo scanning (prevents memory issues with huge files)
   // Developer Settings (fine-tuning)
   devSettingsEnabled: boolean;
   tileMaxZoom: number; // Absolute max zoom limit for manual zooming (map tile availability limit)
@@ -77,6 +79,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autoZoomDuringPlay: true,
   // UI defaults
   toastDuration: 3000, // 3 seconds
+  // Scanning defaults
+  maxFileSizeMB: 150, // 150MB - accommodates professional RAW files (medium format cameras)
   // Developer defaults
   devSettingsEnabled: false,
   tileMaxZoom: 18, // OSM tiles work up to 19, but 18 is safer

@@ -3,6 +3,7 @@ import { MapView, SelectionMode } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { Settings, AppSettings, DEFAULT_SETTINGS } from './components/Settings';
 import { OperationsPanel } from './components/Operations/OperationsPanel';
+import { LibraryStatsPanel } from './components/LibraryStatsPanel';
 import { FloatingHeader } from './components/FloatingHeader';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import type { Photo } from '@placemark/core';
@@ -48,6 +49,7 @@ function App() {
   // Component state
   const [showTimeline, setShowTimeline] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const [showOperations, setShowOperations] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [lastSelectedDateRange, setLastSelectedDateRange] = useState<{
@@ -79,7 +81,7 @@ function App() {
 
   const handleScanFolder = async () => {
     try {
-      const result = await folderScan.scanFolder(photoData.loadPhotos);
+      const result = await folderScan.scanFolder(photoData.loadPhotos, settings.maxFileSizeMB);
 
       // Show success or error toast based on result
       if (result && !result.canceled) {
@@ -195,6 +197,7 @@ function App() {
           onSelectionModeToggle={handleSelectionModeToggle}
           onOperationsOpen={() => setShowOperations(true)}
           onSettingsOpen={() => setShowSettings(true)}
+          onStatsOpen={() => setShowStats(true)}
           onTimelineToggle={handleTimelineToggle}
           onScanFolder={handleScanFolder}
         />
@@ -264,6 +267,9 @@ function App() {
             toast={toast}
           />
         )}
+
+        {/* Library Stats Panel */}
+        {showStats && <LibraryStatsPanel onClose={() => setShowStats(false)} theme={theme} />}
 
         {/* Operations Modal */}
         {showOperations && (

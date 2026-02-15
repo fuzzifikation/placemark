@@ -195,6 +195,64 @@ export function getPhotoCountWithLocation(): number {
   return result.count;
 }
 
+/**
+ * Library statistics — single query aggregating photo metadata for the stats panel.
+ * Returns total counts, GPS/timestamp coverage, format breakdown, file sizes, and date range.
+ */
+export interface LibraryStats {
+  totalPhotos: number;
+  photosWithLocation: number;
+  photosWithTimestamp: number;
+  totalFileSizeBytes: number;
+  avgFileSizeBytes: number;
+  minTimestamp: number | null;
+  maxTimestamp: number | null;
+  formatBreakdown: Array<{ mimeType: string; count: number }>;
+  lastScannedAt: number | null;
+}
+
+export function getLibraryStats(): LibraryStats {
+  const db = getDb();
+
+  const summary = db
+    .prepare(
+      `SELECT
+        COUNT(*) AS totalPhotos,
+        SUM(CASE WHEN latitude IS NOT NULL AND longitude IS NOT NULL THEN 1 ELSE 0 END) AS photosWithLocation,
+        SUM(CASE WHEN timestamp IS NOT NULL THEN 1 ELSE 0 END) AS photosWithTimestamp,
+        COALESCE(SUM(file_size), 0) AS totalFileSizeBytes,
+        COALESCE(AVG(file_size), 0) AS avgFileSizeBytes,
+        MIN(CASE WHEN timestamp IS NOT NULL THEN timestamp END) AS minTimestamp,
+        MAX(CASE WHEN timestamp IS NOT NULL THEN timestamp END) AS maxTimestamp,
+        MAX(scanned_at) AS lastScannedAt
+      FROM photos`
+    )
+    .get() as {
+    totalPhotos: number;
+    photosWithLocation: number;
+    photosWithTimestamp: number;
+    totalFileSizeBytes: number;
+    avgFileSizeBytes: number;
+    minTimestamp: number | null;
+    maxTimestamp: number | null;
+    lastScannedAt: number | null;
+  };
+
+  const formatRows = db
+    .prepare(
+      `SELECT mime_type AS mimeType, COUNT(*) AS count
+       FROM photos
+       GROUP BY mime_type
+       ORDER BY count DESC`
+    )
+    .all() as Array<{ mimeType: string; count: number }>;
+
+  return {
+    ...summary,
+    formatBreakdown: formatRows,
+  };
+}
+
 // ============================================================================
 // Source operations
 // ============================================================================

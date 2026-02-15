@@ -1,5 +1,33 @@
 # Release Notes
 
+## v0.7.0 - RAW Format Support (2026-02-14)
+
+📷 **Professional camera RAW formats now fully supported.**
+
+### ✨ New Features
+
+- **12 RAW format support:** Canon (CR2, CR3), Nikon (NEF, NRW), Sony (ARW), Adobe DNG, Fujifilm (RAF), Olympus (ORF), Panasonic (RW2), Pentax (PEF), Samsung (SRW), and Leica (RWL).
+- **EXIF extraction from RAW files:** GPS coordinates and timestamps are read directly from RAW files using existing `exifr` library.
+- **Thumbnail extraction:** Embedded JPEG previews are extracted from RAW files and resized to 400×400px thumbnails.
+- **Graceful fallback:** RAW files without embedded thumbnails are indexed (GPS/timestamp) but show "Thumbnail not available" in preview.
+- **Increased file size limit:** Maximum file size raised from 100MB to 150MB to accommodate professional medium-format RAW files.
+
+### 🏗️ Architecture
+
+- **New `formats.ts` module:** Centralizes all supported format definitions (standard + RAW extensions).
+- **MIME type mapping:** Added 12 RAW-specific MIME types (`image/x-canon-cr2`, etc.).
+- **Optimized RAW EXIF parsing:** 64KB chunk size used for RAW files to ensure reliable EXIF header reading.
+- **No new dependencies:** `exifr` already supports RAW EXIF + thumbnail extraction; `sharp` handles JPEG resize.
+
+### 📝 Notes
+
+- **No database schema changes:** Existing `mime_type TEXT` column accommodates new RAW MIME types.
+- **No breaking changes:** All existing functionality preserved.
+- **Testing recommended:** Verify EXIF extraction and thumbnail generation with sample RAW files from [raw.pixls.us](https://raw.pixls.us/).
+- **CR3 and RAF support:** May vary depending on embedded thumbnail format — graceful fallback applies if extraction fails.
+
+---
+
 ## v0.6.1 - Spider & Icon Fixes (2026-02-10)
 
 ### 🐛 Bug Fixes

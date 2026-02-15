@@ -36,6 +36,11 @@ Thumbs.db
 coverage/
 .nyc_output/
 
+# Test data (large sample images)
+test-data/**/*
+!test-data/.gitkeep
+!test-data/README.md
+
 # Temporary
 *.tmp
 .cache/

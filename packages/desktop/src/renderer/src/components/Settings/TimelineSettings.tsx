@@ -6,7 +6,6 @@ import { useState } from 'react';
 import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
-import { SettingsToggle } from './SettingsToggle';
 import type { AppSettings } from '../Settings';
 
 interface TimelineSettingsProps {

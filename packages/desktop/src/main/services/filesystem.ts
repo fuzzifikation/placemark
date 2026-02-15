@@ -6,21 +6,14 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createPhoto } from './storage';
-import { extractExif, isSupportedImageFile } from './exif';
+import { extractExif } from './exif';
+import { isSupportedImageFile, isRawFile, getMimeType } from './formats';
 import { PhotoSource } from '@placemark/core';
 import { logger } from './logger';
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
-const MIME_TYPES: Record<string, string> = {
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.heic': 'image/heic',
-  '.heif': 'image/heif',
-  '.tiff': 'image/tiff',
-  '.tif': 'image/tiff',
-  '.webp': 'image/webp',
-};
+// 150MB  default limit to accommodate professional RAW files (medium format cameras can exceed 100MB)
+// This is now configurable via settings
+const DEFAULT_MAX_FILE_SIZE_MB = 150;
 
 export interface ScanResult {
   totalFiles: number;
@@ -41,12 +34,14 @@ export interface ScanProgress {
  * @param source Source type (local, network, etc.)
  * @param onProgress Optional callback for progress updates
  * @param includeSubdirectories Whether to scan subdirectories recursively (default: true)
+ * @param maxFileSizeMB Maximum file size in MB (default: 150MB)
  */
 export async function scanDirectory(
   dirPath: string,
   source: PhotoSource,
   onProgress?: (progress: ScanProgress) => void,
-  includeSubdirectories: boolean = true
+  includeSubdirectories: boolean = true,
+  maxFileSizeMB: number = DEFAULT_MAX_FILE_SIZE_MB
 ): Promise<ScanResult> {
   const result: ScanResult = {
     totalFiles: 0,
@@ -72,7 +67,7 @@ export async function scanDirectory(
         });
       }
 
-      await processImageFile(filePath, source, result);
+      await processImageFile(filePath, source, result, maxFileSizeMB);
       result.processedFiles++;
     } catch (error) {
       const errorMsg = `Error processing ${path.basename(filePath)}: ${error instanceof Error ? error.message : String(error)}`;
@@ -119,7 +114,62 @@ async function findImageFiles(dirPath: string, includeSubdirectories: boolean): 
   }
 
   await scanDir(dirPath, true);
-  return imageFiles;
+  return deduplicateRawJpegPairs(imageFiles);
+}
+
+/** JPEG extensions used for RAW+JPEG companion detection */
+const JPEG_EXTENSIONS = ['.jpg', '.jpeg'];
+
+/**
+ * Remove RAW files that have a JPEG companion with the same filename stem
+ * in the same directory. Many cameras output both RAW + JPEG for each shot;
+ * the JPEG contains identical EXIF/GPS data and produces better thumbnails.
+ *
+ * Standalone RAW files (no JPEG companion) are kept.
+ */
+function deduplicateRawJpegPairs(files: string[]): string[] {
+  // Build a set of JPEG stems keyed by directory for O(1) lookup
+  const jpegStemsByDir = new Map<string, Set<string>>();
+
+  for (const filePath of files) {
+    const ext = path.extname(filePath).toLowerCase();
+    if (JPEG_EXTENSIONS.includes(ext)) {
+      const dir = path.dirname(filePath);
+      const stem = path.basename(filePath, path.extname(filePath)).toLowerCase();
+      let stems = jpegStemsByDir.get(dir);
+      if (!stems) {
+        stems = new Set();
+        jpegStemsByDir.set(dir, stems);
+      }
+      stems.add(stem);
+    }
+  }
+
+  // If no JPEGs at all, nothing to deduplicate
+  if (jpegStemsByDir.size === 0) {
+    return files;
+  }
+
+  let skippedCount = 0;
+  const result = files.filter((filePath) => {
+    if (!isRawFile(filePath)) {
+      return true; // Keep all non-RAW files
+    }
+    const dir = path.dirname(filePath);
+    const stem = path.basename(filePath, path.extname(filePath)).toLowerCase();
+    const dirJpegs = jpegStemsByDir.get(dir);
+    if (dirJpegs && dirJpegs.has(stem)) {
+      skippedCount++;
+      return false; // Skip RAW — JPEG companion exists
+    }
+    return true; // Keep standalone RAW
+  });
+
+  if (skippedCount > 0) {
+    logger.info(`Skipped ${skippedCount} RAW files with JPEG companions`);
+  }
+
+  return result;
 }
 
 /**
@@ -145,11 +195,13 @@ function shouldSkipDirectory(dirName: string): boolean {
 async function processImageFile(
   filePath: string,
   source: PhotoSource,
-  result: ScanResult
+  result: ScanResult,
+  maxFileSizeMB: number
 ): Promise<void> {
   const stats = await fs.stat(filePath);
 
-  if (stats.size > MAX_FILE_SIZE) {
+  const maxFileSizeBytes = maxFileSizeMB * 1024 * 1024;
+  if (stats.size > maxFileSizeBytes) {
     // Track large files that were skipped
     result.errors.push(
       `Skipped large file (${Math.round(stats.size / 1024 / 1024)}MB): ${path.basename(filePath)}`
@@ -167,7 +219,7 @@ async function processImageFile(
     longitude: exifData.longitude,
     timestamp: exifData.timestamp,
     fileSize: stats.size,
-    mimeType: MIME_TYPES[ext] || 'image/jpeg',
+    mimeType: getMimeType(ext),
   });
 
   if (exifData.latitude != null && exifData.longitude != null) {

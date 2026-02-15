@@ -29,6 +29,18 @@ export interface DatabaseStats {
   totalPhotoCount: number;
 }
 
+export interface LibraryStats {
+  totalPhotos: number;
+  photosWithLocation: number;
+  photosWithTimestamp: number;
+  totalFileSizeBytes: number;
+  avgFileSizeBytes: number;
+  minTimestamp: number | null;
+  maxTimestamp: number | null;
+  formatBreakdown: Array<{ mimeType: string; count: number }>;
+  lastScannedAt: number | null;
+}
+
 export interface ThumbnailStats {
   totalSizeBytes: number;
   totalSizeMB: number;
@@ -38,7 +50,7 @@ export interface ThumbnailStats {
 }
 
 export interface PhotosAPI {
-  scanFolder: (includeSubdirectories: boolean) => Promise<ScanResult>;
+  scanFolder: (includeSubdirectories: boolean, maxFileSizeMB: number) => Promise<ScanResult>;
   getWithLocation: () => Promise<Photo[]>;
   getWithLocationInDateRange: (
     startTimestamp: number | null,
@@ -50,6 +62,7 @@ export interface PhotosAPI {
   showInFolder: (photoId: number) => Promise<void>;
   showMultipleInFolder: (filePaths: string[]) => Promise<void>;
   getDatabaseStats: () => Promise<DatabaseStats>;
+  getLibraryStats: () => Promise<LibraryStats>;
   clearDatabase: () => Promise<void>;
   onScanProgress: (callback: (progress: ScanProgress) => void) => () => void;
 }

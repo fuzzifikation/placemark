@@ -162,7 +162,13 @@ preview, atomic rollback, and full undo.
 Drag photos to correct their location. Set a place by address. Tag
 photos that have no GPS data at all.
 
-�🔒 PRIVATE BY DESIGN
+📷 SUPPORTED FORMATS
+JPEG, PNG, HEIC/HEIF, TIFF, WebP — plus 12 professional RAW formats:
+Canon (CR2, CR3), Nikon (NEF, NRW), Sony (ARW), Adobe DNG,
+Fujifilm (RAF), Olympus (ORF), Panasonic (RW2), Pentax (PEF),
+Samsung (SRW), and Leica (RWL).
+
+🔒 PRIVATE BY DESIGN
 No cloud. No telemetry. No AI. All data stays on your device.
 
 FREE — full map exploration and timeline for up to 1,000 photos.
@@ -210,7 +216,8 @@ Placemark has no marketing budget. Growth must be organic and low-effort.
 
 Target keywords: `photo map`, `photo organizer`, `EXIF viewer`, `geotagged photos`,
 `photo location`, `privacy photo`, `local photo organizer`, `photo GPS`,
-`photo timeline`, `photo viewer map`, `no cloud photo`.
+`photo timeline`, `photo viewer map`, `no cloud photo`, `RAW photo viewer`,
+`CR2 viewer`, `NEF viewer`, `ARW viewer`, `DNG viewer`, `RAW EXIF`.
 
 ### Community Posts (Free)
 
