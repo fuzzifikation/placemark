@@ -4,7 +4,7 @@ Step-by-step roadmap for building Placemark. See [ARCHITECTURE.md](ARCHITECTURE.
 
 Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
 
-**Current Status:** ✅ Phase 0–5.5 Complete | ⚙️ Phase 6 Next (Export) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
+**Current Status:** ✅ Phase 0–5.5 Complete | ⚙️ Phase 6 Next (Collections & Export) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
 
 **Recent Work:**
 
@@ -295,43 +295,11 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 ---
 
-### Phase 6: Export & Data Portability
+### Phase 6: Smart Collections & Export
 
-**Goal:** Let users get their data out. Export photo metadata and locations in standard formats. Reinforces Placemark's trust promise ("your data, your control") and provides immediate value for the Store listing.
+**Goal:** Give users persistent filter shortcuts and let them export data in standard formats. Collections make the app feel polished; export reinforces the trust promise ("your data, your control"). Both provide immediate value for the Store listing.
 
-**Tasks:**
-
-1. **GeoJSON export** — photo locations as a GeoJSON FeatureCollection (importable in QGIS, Google Earth, Mapbox)
-2. **KML/KMZ export** — Google Earth format with photo thumbnails embedded (KMZ) or referenced (KML)
-3. **GPX export** — photo locations as waypoints, importable in hiking/GPS apps
-4. **CSV export** — tabular format: filename, date, latitude, longitude, camera make/model, folder path
-5. **Self-contained HTML map** — generates a single `.html` file with Leaflet + embedded markers, viewable in any browser, shareable without Placemark installed
-6. Add "Export" button to the toolbar with format picker
-7. Export respects current filters (date range + map bounds) — export only what's visible
-
-**Privacy note:** All exports are local file writes. No data leaves the device.
-
-**Testing:**
-
-- [ ] GeoJSON export opens correctly in geojson.io
-- [ ] KML export opens in Google Earth
-- [ ] GPX export imports into a GPS app
-- [ ] CSV opens in Excel/LibreOffice with correct columns
-- [ ] HTML map displays markers in a browser without internet (embedded tiles optional)
-- [ ] Filtered export only includes visible photos
-- [ ] Export 10,000 photos in <5 seconds
-
-**Estimated Effort:** 2–3 days
-
-**Deliverable:** Users can export their photo data in 5 standard formats.
-
----
-
-### Phase 7: Smart Collections & Library Insights
-
-**Goal:** Give users persistent filter shortcuts and statistics about their photo library. Makes the free tier feel polished and complete before Store launch.
-
-#### 7.1 Saved Filter Collections
+#### 6.1 Saved Filter Collections
 
 **Tasks:**
 
@@ -344,7 +312,43 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
    - "This Year" — current calendar year
 5. User can create, rename, and delete custom collections
 
-#### 7.2 Photo Statistics Dashboard
+#### 6.2 Export
+
+**Tasks:**
+
+1. **CSV export** — tabular format: filename, date, latitude, longitude, camera make/model, folder path. Universal, opens in Excel/Google Sheets.
+2. **GeoJSON export** — photo locations as a GeoJSON FeatureCollection (importable in QGIS, Google Earth, Mapbox). The standard for geo data.
+3. **GPX export** — photo locations as waypoints, importable in hiking/GPS apps. Also lays groundwork for Phase 9 trip route export.
+4. Add "Export" button to the toolbar with format picker
+5. Export respects current filters and collections — export only what's visible
+
+**Dropped formats (can revisit post-1.0):**
+
+- ~~KML/KMZ~~ — Google Earth is niche and declining. KMZ adds significant complexity (ZIP archive, embedded thumbnails). Users can convert from GeoJSON with free tools.
+- ~~Self-contained HTML map~~ — High effort (bundle Leaflet, tile handling, offline support) for a rarely-used sharing mechanism. Better alternatives exist.
+
+**Privacy note:** All exports are local file writes. No data leaves the device.
+
+**Testing:**
+
+- [ ] Saved collection restores exact filter state
+- [ ] Deleting a collection doesn't affect photos
+- [ ] Smart collections update automatically when new photos are scanned
+- [ ] CSV opens in Excel/LibreOffice with correct columns
+- [ ] GeoJSON export opens correctly in geojson.io
+- [ ] GPX export imports into a GPS app
+- [ ] Filtered/collection export only includes visible photos
+- [ ] Export 10,000 photos in <5 seconds
+
+**Estimated Effort:** 3–4 days
+
+**Deliverable:** Saved filter collections and photo data export in 3 standard formats (CSV, GeoJSON, GPX).
+
+---
+
+### Phase 7: Library Insights
+
+**Goal:** Give users statistics and insights about their photo library. Makes the free tier feel complete before Store launch.
 
 **Tasks:**
 
@@ -360,16 +364,13 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 **Testing:**
 
-- [ ] Saved collection restores exact filter state
-- [ ] Deleting a collection doesn't affect photos
-- [ ] Smart collections update automatically when new photos are scanned
 - [ ] Statistics dashboard loads in <1 second for 50,000 photos
 - [ ] Camera breakdown shows correct make/model from EXIF
 - [ ] Photos-per-year chart renders correctly with sparse data (gaps in years)
 
-**Estimated Effort:** 3–4 days
+**Estimated Effort:** 2–3 days
 
-**Deliverable:** Saved filter collections and a library statistics overview.
+**Deliverable:** Library statistics overview with charts and insights.
 
 ---
 
@@ -477,7 +478,7 @@ _All phases below are post-Store-launch. Priority order may shift based on user 
 1. Connect photos within a trip chronologically with polylines on the map
 2. Line styling: color by speed/density, animate during timeline playback
 3. Route playback: "Watch your trip unfold" — animated marker moves along the route
-4. Export trip route as GPX track (builds on Phase 6 export infrastructure)
+4. Export trip route as GPX track (builds on Phase 6.2 GPX export infrastructure)
 
 **Testing:**
 
@@ -974,6 +975,15 @@ pnpm -r test                           # Test all
 - Scan 1,000 OneDrive photos in <2 minutes
 
 ## Backlog / Future Enhancements
+
+- **Video File Support (MP4, MOV):** Smartphones embed GPS coordinates in video files the same way they do in photos — stored in the MP4/MOV container's metadata box (not EXIF, but equivalent lat/lon/altitude). Samsung Gallery, Apple Photos, and Google Photos all surface map views for videos. Placemark should support this too.
+  - **Extraction:** `exifr` does not parse video GPS. Use `ffprobe` (bundled with ffmpeg) to read the `©xyz` / `GPS ` metadata atom from MP4/MOV files. Alternatively evaluate `mp4box.js` (pure JS, no native binary).
+  - **Thumbnails:** Extract a representative frame using `ffmpeg` (e.g. frame at 1s), then resize with `sharp` — same pipeline as RAW.
+  - **Formats in scope:** MP4 (`.mp4`), QuickTime (`.mov`), and potentially 3GP (`.3gp`) for older Android clips.
+  - **UI impact:** Video markers need a visual distinction from photo markers (e.g. a small play icon overlay). The preview panel should show the extracted frame, not attempt inline playback.
+  - **Dependency decision required:** Bundling ffmpeg adds ~80–120 MB to the installer. Evaluate `fluent-ffmpeg` + `@ffmpeg-installer/ffmpeg` vs. requiring ffmpeg on PATH vs. a pure-JS fallback.
+  - **Schema:** Add `media_type TEXT DEFAULT 'photo'` column (`'photo'` | `'video'`), and update `mime_type` to include `video/mp4`, `video/quicktime`, etc.
+  - **Phase suggestion:** Phase 12.5 or a dedicated Phase 18, after mobile foundation.
 
 - **Timeline Animation Bug:** The end-bars of the timeline do not move with the bar during play mode ✅ FIXED
 - **About Section Updates:** Update the about section with the correct GitHub link and add a donate button ✅ FIXED (GitHub link corrected, donation link removed pending proper sponsor setup)

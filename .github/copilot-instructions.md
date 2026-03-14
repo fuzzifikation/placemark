@@ -182,9 +182,9 @@ Use `pnpm run version:update x.y.z` for version bumps (patch: bug fixes, minor: 
 
 ## Implementation Phase
 
-Currently in **Phase 5.5 Complete** — RAW format support (12 camera brands) with embedded thumbnail extraction. Phase 6 (Export) is next. See [docs/plan.md](../docs/plan.md) for 17-phase roadmap.
+Currently in **Phase 5.5 Complete** — RAW format support (12 camera brands) with embedded thumbnail extraction. Phase 6 (Collections & Export) is next. See [docs/plan.md](../docs/plan.md) for 17-phase roadmap.
 
-**Pre-store:** ✅ Phase 5.5 (RAW) → Phase 6 (Export) → Phase 7 (Collections & Stats) → Phase 8 (Polish & Store Readiness) → 🏪 **v1.0 Microsoft Store Launch**
+**Pre-store:** ✅ Phase 5.5 (RAW) → Phase 6 (Collections & Export) → Phase 7 (Library Insights) → Phase 8 (Polish & Store Readiness) → 🏪 **v1.0 Microsoft Store Launch**
 **Post-store:** Phase 9 (Trip Detection) → Phase 10 (GPS Editing) → Phase 11–17 (Duplicates, Network, Import, Timestamps, OneDrive, Advanced, Mobile)
 
 Prioritize: **clarity > performance**, **safety > convenience**, **explicit > automatic**.

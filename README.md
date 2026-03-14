@@ -1,7 +1,7 @@
 # Placemark
 
 **Privacy-first, local-first photo organizer.**
-Rediscover your photo collection by visualizing _where_ and _when_ your photos were taken, without ever uploading your personal moments to the cloud.
+Rediscover your photo collection by visualizing _where_ and _when_ your photos were taken — using the GPS coordinates your phone or camera recorded at capture time and stored inside the photo file. No cloud uploads, no AI inference, no guessing.
 
 ---
 
@@ -9,7 +9,7 @@ Rediscover your photo collection by visualizing _where_ and _when_ your photos w
 
 Placemark is a privacy-first, local-first application that allows users to explore and organize their photos by where and when they were taken.
 
-The core idea is to treat geographic location and time as explicit, user-controlled lenses on personal photo collections, without uploading photos or derived data to third-party servers.
+The core idea is to treat geographic location and time as explicit, user-controlled lenses on personal photo collections. Location is read directly from GPS coordinates already embedded in the photo file by the device that took the photo — Placemark never estimates, infers, or guesses location. No photos or derived data are uploaded to third-party servers.
 
 ### Primary Goals
 
@@ -69,8 +69,8 @@ When you open Placemark, you are greeted with a clean map interface. The data st
 
 1. Click the **"Add Source"** button (or the `+` icon) in the top-left sidebar.
 2. Select a folder on your computer that contains photos (e.g., your "Pictures" folder).
-3. Placemark will scan the folder recursively for images with GPS data (EXIF).
-   - **Note:** Only photos with location data will appear on the map. Photos without GPS are counted but skipped for map display.
+3. Placemark will scan the folder recursively and read the **GPS coordinates already embedded in each photo's EXIF metadata** — the location your phone or camera recorded automatically at the moment the photo was taken.
+   - **Note:** Only photos that already contain GPS coordinates in their EXIF metadata will appear on the map. Placemark does not estimate or infer location from image content. Photos without embedded GPS coordinates are counted but skipped for map display.
 
 ### 2. Navigating the Map
 

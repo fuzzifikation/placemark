@@ -4,7 +4,7 @@
 
 This document defines what Placemark must do from the user's perspective. It describes the problems the product solves, who it serves, and the functional and non-functional requirements it must satisfy.
 
-Placemark is a **privacy-first, local-first photo organizer** that lets users rediscover their photo collections by visualizing _where_ and _when_ their photos were taken — without ever uploading personal photos to the cloud.
+Placemark is a **privacy-first, local-first photo organizer** that lets users rediscover their photo collections by visualizing _where_ and _when_ their photos were taken — by reading the GPS coordinates already embedded in the photo files by their camera or smartphone, without ever uploading personal photos to the cloud or estimating location from image content.
 
 ---
 
@@ -37,7 +37,7 @@ Users who care about privacy, or who simply want to stay in control of their own
 
 ### User Assumptions
 
-- Users have photos with EXIF GPS metadata (most modern smartphones embed this).
+- Users have photos with GPS coordinates embedded in EXIF metadata. Most modern smartphones record and embed GPS location automatically when a photo is taken. Dedicated cameras can also record GPS if they have a built-in receiver or are paired with a GPS-enabled device. Placemark reads this pre-existing data — it does not assign or infer coordinates for photos that lack them.
 - Users are comfortable selecting folders on their computer.
 - Users expect a desktop application that works offline (no account creation or login required).
 
