@@ -57,7 +57,7 @@ Requires: **Folder G** from the setup above. Download samples from [raw.pixls.us
 
 | #    | Test                                                              | Expected                                                                                        | ✅  | Notes |
 | ---- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | --- | ----- |
-| 3.1  | Scan Folder G (mixed RAW brands)                                  | All RAW files indexed; GPS coordinates and timestamps extracted correctly                        |     |       |
+| 3.1  | Scan Folder G (mixed RAW brands)                                  | All RAW files indexed; GPS coordinates and timestamps extracted correctly                       |     |       |
 | 3.2  | Hover over a RAW photo marker                                     | Thumbnail displays — extracted from the embedded JPEG preview inside the RAW file               |     |       |
 | 3.3  | Click a RAW photo marker                                          | Detail modal shows correct GPS, date, file size, and format (e.g., CR2, NEF, ARW)               |     |       |
 | 3.4  | Scan a Canon CR2 file                                             | GPS and timestamp extracted, thumbnail generated                                                |     |       |
