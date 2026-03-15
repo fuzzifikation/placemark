@@ -15,6 +15,14 @@ import { logger } from './logger';
 // This is now configurable via settings
 const DEFAULT_MAX_FILE_SIZE_MB = 150;
 
+// Module-level abort flag — set by requestAbort(), checked in the scan loop
+let abortRequested = false;
+
+/** Signal the currently running scan to stop at the next file boundary. */
+export function requestAbort(): void {
+  abortRequested = true;
+}
+
 export interface ScanResult {
   totalFiles: number;
   processedFiles: number;
@@ -43,6 +51,8 @@ export async function scanDirectory(
   includeSubdirectories: boolean = true,
   maxFileSizeMB: number = DEFAULT_MAX_FILE_SIZE_MB
 ): Promise<ScanResult> {
+  abortRequested = false; // reset for this scan session
+
   const result: ScanResult = {
     totalFiles: 0,
     processedFiles: 0,
@@ -58,6 +68,10 @@ export async function scanDirectory(
 
   // Process each file
   for (const filePath of imageFiles) {
+    if (abortRequested) {
+      logger.info('Scan aborted by user request');
+      break;
+    }
     try {
       if (onProgress) {
         onProgress({

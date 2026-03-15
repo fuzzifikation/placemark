@@ -83,34 +83,47 @@ function formatSpan(ms: number): string {
 interface LibraryStatsPanelProps {
   onClose: () => void;
   theme: Theme;
+  isScanning?: boolean;
 }
 
-export function LibraryStatsPanel({ onClose, theme }: LibraryStatsPanelProps) {
+export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPanelProps) {
   const colors = useThemeColors(theme);
   const [stats, setStats] = useState<LibraryStats | null>(null);
   const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
   const [thumbStats, setThumbStats] = useState<ThumbnailStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [lib, db, thumb] = await Promise.all([
-          window.api.photos.getLibraryStats(),
-          window.api.photos.getDatabaseStats(),
-          window.api.thumbnails.getStats(),
-        ]);
-        setStats(lib);
-        setDbStats(db);
-        setThumbStats(thumb);
-      } catch (err) {
-        console.error('Failed to load library stats:', err);
-      } finally {
-        setLoading(false);
-      }
+  const loadStats = async () => {
+    try {
+      const [lib, db, thumb] = await Promise.all([
+        window.api.photos.getLibraryStats(),
+        window.api.photos.getDatabaseStats(),
+        window.api.thumbnails.getStats(),
+      ]);
+      setStats(lib);
+      setDbStats(db);
+      setThumbStats(thumb);
+    } catch (err) {
+      console.error('Failed to load library stats:', err);
+    } finally {
+      setLoading(false);
     }
-    load();
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadStats();
   }, []);
+
+  // Poll every 1.5s during scan; do one final refresh when scan ends
+  useEffect(() => {
+    if (!isScanning) {
+      loadStats(); // refresh once when scan completes
+      return;
+    }
+    const interval = setInterval(loadStats, 1500);
+    return () => clearInterval(interval);
+  }, [isScanning]);
 
   const cardStyle: React.CSSProperties = {
     backgroundColor: colors.surface,

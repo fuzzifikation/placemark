@@ -58,6 +58,10 @@ export function useFolderScan() {
     }
   };
 
+  const abortScan = async () => {
+    await window.api.photos.abortScan();
+  };
+
   return {
     scanning,
     result,
@@ -65,5 +69,6 @@ export function useFolderScan() {
     includeSubdirectories,
     setIncludeSubdirectories,
     scanFolder,
+    abortScan,
   };
 }

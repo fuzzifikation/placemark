@@ -75,25 +75,6 @@ export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSet
     }
   };
 
-  const handleClearPhotosDatabase = async () => {
-    if (
-      !confirm(
-        'Clear all photos from database? This cannot be undone. You will need to re-scan your folders.'
-      )
-    ) {
-      return;
-    }
-    try {
-      await window.api.photos.clearDatabase();
-      await loadDatabaseStats();
-      toast.success('Photos database cleared successfully.');
-      window.location.reload();
-    } catch (error) {
-      console.error('Failed to clear photos database:', error);
-      toast.error('Failed to clear database: ' + error);
-    }
-  };
-
   const handleOpenAppDataFolder = async () => {
     try {
       await window.api.system.openAppDataFolder();
@@ -279,21 +260,6 @@ export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSet
             </button>
           </div>
         )}
-
-        {/* Clear All Photos Button */}
-        <button
-          onClick={handleClearPhotosDatabase}
-          style={{
-            ...buttonStyle,
-            backgroundColor: colors.error,
-            color: colors.buttonText,
-            border: 'none',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-        >
-          Clear All Photos (Reset Database)
-        </button>
 
         {/* Open Data Folder Button */}
         <button
@@ -492,17 +458,6 @@ export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSet
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <button onClick={handleOpenAppDataFolder} style={buttonStyle}>
             Open App Data Folder
-          </button>
-          <button
-            onClick={handleClearPhotosDatabase}
-            style={{
-              ...buttonStyle,
-              backgroundColor: colors.error,
-              color: 'white',
-              border: 'none',
-            }}
-          >
-            Clear Photos Database
           </button>
         </div>
       </div>

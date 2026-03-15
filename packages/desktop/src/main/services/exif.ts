@@ -26,11 +26,21 @@ export const isSupportedImageFile = checkSupportedImage;
  */
 export async function extractExif(filePath: string): Promise<ExifData> {
   try {
-    // Single parse operation extracts both GPS and timestamp data
-    // exifr detects file format automatically (no extension checking needed)
+    // Single parse operation extracts both GPS and timestamp data.
+    // exifr detects file format automatically (no extension checking needed).
+    // NOTE: Do NOT use `pick` together with `gps: true` — `pick` filters GPS tags
+    // before exifr can compute latitude/longitude, silently dropping all GPS data.
+    // Instead, disable heavy segments we don't need.
     const data = await exifr.parse(filePath, {
-      gps: true,
-      pick: ['DateTimeOriginal', 'CreateDate', 'DateTime'],
+      gps: true, // GPS IFD → latitude, longitude
+      exif: true, // EXIF IFD → DateTimeOriginal, CreateDate
+      tiff: true, // IFD0 → DateTime fallback
+      makerNote: false, // Skip large camera maker notes
+      iptc: false,
+      xmp: false,
+      icc: false,
+      jfif: false,
+      ihdr: false,
     });
 
     const result: ExifData = {};

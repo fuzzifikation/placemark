@@ -39,6 +39,7 @@ export const Z_INDEX = {
   MAP: 0,
   HEADER: 10,
   TIMELINE: 10,
+  SCAN_OVERLAY: 40,
   MODAL: 50,
   PHOTO_PREVIEW: 1000,
 } as const;

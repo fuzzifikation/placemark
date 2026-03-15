@@ -11,7 +11,7 @@ import {
   FONT_FAMILY,
   Z_INDEX,
 } from '../constants/ui';
-import { Lasso, Folder, Settings, History, BarChart3 } from 'lucide-react';
+import { Lasso, FolderOpen, Settings, History, BarChart3, Trash2 } from 'lucide-react';
 import type { ThemeColors } from '../theme';
 
 interface FloatingHeaderProps {
@@ -30,6 +30,7 @@ interface FloatingHeaderProps {
   onStatsOpen: () => void;
   onTimelineToggle: () => void;
   onScanFolder: () => void;
+  onClearLibrary: () => void;
 }
 
 export function FloatingHeader({
@@ -48,6 +49,7 @@ export function FloatingHeader({
   onStatsOpen,
   onTimelineToggle,
   onScanFolder,
+  onClearLibrary,
 }: FloatingHeaderProps) {
   return (
     <div
@@ -190,7 +192,7 @@ export function FloatingHeader({
             }
           }}
         >
-          <Folder size={16} />
+          <FolderOpen size={16} />
           Organize ({selectionCount > 0 ? selectionCount : 0})
         </button>
 
@@ -306,7 +308,7 @@ export function FloatingHeader({
           <History size={20} />
         </button>
 
-        {/* Scan Button */}
+        {/* Scan (Add Folder) Button */}
         <button
           onClick={onScanFolder}
           disabled={scanning}
@@ -324,6 +326,9 @@ export function FloatingHeader({
             boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
             transform: 'scale(1)',
             opacity: scanning ? 0.7 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: SPACING.SM,
           }}
           onMouseEnter={(e) => {
             if (!scanning) {
@@ -340,7 +345,41 @@ export function FloatingHeader({
             }
           }}
         >
-          {scanning ? 'Scanning...' : 'Scan'}
+          <FolderOpen size={16} />
+          Add Folder
+        </button>
+
+        {/* Clear Library Button */}
+        <button
+          onClick={onClearLibrary}
+          title="Clear library (remove all photos from database)"
+          className="floating-header-button"
+          style={{
+            padding: SPACING.SM,
+            fontSize: FONT_SIZE.LG,
+            backgroundColor: 'transparent',
+            color: colors.error,
+            border: 'none',
+            borderRadius: BORDER_RADIUS.FULL,
+            cursor: 'pointer',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px',
+            transform: 'scale(1)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = colors.surfaceHover;
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          <Trash2 size={18} />
         </button>
       </div>
     </div>

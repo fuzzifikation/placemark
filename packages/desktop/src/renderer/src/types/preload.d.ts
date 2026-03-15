@@ -51,6 +51,7 @@ export interface ThumbnailStats {
 
 export interface PhotosAPI {
   scanFolder: (includeSubdirectories: boolean, maxFileSizeMB: number) => Promise<ScanResult>;
+  abortScan: () => Promise<void>;
   getWithLocation: () => Promise<Photo[]>;
   getWithLocationInDateRange: (
     startTimestamp: number | null,

@@ -3,7 +3,7 @@
  */
 
 import { ipcMain, dialog, shell, app } from 'electron';
-import { scanDirectory } from '../services/filesystem';
+import { scanDirectory, requestAbort } from '../services/filesystem';
 import {
   getPhotosWithLocation,
   getPhotoCountWithLocation,
@@ -23,6 +23,11 @@ let thumbnailService: ThumbnailService;
 export function registerPhotoHandlers(): void {
   // Initialize thumbnail service
   thumbnailService = new ThumbnailService();
+
+  // Abort the currently running scan
+  ipcMain.handle('photos:abortScan', async () => {
+    requestAbort();
+  });
 
   // Select and scan a folder
   ipcMain.handle(
@@ -161,14 +166,8 @@ export function registerPhotoHandlers(): void {
       // This opens the folder and selects the oldest file
       shell.showItemInFolder(oldestFile);
     } else if (process.platform === 'darwin') {
-      // macOS: Use open command with -R to reveal first file
-      const { exec } = require('child_process');
-      exec(`open -R "${filePaths[0]}"`, (error: any) => {
-        if (error) {
-          console.error('Failed to open finder:', error);
-          shell.openPath(folder);
-        }
-      });
+      // macOS: shell.showItemInFolder opens Finder and selects the file (no shell, no injection risk)
+      shell.showItemInFolder(filePaths[0]);
     } else {
       // Linux and others: Use xdg-open to open the folder
       shell.openPath(folder);

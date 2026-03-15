@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('api', {
   photos: {
     scanFolder: (includeSubdirectories: boolean, maxFileSizeMB: number) =>
       ipcRenderer.invoke('photos:scanFolder', includeSubdirectories, maxFileSizeMB),
+    abortScan: () => ipcRenderer.invoke('photos:abortScan'),
     getWithLocation: () => ipcRenderer.invoke('photos:getWithLocation'),
     getWithLocationInDateRange: (startTimestamp: number | null, endTimestamp: number | null) =>
       ipcRenderer.invoke('photos:getWithLocationInDateRange', startTimestamp, endTimestamp),
