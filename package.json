@@ -24,6 +24,7 @@
     "tar": "^7.4.3",
     "esbuild": "^0.25.0",
     "@electron/rebuild": "^4.0.3",
-    "@isaacs/brace-expansion": "5.0.1"
+    "@isaacs/brace-expansion": "5.0.1",
+    "rollup": "^4.59.0"
   }
 }

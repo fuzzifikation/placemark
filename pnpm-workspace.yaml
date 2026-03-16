@@ -2,9 +2,10 @@ packages:
   - packages/*
 
 ignoredBuiltDependencies:
-  - esbuild
+  - better-sqlite3
   - electron
   - electron-winstaller
+  - esbuild
 
 overrides:
   '@electron/rebuild': ^3.2.10
