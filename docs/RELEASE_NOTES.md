@@ -1,10 +1,30 @@
 # Release Notes
 
+## v0.7.2 - Code Quality & Bug Fixes (2026-03-16)
+
+### 🐛 Bug Fixes
+
+- **Thumbnail cache size preserved on restart:** `INSERT OR REPLACE` was silently resetting the user's custom thumbnail cache size limit back to 500 MB every time the app launched. Changed to `INSERT OR IGNORE` so the value is only initialised once.
+- **Cluster/point opacity settings now take effect:** Opacity values were not tracked in the applied-settings ref, so changes made in Settings were silently ignored until a full map reload. Now tracked correctly.
+
+### 🧹 Code Cleanup (−1,042 net lines)
+
+- **Migration system removed:** Schema is now a single `SCHEMA_SQL` constant applied via `db.exec()`. No version tracking, no runner machinery — appropriate for an alpha product where the database rebuilds in minutes.
+- **Mobile scaffolding removed:** `IStorage.ts`, `queries.ts`, and `Source.ts` deleted. Mobile compatibility will be re-introduced in Phase 9 when the scope is defined.
+- **Dead code removed:** Unused SQL builders, filter functions, `Photo` utility methods, UI constants, and a dead `did-finish-load` IPC handler.
+- **`StorageSettings` simplified:** Removed legacy `expanded`/`onToggle` props from the `StorageSettings` component.
+
+### 📝 Notes
+
+- **Database rebuild required:** Schema changes mean existing `placemark.db` databases are incompatible. Delete `placemark.db` and `thumbnails.db` from the app data folder and re-scan your photo library.
+
+---
+
 ## v0.7.1 - UI & Dependency Update (2026-03-16)
 
 ### ✨ UI Improvements
 
-- **Redesigned control bar:** Buttons are now grouped into five logical sections separated by visual dividers, matching the natural user workflow: *Library (Clear / Add)* → *Timeline* → *Selection tools (Select / Organize)* → *App utilities (Stats / Settings)*.
+- **Redesigned control bar:** Buttons are now grouped into five logical sections separated by visual dividers, matching the natural user workflow: _Library (Clear / Add)_ → _Timeline_ → _Selection tools (Select / Organize)_ → _App utilities (Stats / Settings)_.
 - **Consistent button style:** All workflow buttons now use a uniform icon + text label with an outlined style. No more mixing of text buttons and icon-only buttons within the same workflow group.
 - **Better icons:** "Add" uses `FolderPlus` (folder with +); "Organize" uses `FolderOpen` — no more duplicate icons.
 - **Clear label on trash:** The clear-library action now shows a "Clear" text label for consistency.

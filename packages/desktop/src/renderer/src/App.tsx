@@ -58,8 +58,12 @@ function App() {
     end: number;
   } | null>(null);
   const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('placemark-settings');
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    try {
+      const saved = localStorage.getItem('placemark-settings');
+      return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    } catch {
+      return DEFAULT_SETTINGS;
+    }
   });
 
   // Auto-show scan overlay when library is empty after init
@@ -146,7 +150,7 @@ function App() {
     if (newShowTimeline) {
       // When opening timeline, restore last selection if it exists
       if (lastSelectedDateRange) {
-        photoData.filterByDateRange(lastSelectedDateRange.start, lastSelectedDateRange.end, false);
+        photoData.filterByDateRange(lastSelectedDateRange.start, lastSelectedDateRange.end);
       }
     } else {
       // When closing timeline, reset to show all photos
@@ -154,11 +158,11 @@ function App() {
     }
   };
 
-  const handleDateRangeChange = async (start: number, end: number) => {
+  const handleDateRangeChange = (start: number, end: number) => {
     // If autoZoom is ON, we want to find ALL photos in the new date range (ignoring current map bounds)
     // so the map can auto-fit to them.
     // If autoZoom is OFF, we only want to see photos in the CURRENT view.
-    await photoData.filterByDateRange(start, end, settings.autoZoomDuringPlay);
+    photoData.filterByDateRange(start, end);
     // Remember this selection for when timeline is reopened
     setLastSelectedDateRange({ start, end });
   };

@@ -14,13 +14,11 @@ interface ScanProgress {
 
 export function useFolderScan() {
   const [scanning, setScanning] = useState(false);
-  const [result, setResult] = useState<any>(null);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
   const [includeSubdirectories, setIncludeSubdirectories] = useState(true);
 
   const scanFolder = async (onComplete?: () => Promise<void>, maxFileSizeMB: number = 150) => {
     setScanning(true);
-    setResult(null);
     setScanProgress(null);
 
     const startTime = Date.now();
@@ -40,7 +38,6 @@ export function useFolderScan() {
 
     try {
       const scanResult = await window.api.photos.scanFolder(includeSubdirectories, maxFileSizeMB);
-      setResult(scanResult);
 
       // Call onComplete callback if provided
       if (!scanResult.canceled && onComplete) {
@@ -48,9 +45,6 @@ export function useFolderScan() {
       }
 
       return scanResult;
-    } catch (error) {
-      setResult({ error: String(error) });
-      throw error;
     } finally {
       removeListener();
       setScanProgress(null);
@@ -64,7 +58,6 @@ export function useFolderScan() {
 
   return {
     scanning,
-    result,
     scanProgress,
     includeSubdirectories,
     setIncludeSubdirectories,

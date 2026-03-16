@@ -96,7 +96,7 @@ export function registerPhotoHandlers(): void {
     // Validate path exists and is readable
     try {
       await fs.access(photo.path, constants.R_OK);
-    } catch (error) {
+    } catch {
       throw new Error(`Photo file not accessible: ${photo.path}`);
     }
     await shell.openPath(photo.path);
@@ -111,7 +111,7 @@ export function registerPhotoHandlers(): void {
     // Validate path exists
     try {
       await fs.access(photo.path, constants.R_OK);
-    } catch (error) {
+    } catch {
       throw new Error(`Photo file not accessible: ${photo.path}`);
     }
     shell.showItemInFolder(photo.path);
@@ -132,12 +132,10 @@ export function registerPhotoHandlers(): void {
       }
     }
 
-    // Group files by folder (they should all be in the same folder for this feature)
+    // Group files by folder — path.dirname handles all OS separator variants
     const folders = new Set<string>();
     filePaths.forEach((filePath) => {
-      const separator = filePath.includes('\\') ? '\\' : '/';
-      const folder = filePath.substring(0, filePath.lastIndexOf(separator)) || filePath;
-      folders.add(folder);
+      folders.add(path.dirname(filePath));
     });
 
     if (folders.size > 1) {
@@ -149,22 +147,17 @@ export function registerPhotoHandlers(): void {
 
     const folder = Array.from(folders)[0];
 
-    // Sort files by creation date (oldest first) and select the oldest
-    const filesWithStats = await Promise.all(
-      filePaths.map(async (filePath) => {
-        const stats = await fs.stat(filePath);
-        return { path: filePath, birthtime: stats.birthtime };
-      })
-    );
-
-    filesWithStats.sort((a, b) => a.birthtime.getTime() - b.birthtime.getTime());
-    const oldestFile = filesWithStats[0].path;
-
     // Platform-specific implementation
     if (process.platform === 'win32') {
-      // Windows: Use Electron's shell.showItemInFolder which works reliably
-      // This opens the folder and selects the oldest file
-      shell.showItemInFolder(oldestFile);
+      // Sort files by creation date and show the oldest (most likely the "main" photo)
+      const filesWithStats = await Promise.all(
+        filePaths.map(async (filePath) => {
+          const stats = await fs.stat(filePath);
+          return { path: filePath, birthtime: stats.birthtime };
+        })
+      );
+      filesWithStats.sort((a, b) => a.birthtime.getTime() - b.birthtime.getTime());
+      shell.showItemInFolder(filesWithStats[0].path);
     } else if (process.platform === 'darwin') {
       // macOS: shell.showItemInFolder opens Finder and selects the file (no shell, no injection risk)
       shell.showItemInFolder(filePaths[0]);

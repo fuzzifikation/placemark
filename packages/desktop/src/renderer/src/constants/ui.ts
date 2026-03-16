@@ -44,24 +44,8 @@ export const Z_INDEX = {
   PHOTO_PREVIEW: 1000,
 } as const;
 
-export const THUMBNAIL_CONSTANTS = {
-  SIZE: 400, // pixels (single size for all contexts)
-  QUALITY: 80, // JPEG quality
-  DEFAULT_MAX_CACHE_MB: 500,
-  CACHE_MEMORY_LIMIT: 50, // max thumbnails in memory
-} as const;
-
-export const FILE_CONSTANTS = {
-  MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
-} as const;
-
 export const TRANSITIONS = {
   FAST: '0.2s ease',
   MEDIUM: '0.3s ease',
   SLOW: '0.5s ease',
-} as const;
-
-export const GLASS_EFFECT = {
-  BACKDROP_FILTER: 'blur(12px)',
-  WEBKIT_BACKDROP_FILTER: 'blur(12px)',
 } as const;

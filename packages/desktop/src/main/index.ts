@@ -2,11 +2,6 @@ import { app, BrowserWindow } from 'electron';
 import { join, dirname } from 'path';
 import { existsSync } from 'fs';
 
-// Lazy load these ensuring splash screen appears immediately
-// import { registerPhotoHandlers, closeThumbnailService } from './ipc/photos';
-// import { registerOperationHandlers } from './ipc/operations';
-// import { closeStorage } from './services/storage';
-
 // Store cleanup functions for window-all-closed
 let closeStorage: (() => void) | undefined;
 let closeThumbnailService: (() => void) | undefined;
@@ -50,11 +45,6 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
-  });
-
-  // Test active push message to Renderer-process
-  win.webContents.on('did-finish-load', () => {
-    win?.webContents.send('main-process-message', new Date().toLocaleString());
   });
 
   // Show window when ready

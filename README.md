@@ -139,7 +139,7 @@ pnpm dev
 ### Tech Stack
 
 - **Frontend:** React 18 + TypeScript + Vite
-- **Desktop:** Electron 40+ with secure IPC
+- **Desktop:** Electron 41+ with secure IPC
 - **Maps:** MapLibre GL JS (open-source, offline-capable)
 - **Database:** SQLite via better-sqlite3
 - **Monorepo:** pnpm workspaces
@@ -176,10 +176,11 @@ The app reads version from Electron's `app.getVersion()` at runtime (no hardcode
 
 ### Project Status
 
-**Current Phase:** Phase 4A Complete — Code quality improvements
-**Next Phase:** Phase 5 — File operations (copy/move execution)
+**Current Version:** v0.7.2  
+**Current Phase:** Phase 5.5 Complete — RAW format support (12 camera brands)  
+**Next Phase:** Phase 6 — Collections & Export
 
-See [docs/plan.md](docs/plan.md) for the complete 9-phase roadmap.
+See [docs/plan.md](docs/plan.md) for the complete roadmap.
 
 ### License
 

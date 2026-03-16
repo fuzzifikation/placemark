@@ -96,12 +96,8 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
       const enrichedOps: FileOperation[] = [];
       const warnings: string[] = [...plan.summary.warnings];
 
-      // Check disk space (rough estimate, standard 4KB blocks)
+      // Verify destination is writable
       try {
-        // fs.statfs is available in Node 18+
-        // Fallback or skip if not available, or use a library.
-        // For now, let's skip complex disk space check to keep it simple,
-        // or check write permissions.
         await fs.access(destPath, constants.W_OK);
       } catch (e) {
         throw new Error(`Destination not writable: ${destPath}`);

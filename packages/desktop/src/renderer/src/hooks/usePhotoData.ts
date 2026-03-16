@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { Photo, BoundingBox } from '@placemark/core';
+import type { Photo } from '@placemark/core';
 import { filterPhotos } from '@placemark/core';
 
 export function usePhotoData() {
@@ -11,7 +11,6 @@ export function usePhotoData() {
   // Use a ref for the full dataset to avoid state duplication and extra renders
   const allPhotosRef = useRef<Photo[]>([]);
 
-  const [showMap, setShowMap] = useState(false);
   const [dateRange, setDateRange] = useState<{ min: number; max: number } | null>(null);
   const [selectedDateRange, setSelectedDateRange] = useState<{ start: number; end: number } | null>(
     null
@@ -80,8 +79,6 @@ export function usePhotoData() {
       setFilterSource('scan');
 
       if (photosWithLocation.length > 0) {
-        setShowMap(true);
-
         // Load date range
         const range = await window.api.photos.getDateRange();
         if (range.minDate && range.maxDate) {
@@ -98,37 +95,12 @@ export function usePhotoData() {
   };
 
   /**
-   * Centralized filter logic using core package
-   */
-  const applyFilters = useCallback(
-    (
-      targetPhotos: Photo[],
-      range: { start: number; end: number } | null,
-      bounds: BoundingBox | null
-    ) => {
-      const filtered = filterPhotos(targetPhotos, {
-        dateRange: range ? { start: range.start, end: range.end } : undefined,
-        bounds: bounds || undefined,
-      });
-      setPhotos(filtered);
-    },
-    []
-  );
-
-  /**
    * Client-side filtering to avoid IPC overhead and data duplication
    */
-  const filterByDateRange = useCallback(
-    (start: number, end: number, ignoreBounds = false) => {
-      const newRange = { start, end };
-      setSelectedDateRange(newRange);
-      // We set the source BEFORE applying filters so the consumer can react
-      setFilterSource('date');
-      // If ignoring bounds (e.g. for auto-zoom), pass null instead of current bounds
-      applyFilters(allPhotosRef.current, newRange, ignoreBounds ? null : mapBounds);
-    },
-    [applyFilters, mapBounds]
-  );
+  const filterByDateRange = useCallback((start: number, end: number) => {
+    setSelectedDateRange({ start, end });
+    setFilterSource('date');
+  }, []);
 
   /**
    * Track map bounds for UI display (doesn't filter map photos)
@@ -141,11 +113,10 @@ export function usePhotoData() {
     []
   );
 
-  const resetDateFilter = () => {
+  const resetDateFilter = useCallback(() => {
     setSelectedDateRange(null);
     setFilterSource('date');
-    applyFilters(allPhotosRef.current, null, mapBounds);
-  };
+  }, []);
 
   // Load photos on mount
   useEffect(() => {
@@ -153,11 +124,9 @@ export function usePhotoData() {
   }, []);
 
   return {
-    photos,
     mapPhotos, // Date-filtered photos for map display (no bounds filtering)
     allPhotos: allPhotosRef.current, // Expose for checking length/empty state
     visibleInBoundsCount, // Count of photos in current map view
-    showMap,
     dateRange,
     selectedDateRange,
     loading,

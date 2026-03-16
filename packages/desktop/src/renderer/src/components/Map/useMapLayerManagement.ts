@@ -36,6 +36,25 @@ interface UseMapLayerManagementProps {
   unclusteredPointOpacity?: number;
 }
 
+/** Settings that require tearing down and recreating the GeoJSON source */
+interface AppliedSourceSettings {
+  isClusteringActive: boolean;
+  clusterRadius: number;
+  clusterMaxZoom: number;
+  showHeatmap: boolean;
+  clusterOpacity: number | undefined;
+  unclusteredPointOpacity: number | undefined;
+}
+
+/** Remove all photo-related layers and sources from the map */
+function removePhotoSourceAndLayers(map: MaplibreMap): void {
+  for (const layerId of ['photos-heatmap', 'clusters', 'cluster-count', 'unclustered-point']) {
+    if (map.getLayer(layerId)) map.removeLayer(layerId);
+  }
+  if (map.getSource('photos')) map.removeSource('photos');
+  if (map.getSource('photos-heatmap-source')) map.removeSource('photos-heatmap-source');
+}
+
 export function useMapLayerManagement({
   mapRef,
   mapLoaded,
@@ -54,6 +73,7 @@ export function useMapLayerManagement({
   unclusteredPointOpacity,
 }: UseMapLayerManagementProps) {
   const hasInitialFit = useRef(false);
+  const appliedSourceSettings = useRef<AppliedSourceSettings | null>(null);
 
   // Sync selection state to map features
   useEffect(() => {
@@ -84,15 +104,8 @@ export function useMapLayerManagement({
     if (photosWithLocation.length === 0) {
       // Remove source if no photos
       if (mapRef.current.getSource('photos')) {
-        if (mapRef.current.getLayer('photos-heatmap')) mapRef.current.removeLayer('photos-heatmap');
-        if (mapRef.current.getLayer('clusters')) mapRef.current.removeLayer('clusters');
-        if (mapRef.current.getLayer('cluster-count')) mapRef.current.removeLayer('cluster-count');
-        if (mapRef.current.getLayer('unclustered-point'))
-          mapRef.current.removeLayer('unclustered-point');
-        mapRef.current.removeSource('photos');
-        if (mapRef.current.getSource('photos-heatmap-source')) {
-          mapRef.current.removeSource('photos-heatmap-source');
-        }
+        removePhotoSourceAndLayers(mapRef.current);
+        appliedSourceSettings.current = null;
       }
       return;
     }
@@ -150,6 +163,14 @@ export function useMapLayerManagement({
 
       // Add all cluster layers on top
       addClusterLayers(mapRef.current, showHeatmap, clusterOpacity, unclusteredPointOpacity);
+      appliedSourceSettings.current = {
+        isClusteringActive,
+        clusterRadius,
+        clusterMaxZoom,
+        showHeatmap,
+        clusterOpacity,
+        unclusteredPointOpacity,
+      };
     } else {
       // Update existing source data
       const source = mapRef.current.getSource('photos') as maplibregl.GeoJSONSource;
@@ -163,30 +184,24 @@ export function useMapLayerManagement({
         heatmapSource.setData(geojson);
       }
 
-      // If cluster settings or heatmap visibility changed, we need to recreate the source
-      // Check if we need to update cluster settings by removing and re-adding
-      const currentSource = mapRef.current.getSource('photos') as any;
-      const hasHeatmapLayer = mapRef.current.getLayer('photos-heatmap') !== undefined;
+      // If cluster settings or heatmap visibility changed, recreate the source.
+      // We track previously applied settings in a ref to avoid reading private
+      // MapLibre internals (_data, _options) which are undocumented and may change.
+      const prev = appliedSourceSettings.current;
+      const hasHeatmapLayer = !!mapRef.current.getLayer('photos-heatmap');
       const heatmapNeedsUpdate = showHeatmap !== hasHeatmapLayer;
 
       if (
-        currentSource._data &&
-        (currentSource._options.cluster !== isClusteringActive ||
-          currentSource._options.clusterRadius !== clusterRadius ||
-          currentSource._options.clusterMaxZoom !== clusterMaxZoom ||
+        prev !== null &&
+        (prev.isClusteringActive !== isClusteringActive ||
+          prev.clusterRadius !== clusterRadius ||
+          prev.clusterMaxZoom !== clusterMaxZoom ||
+          prev.clusterOpacity !== clusterOpacity ||
+          prev.unclusteredPointOpacity !== unclusteredPointOpacity ||
           heatmapNeedsUpdate)
       ) {
         // Remove layers
-        if (mapRef.current.getLayer('photos-heatmap')) mapRef.current.removeLayer('photos-heatmap');
-        if (mapRef.current.getLayer('clusters')) mapRef.current.removeLayer('clusters');
-        if (mapRef.current.getLayer('cluster-count')) mapRef.current.removeLayer('cluster-count');
-        if (mapRef.current.getLayer('unclustered-point'))
-          mapRef.current.removeLayer('unclustered-point');
-        // Remove source
-        mapRef.current.removeSource('photos');
-        if (mapRef.current.getSource('photos-heatmap-source')) {
-          mapRef.current.removeSource('photos-heatmap-source');
-        }
+        removePhotoSourceAndLayers(mapRef.current);
 
         // Re-add with new settings
         mapRef.current.addSource('photos', {
@@ -207,7 +222,15 @@ export function useMapLayerManagement({
         }
 
         // Re-add all cluster layers
-        addClusterLayers(mapRef.current, showHeatmap);
+        addClusterLayers(mapRef.current, showHeatmap, clusterOpacity, unclusteredPointOpacity);
+        appliedSourceSettings.current = {
+          isClusteringActive,
+          clusterRadius,
+          clusterMaxZoom,
+          showHeatmap,
+          clusterOpacity,
+          unclusteredPointOpacity,
+        };
       }
     }
 
@@ -232,40 +255,12 @@ export function useMapLayerManagement({
     padding,
     autoFit,
     showHeatmap,
+    clusterOpacity,
+    unclusteredPointOpacity,
     selectionMode,
     spiderState, // Re-render when spider state changes (animation frames)
     mapRef,
   ]);
-
-  // Toggle heatmap visibility when showHeatmap prop changes
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return;
-
-    const hasHeatmapLayer = mapRef.current.getLayer('photos-heatmap');
-    const hasClustersLayer = mapRef.current.getLayer('clusters');
-    const hasClusterCountLayer = mapRef.current.getLayer('cluster-count');
-
-    if (showHeatmap && !hasHeatmapLayer) {
-      // Heatmap enabled but layer doesn't exist - it will be added by the main photos effect
-      // This effect just ensures visibility, the main effect handles creation
-    } else if (!showHeatmap && hasHeatmapLayer) {
-      // Heatmap disabled but layer exists - remove it
-      mapRef.current.removeLayer('photos-heatmap');
-    }
-
-    // Clusters and heatmap can coexist, but we need to manage z-order
-    if (showHeatmap && hasHeatmapLayer && (hasClustersLayer || hasClusterCountLayer)) {
-      // Ensure heatmap is under clusters by moving it
-      try {
-        const clustersLayerId = hasClustersLayer ? 'clusters' : 'cluster-count';
-        if (mapRef.current.getLayer('photos-heatmap')) {
-          mapRef.current.moveLayer('photos-heatmap', clustersLayerId);
-        }
-      } catch (err) {
-        // Ignore layer ordering errors
-      }
-    }
-  }, [showHeatmap, mapLoaded, mapRef]);
 
   // Render spider legs when spider state changes
   useEffect(() => {

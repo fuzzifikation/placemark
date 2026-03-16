@@ -57,13 +57,13 @@ export function generateOperationPlan(
   // Track filenames to detect collisions within this batch
   const destFilenames = new Set<string>();
 
+  // Normalise once — these depend only on destFolder, not on individual photos
+  const cleanDestFolder =
+    destFolder.endsWith('/') || destFolder.endsWith('\\') ? destFolder.slice(0, -1) : destFolder;
+  const sep = destFolder.includes('\\') ? '\\' : '/';
+
   for (const photo of photos) {
     const filename = getBasename(photo.path);
-
-    // Path joining (core package cannot use Node's path module)
-    const cleanDestFolder =
-      destFolder.endsWith('/') || destFolder.endsWith('\\') ? destFolder.slice(0, -1) : destFolder;
-    const sep = destFolder.includes('\\') ? '\\' : '/';
 
     // Handle batch collisions - add " (1)", " (2)" suffix if needed
     let uniqueFilename = filename;

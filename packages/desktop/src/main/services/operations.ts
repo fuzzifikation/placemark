@@ -20,7 +20,6 @@ import { FileOperation, DryRunResult, OperationType } from '@placemark/core';
 import {
   logOperationBatch,
   getLastCompletedBatch,
-  markBatchUndone,
   updateBatchStatus,
   updatePhotoPath,
 } from './storage';
@@ -198,8 +197,7 @@ export async function executeOperations(
     // All succeeded - update batch status
     updateBatchStatus(batchId, 'completed');
 
-    // PHASE 4: Update photo paths in database (MOVE only)
-    // This keeps the photos table in sync with actual file locations
+    // Update photo paths in database after move (keeps DB in sync with filesystem)
     if (opType === 'move') {
       for (const op of completedOps) {
         try {
@@ -401,7 +399,7 @@ export async function undoLastBatch(): Promise<{
 
   // Only mark as undone if ALL files were successfully undone
   if (errors.length === 0) {
-    markBatchUndone(batch.id);
+    updateBatchStatus(batch.id, 'undone');
   } else {
     // Partial undo - don't mark batch as undone so user knows something's wrong
     return {

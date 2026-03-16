@@ -16,6 +16,8 @@ import type { MapLayerMouseEvent } from 'maplibre-gl';
 import type { Photo } from '@placemark/core';
 import type * as GeoJSON from 'geojson';
 import type { SpiderSettings } from '../MapView';
+import type { SpiderState } from './useSpider';
+import { photoFromProps } from './mapPhotoUtils';
 
 interface UseMapEventHandlersProps {
   mapRef: MutableRefObject<maplibregl.Map | null>;
@@ -25,7 +27,7 @@ interface UseMapEventHandlersProps {
   onViewChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
   // Hover handlers
   hoverHandlersRef: MutableRefObject<{
-    onMouseMove: (props: any, x: number, y: number) => void;
+    onMouseMove: (props: Record<string, unknown>, x: number, y: number) => void;
     onMouseLeave: () => void;
   }>;
   hoveredFeatureIdRef: MutableRefObject<string | null>;
@@ -33,14 +35,12 @@ interface UseMapEventHandlersProps {
   spiderAtPoint: (photo: Photo) => void;
   clearSpider: (animated?: boolean) => void;
   isSpiderActive: boolean;
-  spiderState: any;
+  spiderState: SpiderState | null;
   // Overlap detection
   findOverlappingPhotosInPixels: (photo: Photo, tolerance: number) => Photo[];
   // Settings
   spiderSettings: SpiderSettings;
   tileMaxZoom: number;
-  // Data
-  photos: Photo[];
   // State setters
   setCurrentZoom: (zoom: number) => void;
 }
@@ -59,125 +59,101 @@ export function useMapEventHandlers({
   findOverlappingPhotosInPixels,
   spiderSettings,
   tileMaxZoom,
-  photos,
   setCurrentZoom,
 }: UseMapEventHandlersProps) {
-  // Store callbacks in refs to avoid stale closures
-  const onViewChangeRef = useRef(onViewChange);
-  const onPhotoClickRef = useRef(onPhotoClick);
-  const spiderAtPointRef = useRef(spiderAtPoint);
-  const clearSpiderRef = useRef(clearSpider);
-  const isSpiderActiveRef = useRef(isSpiderActive);
-  const spiderStateRef = useRef(spiderState);
-  const photosRef = useRef(photos);
-  const spiderSettingsRef = useRef(spiderSettings);
-  const tileMaxZoomRef = useRef(tileMaxZoom);
-  const findOverlappingPhotosInPixelsRef = useRef(findOverlappingPhotosInPixels);
-
-  // Update refs when values change
-  useEffect(() => {
-    onViewChangeRef.current = onViewChange;
-    onPhotoClickRef.current = onPhotoClick;
-    spiderAtPointRef.current = spiderAtPoint;
-    clearSpiderRef.current = clearSpider;
-    isSpiderActiveRef.current = isSpiderActive;
-    spiderStateRef.current = spiderState;
-    photosRef.current = photos;
-    spiderSettingsRef.current = spiderSettings;
-    tileMaxZoomRef.current = tileMaxZoom;
-    findOverlappingPhotosInPixelsRef.current = findOverlappingPhotosInPixels;
-  }, [
+  // "Latest ref" pattern: a single object ref updated synchronously on every render.
+  // Event listeners are registered once (on mapLoaded) and read from this ref,
+  // so they always see current props/state without stale closures — and without
+  // a separate sync useEffect.
+  const latestRef = useRef({
     onViewChange,
     onPhotoClick,
     spiderAtPoint,
     clearSpider,
     isSpiderActive,
     spiderState,
-    photos,
     spiderSettings,
     tileMaxZoom,
     findOverlappingPhotosInPixels,
-  ]);
+  });
+  latestRef.current = {
+    onViewChange,
+    onPhotoClick,
+    spiderAtPoint,
+    clearSpider,
+    isSpiderActive,
+    spiderState,
+    spiderSettings,
+    tileMaxZoom,
+    findOverlappingPhotosInPixels,
+  };
 
   // Setup all event listeners
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
     const map = mapRef.current;
+    const cb = () => latestRef.current; // shorthand for reading latest values
+
+    // ============= CURSOR HELPERS =============
+    const setCursorPointer = () => {
+      if (mapRef.current) mapRef.current.getCanvas().style.cursor = 'pointer';
+    };
+    const clearCursor = () => {
+      if (mapRef.current) mapRef.current.getCanvas().style.cursor = '';
+    };
 
     // ============= MOVE END HANDLER =============
     const handleMoveEnd = () => {
       if (!mapRef.current) return;
       const bounds = mapRef.current.getBounds();
-      const zoom = mapRef.current.getZoom();
-      setCurrentZoom(zoom);
-
-      if (onViewChangeRef.current) {
-        onViewChangeRef.current({
-          north: bounds.getNorth(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          west: bounds.getWest(),
-        });
-      }
+      setCurrentZoom(mapRef.current.getZoom());
+      cb().onViewChange?.({
+        north: bounds.getNorth(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        west: bounds.getWest(),
+      });
     };
 
     // ============= ZOOM HANDLER =============
     const handleZoom = () => {
-      if (mapRef.current) {
-        setCurrentZoom(mapRef.current.getZoom());
-      }
+      if (mapRef.current) setCurrentZoom(mapRef.current.getZoom());
     };
 
     // ============= CLUSTER CLICK HANDLER =============
     const handleClusterClick = async (e: MapLayerMouseEvent) => {
       if (!mapRef.current) return;
-      const features = mapRef.current.queryRenderedFeatures(e.point, {
-        layers: ['clusters'],
-      });
+      const features = mapRef.current.queryRenderedFeatures(e.point, { layers: ['clusters'] });
       if (features.length === 0) return;
 
+      const { spiderSettings: ss, tileMaxZoom: maxTileZoom } = cb();
       const clusterId = features[0].properties.cluster_id;
       const source = mapRef.current.getSource('photos') as maplibregl.GeoJSONSource;
       const clusterCenter = (features[0].geometry as GeoJSON.Point).coordinates as [number, number];
       const currentMapZoom = mapRef.current.getZoom();
-      const triggerZoom = spiderSettingsRef.current.triggerZoom;
-      const maxTileZoom = tileMaxZoomRef.current;
 
       try {
-        // Get the optimal zoom level to expand this cluster
         const expansionZoom = await source.getClusterExpansionZoom(clusterId);
 
-        // If we're at or near the spider trigger zoom and can't expand further, spider out
-        if (currentMapZoom >= triggerZoom && expansionZoom > maxTileZoom) {
-          // Get the photos in this cluster and use the first one to trigger spider
+        if (currentMapZoom >= ss.triggerZoom && expansionZoom > maxTileZoom) {
           const leaves = await source.getClusterLeaves(clusterId, 100, 0);
           if (leaves.length > 0) {
-            const firstLeaf = leaves[0];
-            const props = firstLeaf.properties as Record<string, unknown>;
-            const photo: Photo = {
-              id: props.id as number,
-              path: props.path as string,
+            const props = leaves[0].properties as Record<string, unknown>;
+            // Use cluster center as coordinates since leaves may lack positional data
+            cb().spiderAtPoint({
+              ...photoFromProps(props),
               latitude: clusterCenter[1],
               longitude: clusterCenter[0],
-              timestamp: (props.timestamp as number) || null,
-              source: (props.source as 'local' | 'onedrive' | 'network') || 'local',
-              fileSize: props.fileSize as number,
-              mimeType: props.mimeType as string,
-              scannedAt: props.scannedAt as number,
-              fileHash: (props.fileHash as string) || null,
-            };
-            spiderAtPointRef.current(photo);
+            });
           }
           return;
         }
 
-        // Otherwise zoom to expand the cluster (capped at tile max zoom)
-        const targetZoom = Math.min(expansionZoom, maxTileZoom);
         mapRef.current.easeTo({
           center: clusterCenter,
-          zoom: targetZoom,
+          zoom: Math.min(expansionZoom, maxTileZoom),
         });
-      } catch (err) {
+      } catch {
         // Silently handle cluster expansion errors
       }
     };
@@ -185,51 +161,31 @@ export function useMapEventHandlers({
     // ============= GENERAL CLICK HANDLER (clears spider on empty space) =============
     const handleMapClick = (e: MapLayerMouseEvent) => {
       if (!mapRef.current) return;
-
-      // Check if click was on any feature
       const clusterFeatures = mapRef.current.queryRenderedFeatures(e.point, {
         layers: ['clusters'],
       });
       const pointFeatures = mapRef.current.queryRenderedFeatures(e.point, {
         layers: ['unclustered-point'],
       });
-
-      // If clicking empty space (not on cluster or point), clear spider
       if (clusterFeatures.length === 0 && pointFeatures.length === 0) {
-        clearSpiderRef.current();
+        cb().clearSpider();
       }
     };
 
     // ============= SPIDER COLLAPSE ON MOUSE LEAVE =============
     const handleMouseMove = (e: MapLayerMouseEvent) => {
       if (!mapRef.current) return;
-
-      // Check spiderState directly from ref (more reliable than isSpiderActive boolean)
-      const currentSpiderState = spiderStateRef.current;
+      const currentSpiderState = cb().spiderState;
       if (!currentSpiderState) return;
 
-      const center = currentSpiderState.center;
-      const centerPoint = mapRef.current.project(center);
+      const centerPoint = mapRef.current.project(currentSpiderState.center);
       const dx = e.point.x - centerPoint.x;
       const dy = e.point.y - centerPoint.y;
-      const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
-
-      const collapseRadius =
-        spiderSettingsRef.current.radius + spiderSettingsRef.current.collapseMargin;
-      if (distanceFromCenter > collapseRadius) {
-        clearSpiderRef.current();
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const { spiderSettings: ss } = cb();
+      if (distance > ss.radius + ss.collapseMargin) {
+        cb().clearSpider();
       }
-    };
-
-    // ============= CURSOR CHANGE HANDLERS =============
-    const handleClusterMouseEnter = () => {
-      if (mapRef.current) mapRef.current.getCanvas().style.cursor = 'pointer';
-    };
-    const handleClusterMouseLeave = () => {
-      if (mapRef.current) mapRef.current.getCanvas().style.cursor = '';
-    };
-    const handlePointMouseEnter = () => {
-      if (mapRef.current) mapRef.current.getCanvas().style.cursor = 'pointer';
     };
 
     // ============= PHOTO HOVER HANDLER (preview + spider trigger) =============
@@ -238,59 +194,30 @@ export function useMapEventHandlers({
       const props = e.features[0].properties;
       if (!props) return;
 
-      // Set hover feature state for visual feedback
+      // Update hover feature state for visual feedback
       if (mapRef.current) {
-        // Clear previous hover state
         if (hoveredFeatureIdRef.current !== null && hoveredFeatureIdRef.current !== props.id) {
           mapRef.current.setFeatureState(
             { source: 'photos', id: hoveredFeatureIdRef.current },
             { hover: false }
           );
         }
-        // Set new hover state
         mapRef.current.setFeatureState({ source: 'photos', id: props.id }, { hover: true });
         hoveredFeatureIdRef.current = props.id;
       }
 
-      // Show hover preview
       hoverHandlersRef.current.onMouseMove(props, e.originalEvent.clientX, e.originalEvent.clientY);
 
-      // If at high zoom, check for overlaps and spider on hover
-      // Allow spidering a new stack even if a different spider is already active
       if (mapRef.current) {
-        const currentZoom = mapRef.current.getZoom();
-        if (currentZoom >= spiderSettingsRef.current.triggerZoom) {
-          // Skip if this photo is already part of the active spider
-          const currentSpider = spiderStateRef.current;
-          if (currentSpider && currentSpider.photoIds.has(props.id)) {
-            return;
-          }
+        const { spiderSettings: ss, spiderState: currentSpider } = cb();
+        if (mapRef.current.getZoom() >= ss.triggerZoom) {
+          if (currentSpider?.photoIds.has(props.id)) return;
 
-          const photo: Photo = {
-            id: props.id,
-            path: props.path,
-            latitude: props.latitude,
-            longitude: props.longitude,
-            timestamp: props.timestamp || null,
-            source: props.source,
-            fileSize: props.fileSize,
-            mimeType: props.mimeType,
-            scannedAt: props.scannedAt,
-            fileHash: props.fileHash || null,
-          };
-
-          // Use pixel-based overlap detection (tolerance is in pixels)
-          const overlapping = findOverlappingPhotosInPixelsRef.current(
-            photo,
-            spiderSettingsRef.current.overlapTolerance
-          );
-
+          const photo = photoFromProps(props as Record<string, unknown>);
+          const overlapping = cb().findOverlappingPhotosInPixels(photo, ss.overlapTolerance);
           if (overlapping.length > 1) {
-            // Collapse the current spider instantly before opening the new one
-            if (currentSpider) {
-              clearSpiderRef.current(false);
-            }
-            spiderAtPointRef.current(photo);
+            if (currentSpider) cb().clearSpider(false);
+            cb().spiderAtPoint(photo);
           }
         }
       }
@@ -298,7 +225,6 @@ export function useMapEventHandlers({
 
     // ============= PHOTO HOVER LEAVE HANDLER =============
     const handlePointMouseLeave = () => {
-      // Clear hover feature state
       if (mapRef.current && hoveredFeatureIdRef.current !== null) {
         mapRef.current.setFeatureState(
           { source: 'photos', id: hoveredFeatureIdRef.current },
@@ -306,53 +232,32 @@ export function useMapEventHandlers({
         );
         hoveredFeatureIdRef.current = null;
       }
-
       hoverHandlersRef.current.onMouseLeave();
-      // Reset cursor
-      if (mapRef.current) mapRef.current.getCanvas().style.cursor = '';
+      clearCursor();
     };
 
     // ============= PHOTO CLICK HANDLER (spider or open) =============
     const handlePointClick = (e: MapLayerMouseEvent) => {
       if (!mapRef.current) return;
-
       const features = mapRef.current.queryRenderedFeatures(e.point, {
         layers: ['unclustered-point'],
       });
       if (features.length === 0) return;
 
-      const props = features[0].properties;
-      const photo: Photo = {
-        id: props.id,
-        path: props.path,
-        latitude: props.latitude,
-        longitude: props.longitude,
-        timestamp: props.timestamp || null,
-        source: props.source,
-        fileSize: props.fileSize,
-        mimeType: props.mimeType,
-        scannedAt: props.scannedAt,
-        fileHash: props.fileHash || null,
-      };
+      const photo = photoFromProps(features[0].properties as Record<string, unknown>);
+      const { isSpiderActive: spiderActive, spiderSettings: ss } = cb();
 
-      // If spider is active and this photo is spidered, just open it (no longer overlapping)
-      if (isSpiderActiveRef.current) {
-        onPhotoClickRef.current(photo);
-        clearSpiderRef.current(false); // Close spider without animation
+      if (spiderActive) {
+        cb().onPhotoClick(photo);
+        cb().clearSpider(false);
         return;
       }
 
-      // Check if there are visually overlapping photos - if so, spider them out
-      // Uses pixel-based detection so it works correctly at any zoom level
-      const overlapping = findOverlappingPhotosInPixelsRef.current(
-        photo,
-        spiderSettingsRef.current.overlapTolerance
-      );
+      const overlapping = cb().findOverlappingPhotosInPixels(photo, ss.overlapTolerance);
       if (overlapping.length > 1) {
-        spiderAtPointRef.current(photo);
+        cb().spiderAtPoint(photo);
       } else {
-        // No overlaps, just open the photo
-        onPhotoClickRef.current(photo);
+        cb().onPhotoClick(photo);
       }
     };
 
@@ -362,9 +267,9 @@ export function useMapEventHandlers({
     map.on('click', 'clusters', handleClusterClick);
     map.on('click', handleMapClick);
     map.on('mousemove', handleMouseMove);
-    map.on('mouseenter', 'clusters', handleClusterMouseEnter);
-    map.on('mouseleave', 'clusters', handleClusterMouseLeave);
-    map.on('mouseenter', 'unclustered-point', handlePointMouseEnter);
+    map.on('mouseenter', 'clusters', setCursorPointer);
+    map.on('mouseleave', 'clusters', clearCursor);
+    map.on('mouseenter', 'unclustered-point', setCursorPointer);
     map.on('mousemove', 'unclustered-point', handlePointMouseMove);
     map.on('mouseleave', 'unclustered-point', handlePointMouseLeave);
     map.on('click', 'unclustered-point', handlePointClick);
@@ -376,9 +281,9 @@ export function useMapEventHandlers({
       map.off('click', 'clusters', handleClusterClick);
       map.off('click', handleMapClick);
       map.off('mousemove', handleMouseMove);
-      map.off('mouseenter', 'clusters', handleClusterMouseEnter);
-      map.off('mouseleave', 'clusters', handleClusterMouseLeave);
-      map.off('mouseenter', 'unclustered-point', handlePointMouseEnter);
+      map.off('mouseenter', 'clusters', setCursorPointer);
+      map.off('mouseleave', 'clusters', clearCursor);
+      map.off('mouseenter', 'unclustered-point', setCursorPointer);
       map.off('mousemove', 'unclustered-point', handlePointMouseMove);
       map.off('mouseleave', 'unclustered-point', handlePointMouseLeave);
       map.off('click', 'unclustered-point', handlePointClick);

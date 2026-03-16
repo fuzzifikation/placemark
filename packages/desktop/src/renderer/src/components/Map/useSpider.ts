@@ -62,26 +62,6 @@ interface UseSpiderOptions {
 }
 
 /**
- * Fallback: Finds overlapping photos using degree-based comparison.
- * Used only when pixel-based finder is not provided.
- * @internal
- */
-function findOverlappingPhotos(
-  targetPhoto: Photo,
-  photos: Photo[],
-  tolerance: number = DEFAULT_CONFIG.overlapTolerance
-): Photo[] {
-  if (targetPhoto.latitude == null || targetPhoto.longitude == null) return [];
-
-  return photos.filter((p) => {
-    if (p.latitude == null || p.longitude == null) return false;
-    const latDiff = Math.abs(p.latitude - targetPhoto.latitude!);
-    const lngDiff = Math.abs(p.longitude - targetPhoto.longitude!);
-    return latDiff < tolerance && lngDiff < tolerance;
-  });
-}
-
-/**
  * Calculate spider offsets for a set of photos arranged in a circle
  * @param photos - Photos to spider
  * @param center - Center point [lng, lat]
@@ -215,18 +195,10 @@ export function useSpider({
 
       if (clickedPhoto.latitude == null || clickedPhoto.longitude == null) return;
 
-      // Find overlapping photos using pixel-based detection if available
-      let overlapping: Photo[];
-      if (findOverlappingRef.current) {
-        overlapping = findOverlappingRef.current(clickedPhoto, configRef.current.overlapTolerance);
-      } else {
-        // Fallback to degree-based detection (less accurate)
-        overlapping = findOverlappingPhotos(
-          clickedPhoto,
-          photosRef.current,
-          configRef.current.overlapTolerance * 0.00001 // Convert pixels to approximate degrees
-        );
-      }
+      // Find overlapping photos using pixel-based detection
+      const overlapping = findOverlappingRef.current
+        ? findOverlappingRef.current(clickedPhoto, configRef.current.overlapTolerance)
+        : [];
 
       // If only one photo (no overlaps), just click it
       if (overlapping.length <= 1) {
@@ -339,21 +311,6 @@ export function useSpider({
     [spiderState]
   );
 
-  /**
-   * Handle click on a spider point - just forwards to onPhotoClick
-   */
-  const handleSpiderPointClick = useCallback(
-    (photoId: number) => {
-      const photo = photosRef.current.find((p) => p.id === photoId);
-      if (photo && onPhotoClick) {
-        onPhotoClick(photo);
-      }
-      // Clear spider after clicking
-      setSpiderState(null);
-    },
-    [onPhotoClick]
-  );
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -367,7 +324,6 @@ export function useSpider({
     spiderState,
     spiderAtPoint,
     clearSpider,
-    handleSpiderPointClick,
     isSpiderActive: spiderState !== null,
   };
 }

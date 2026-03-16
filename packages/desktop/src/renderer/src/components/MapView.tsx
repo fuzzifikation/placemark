@@ -207,7 +207,6 @@ export function MapView({
     findOverlappingPhotosInPixels,
     spiderSettings,
     tileMaxZoom,
-    photos,
     setCurrentZoom,
   });
 

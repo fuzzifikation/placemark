@@ -1,19 +1,12 @@
 /**
  * Storage service - SQLite implementation for desktop
- * Handles all database operations for photos and sources
+ * Handles all database operations for photos and batch file operations
  */
 
 import Database from 'better-sqlite3';
 import { app } from 'electron';
 import * as path from 'path';
-import {
-  Photo,
-  PhotoCreateInput,
-  Source,
-  SourceCreateInput,
-  OperationType,
-  BatchStatus,
-} from '@placemark/core';
+import { Photo, PhotoCreateInput, OperationType, BatchStatus } from '@placemark/core';
 import { initializeDatabase, closeDatabase } from '../database/schema';
 import { logger } from './logger';
 
@@ -68,6 +61,8 @@ export function createPhoto(input: PhotoCreateInput): Photo {
       latitude = excluded.latitude,
       longitude = excluded.longitude,
       timestamp = excluded.timestamp,
+      file_size = excluded.file_size,
+      mime_type = excluded.mime_type,
       scanned_at = excluded.scanned_at
     RETURNING *
   `
@@ -254,31 +249,6 @@ export function getLibraryStats(): LibraryStats {
 }
 
 // ============================================================================
-// Source operations
-// ============================================================================
-
-/**
- * Create a new source
- */
-export function createSource(input: SourceCreateInput): Source {
-  const db = getDb();
-  const result = db
-    .prepare('INSERT INTO sources (type, path, name, enabled) VALUES (?, ?, ?, 1)')
-    .run(input.type, input.path, input.name);
-
-  const row = db.prepare('SELECT * FROM sources WHERE id = ?').get(result.lastInsertRowid) as any;
-
-  return {
-    id: row.id,
-    type: row.type,
-    path: row.path,
-    name: row.name,
-    lastScan: row.last_scan,
-    enabled: row.enabled === 1,
-  };
-}
-
-// ============================================================================
 // Batch operations (for atomic undo)
 // ============================================================================
 
@@ -380,13 +350,6 @@ export function getLastCompletedBatch(): OperationBatch | null {
       destPath: row.dest_path,
     })),
   };
-}
-
-/**
- * Mark batch as undone
- */
-export function markBatchUndone(batchId: number): void {
-  getDb().prepare('UPDATE operation_batch SET status = ? WHERE id = ?').run('undone', batchId);
 }
 
 /**

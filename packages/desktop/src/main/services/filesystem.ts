@@ -100,7 +100,7 @@ export async function scanDirectory(
 async function findImageFiles(dirPath: string, includeSubdirectories: boolean): Promise<string[]> {
   const imageFiles: string[] = [];
 
-  async function scanDir(currentPath: string, isRoot: boolean = true): Promise<void> {
+  async function scanDir(currentPath: string): Promise<void> {
     try {
       const entries = await fs.readdir(currentPath, { withFileTypes: true });
 
@@ -114,7 +114,7 @@ async function findImageFiles(dirPath: string, includeSubdirectories: boolean): 
             !entry.name.startsWith('.') &&
             !shouldSkipDirectory(entry.name)
           ) {
-            await scanDir(fullPath, false);
+            await scanDir(fullPath);
           }
         } else if (entry.isFile()) {
           if (isSupportedImageFile(fullPath)) {
@@ -127,7 +127,7 @@ async function findImageFiles(dirPath: string, includeSubdirectories: boolean): 
     }
   }
 
-  await scanDir(dirPath, true);
+  await scanDir(dirPath);
   return deduplicateRawJpegPairs(imageFiles);
 }
 

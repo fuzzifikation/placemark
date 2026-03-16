@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isPhotoInBounds, buildBoundsQuery } from './geographic';
+import { isPhotoInBounds } from './geographic';
 import type { Photo } from '../models/Photo';
 import type { BoundingBox } from './geographic';
 
@@ -55,19 +55,5 @@ describe('isPhotoInBounds', () => {
     it('excludes photo outside latitude range', () => {
       expect(isPhotoInBounds(photo(30, 175), idlBox)).toBe(false);
     });
-  });
-});
-
-describe('buildBoundsQuery', () => {
-  it('produces standard SQL for normal bounding box', () => {
-    const result = buildBoundsQuery({ north: 55, south: 35, east: 30, west: -10 });
-    expect(result.sql).toBe('latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?');
-    expect(result.params).toEqual([35, 55, -10, 30]);
-  });
-
-  it('produces OR-based longitude SQL for IDL crossing', () => {
-    const result = buildBoundsQuery({ north: 65, south: 50, east: -160, west: 170 });
-    expect(result.sql).toBe('latitude BETWEEN ? AND ? AND (longitude >= ? OR longitude <= ?)');
-    expect(result.params).toEqual([50, 65, 170, -160]);
   });
 });

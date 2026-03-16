@@ -37,7 +37,7 @@ const THUMBNAIL_SCHEMA = `
   );
 
   -- Store configuration
-  INSERT OR REPLACE INTO thumbnail_metadata (key, value) VALUES ('max_size_mb', '500');
+  INSERT OR IGNORE INTO thumbnail_metadata (key, value) VALUES ('max_size_mb', '500');
   INSERT OR IGNORE INTO thumbnail_metadata (key, value) VALUES ('total_size_bytes', '0');
   INSERT OR IGNORE INTO thumbnail_metadata (key, value) VALUES ('thumbnail_count', '0');
 `;

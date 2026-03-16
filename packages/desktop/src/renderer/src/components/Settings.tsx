@@ -136,7 +136,11 @@ export function Settings({
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('placemark-settings');
     if (saved) {
-      return migrateSettings(JSON.parse(saved));
+      try {
+        return migrateSettings(JSON.parse(saved));
+      } catch {
+        // Corrupt localStorage - fall back to defaults
+      }
     }
     return DEFAULT_SETTINGS;
   });

@@ -12,24 +12,9 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { Photo, PhotoSource } from '@placemark/core';
+import type { Photo } from '@placemark/core';
 import { ThumbnailCache } from '../../utils/ThumbnailCache';
-
-/** Photo data extracted from map feature properties */
-function extractPhotoFromProperties(props: Record<string, unknown>): Photo {
-  return {
-    id: props.id as number,
-    path: props.path as string,
-    latitude: props.latitude as number,
-    longitude: props.longitude as number,
-    timestamp: (props.timestamp as number) || null,
-    source: props.source as PhotoSource,
-    fileSize: props.fileSize as number,
-    mimeType: props.mimeType as string,
-    scannedAt: props.scannedAt as number,
-    fileHash: (props.fileHash as string) || null,
-  };
-}
+import { photoFromProps } from './mapPhotoUtils';
 
 interface HoverState {
   photo: Photo | null;
@@ -79,7 +64,7 @@ export function useMapHover(): UseMapHoverReturn {
       clientX: number,
       clientY: number
     ) => {
-      const photo = extractPhotoFromProperties(props);
+      const photo = photoFromProps(props);
       const newPosition = { x: clientX, y: clientY };
 
       // Always update position for smooth tracking
