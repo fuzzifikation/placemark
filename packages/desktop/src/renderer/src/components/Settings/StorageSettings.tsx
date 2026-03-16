@@ -6,7 +6,9 @@ import { useState, useEffect } from 'react';
 import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
+import { SettingsSlider } from './SettingsSlider';
 import { formatNumber } from '../../utils/formatLocale';
+import type { AppSettings } from '../Settings';
 
 interface ThumbnailStats {
   totalSizeMB: number;
@@ -23,6 +25,9 @@ interface DatabaseStats {
 
 interface StorageSettingsProps {
   theme: Theme;
+  settings: AppSettings;
+  onSettingChange: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
+  onReset?: () => void;
   expanded?: boolean;
   onToggle?: () => void;
   toast: {
@@ -32,10 +37,25 @@ interface StorageSettingsProps {
   };
 }
 
-export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSettingsProps) {
+export function StorageSettings({
+  theme,
+  settings,
+  onSettingChange,
+  onReset,
+  expanded,
+  onToggle,
+  toast,
+}: StorageSettingsProps) {
   const colors = useThemeColors(theme);
   const [thumbnailStats, setThumbnailStats] = useState<ThumbnailStats | null>(null);
   const [databaseStats, setDatabaseStats] = useState<DatabaseStats | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    advanced: false,
+  });
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
+  };
 
   useEffect(() => {
     loadThumbnailStats();
@@ -277,13 +297,37 @@ export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSet
   // Otherwise, render directly with section header (new design)
   return (
     <div>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
-          💾 Storage
-        </h3>
-        <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
-          Manage database and thumbnail cache settings
-        </p>
+      <div
+        style={{
+          marginBottom: '1.5rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+        }}
+      >
+        <div>
+          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>Library</h3>
+          <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
+            Manage your photo library and storage
+          </p>
+        </div>
+        {onReset && (
+          <button
+            onClick={onReset}
+            style={{
+              padding: '0.25rem 0.75rem',
+              fontSize: '0.75rem',
+              backgroundColor: colors.surface,
+              color: colors.textSecondary,
+              border: `1px solid ${colors.border}`,
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+            title="Reset library settings"
+          >
+            Reset
+          </button>
+        )}
       </div>
 
       {/* Database Statistics */}
@@ -461,6 +505,29 @@ export function StorageSettings({ theme, expanded, onToggle, toast }: StorageSet
           </button>
         </div>
       </div>
+
+      {/* Advanced (collapsed) */}
+      <SettingsSection
+        title="Advanced"
+        expanded={expandedSections.advanced}
+        onToggle={() => toggleSection('advanced')}
+        theme={theme}
+        isAdvanced
+      >
+        <SettingsSlider
+          label="Maximum File Size"
+          value={settings.maxFileSizeMB}
+          min={50}
+          max={300}
+          step={10}
+          unit="MB"
+          minLabel="Small (50MB)"
+          maxLabel="Large (300MB)"
+          description="Maximum individual file size to scan. Only relevant for very large RAW files (medium-format cameras). Default: 150 MB."
+          onChange={(val) => onSettingChange('maxFileSizeMB', val)}
+          theme={theme}
+        />
+      </SettingsSection>
     </div>
   );
 }

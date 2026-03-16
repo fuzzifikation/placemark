@@ -15,9 +15,8 @@ import { StorageSettings } from './Settings/StorageSettings';
 import { AboutSection } from './Settings/AboutSection';
 import { AppearanceSettings } from './Settings/AppearanceSettings';
 import { MapDisplaySettings } from './Settings/MapDisplaySettings';
-import { TimelineSettings } from './Settings/TimelineSettings';
-import { AdvancedSettings } from './Settings/AdvancedSettings';
 import { FONT_FAMILY } from '../constants/ui';
+import { Palette, Database, Map as MapIcon, Info } from 'lucide-react';
 import type { SpiderSettings } from './MapView';
 
 interface SettingsProps {
@@ -142,15 +141,12 @@ export function Settings({
     return DEFAULT_SETTINGS;
   });
 
-  const [activeSection, setActiveSection] = useState('appearance');
+  const [activeSection, setActiveSection] = useState('general');
 
   const sections = [
-    { id: 'appearance', label: 'Appearance', icon: '🎨' },
-    { id: 'map', label: 'Map & Display', icon: '🗺️' },
-    { id: 'timeline', label: 'Timeline', icon: '⏱️' },
-    { id: 'storage', label: 'Storage', icon: '💾' },
-    { id: 'advanced', label: 'Advanced', icon: '🔧' },
-    { id: 'about', label: 'About', icon: 'ℹ️' },
+    { id: 'general', label: 'Appearance', icon: <Palette size={16} /> },
+    { id: 'library', label: 'Library', icon: <Database size={16} /> },
+    { id: 'map', label: 'Map', icon: <MapIcon size={16} /> },
   ];
 
   useEffect(() => {
@@ -176,13 +172,21 @@ export function Settings({
   };
 
   // Reset functions for individual sections
-  const resetAppearance = () => {
+  const resetGeneral = () => {
     // Reset theme to light mode (default)
     if (theme !== 'light') {
       onThemeChange();
     }
     updateSetting('devSettingsEnabled', DEFAULT_SETTINGS.devSettingsEnabled);
+    updateSetting('glassBlur', DEFAULT_SETTINGS.glassBlur);
+    updateSetting('glassSurfaceOpacity', DEFAULT_SETTINGS.glassSurfaceOpacity);
+    updateSetting('toastDuration', DEFAULT_SETTINGS.toastDuration);
     toast.success('Appearance settings reset');
+  };
+
+  const resetLibrary = () => {
+    updateSetting('maxFileSizeMB', DEFAULT_SETTINGS.maxFileSizeMB);
+    toast.success('Library settings reset');
   };
 
   const resetMap = () => {
@@ -194,17 +198,7 @@ export function Settings({
     updateSetting('mapPadding', DEFAULT_SETTINGS.mapPadding);
     updateSetting('mapTransitionDuration', DEFAULT_SETTINGS.mapTransitionDuration);
     updateSetting('showHeatmap', DEFAULT_SETTINGS.showHeatmap);
-    toast.success('Map & Display settings reset');
-  };
-
-  const resetTimeline = () => {
     updateSetting('timelineUpdateInterval', DEFAULT_SETTINGS.timelineUpdateInterval);
-    updateSetting('autoZoomDuringPlay', DEFAULT_SETTINGS.autoZoomDuringPlay);
-    toast.success('Timeline settings reset');
-  };
-
-  const resetAdvanced = () => {
-    updateSetting('toastDuration', DEFAULT_SETTINGS.toastDuration);
     updateSetting('tileMaxZoom', DEFAULT_SETTINGS.tileMaxZoom);
     updateSetting('spiderOverlapTolerance', DEFAULT_SETTINGS.spiderOverlapTolerance);
     updateSetting('spiderRadius', DEFAULT_SETTINGS.spiderRadius);
@@ -212,9 +206,7 @@ export function Settings({
     updateSetting('spiderTriggerZoom', DEFAULT_SETTINGS.spiderTriggerZoom);
     updateSetting('spiderCollapseMargin', DEFAULT_SETTINGS.spiderCollapseMargin);
     updateSetting('spiderClearZoom', DEFAULT_SETTINGS.spiderClearZoom);
-    updateSetting('glassBlur', DEFAULT_SETTINGS.glassBlur);
-    updateSetting('glassSurfaceOpacity', DEFAULT_SETTINGS.glassSurfaceOpacity);
-    toast.success('Advanced settings reset');
+    toast.success('Map settings reset');
   };
 
   return (
@@ -296,13 +288,36 @@ export function Settings({
             ))}
           </nav>
 
-          {/* Footer with Reset All */}
+          {/* Footer with Reset All and About */}
           <div
             style={{
               padding: '1rem',
               borderTop: `1px solid ${colors.border}`,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
             }}
           >
+            <button
+              onClick={() => setActiveSection('about')}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                fontSize: '0.75rem',
+                backgroundColor: activeSection === 'about' ? colors.primary : colors.surface,
+                color: activeSection === 'about' ? colors.buttonText : colors.textSecondary,
+                border: `1px solid ${colors.border}`,
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem',
+              }}
+              title="About Placemark"
+            >
+              <Info size={12} /> About Placemark
+            </button>
             <button
               onClick={resetAllSettings}
               style={{
@@ -333,11 +348,13 @@ export function Settings({
           }}
         >
           {/* Section Content */}
-          {activeSection === 'appearance' && (
+          {activeSection === 'general' && (
             <AppearanceSettings
               theme={theme}
+              settings={settings}
+              onSettingChange={updateSetting}
               onThemeChange={onThemeChange}
-              onReset={resetAppearance}
+              onReset={resetGeneral}
             />
           )}
 
@@ -350,23 +367,13 @@ export function Settings({
             />
           )}
 
-          {activeSection === 'timeline' && (
-            <TimelineSettings
+          {activeSection === 'library' && (
+            <StorageSettings
               theme={theme}
               settings={settings}
               onSettingChange={updateSetting}
-              onReset={resetTimeline}
-            />
-          )}
-
-          {activeSection === 'storage' && <StorageSettings theme={theme} toast={toast} />}
-
-          {activeSection === 'advanced' && (
-            <AdvancedSettings
-              theme={theme}
-              settings={settings}
-              onSettingChange={updateSetting}
-              onReset={resetAdvanced}
+              onReset={resetLibrary}
+              toast={toast}
             />
           )}
 

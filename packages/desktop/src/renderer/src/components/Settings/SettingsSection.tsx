@@ -11,6 +11,7 @@ interface SettingsSectionProps {
   onToggle: () => void;
   theme: Theme;
   children: React.ReactNode;
+  isAdvanced?: boolean;
 }
 
 export function SettingsSection({
@@ -19,6 +20,7 @@ export function SettingsSection({
   onToggle,
   theme,
   children,
+  isAdvanced = false,
 }: SettingsSectionProps) {
   const colors = useThemeColors(theme);
 
@@ -43,9 +45,9 @@ export function SettingsSection({
           backgroundColor: colors.surface,
           border: 'none',
           borderBottom: expanded ? `1px solid ${colors.border}` : 'none',
-          fontSize: '1rem',
-          fontWeight: 600,
-          color: colors.textPrimary,
+          fontSize: '0.875rem',
+          fontWeight: isAdvanced ? 500 : 600,
+          color: isAdvanced ? colors.textMuted : colors.textPrimary,
           cursor: 'pointer',
           transition: 'all 0.2s ease',
         }}

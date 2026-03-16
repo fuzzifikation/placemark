@@ -24,11 +24,7 @@ export function AdvancedSettings({
 }: AdvancedSettingsProps) {
   const colors = useThemeColors(theme);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    ui: false,
     spider: false,
-    tiles: false,
-    scanning: false,
-    glass: false,
   });
 
   const toggleSection = (sectionId: string) => {
@@ -50,7 +46,7 @@ export function AdvancedSettings({
       >
         <div>
           <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
-            🔧 Advanced Settings
+            Advanced Settings
           </h3>
           <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
             Fine-tune advanced map and interaction settings
@@ -99,44 +95,25 @@ export function AdvancedSettings({
         </div>
 
         <SettingsSection
-          title="UI Settings"
-          expanded={expandedSections.ui}
-          onToggle={() => toggleSection('ui')}
-          theme={theme}
-        >
-          <SettingsSlider
-            label="Toast Duration"
-            value={settings.toastDuration}
-            min={1000}
-            max={10000}
-            step={500}
-            unit="ms"
-            minLabel="Quick (1s)"
-            maxLabel="Long (10s)"
-            onChange={(val) => onSettingChange('toastDuration', val)}
-            theme={theme}
-          />
-        </SettingsSection>
-
-        <SettingsSection
-          title="Spider Settings"
+          title="Overlapping Markers"
           expanded={expandedSections.spider}
           onToggle={() => toggleSection('spider')}
           theme={theme}
         >
           <SettingsSlider
-            label="Spider Trigger Zoom"
+            label="Trigger zoom level"
             value={settings.spiderTriggerZoom}
             min={0}
             max={18}
             step={1}
             minLabel="Always (0)"
             maxLabel="Max zoom (18)"
+            description="Zoom level at which overlapping markers spread out instead of zooming in"
             onChange={(val) => onSettingChange('spiderTriggerZoom', val)}
             theme={theme}
           />
           <SettingsSlider
-            label="Spider Overlap Tolerance"
+            label="Overlap tolerance"
             value={settings.spiderOverlapTolerance}
             min={5}
             max={50}
@@ -144,11 +121,12 @@ export function AdvancedSettings({
             unit="px"
             minLabel="Tight (5px)"
             maxLabel="Loose (50px)"
+            description="How close markers must be (in pixels) before they are considered overlapping"
             onChange={(val) => onSettingChange('spiderOverlapTolerance', val)}
             theme={theme}
           />
           <SettingsSlider
-            label="Spider Radius"
+            label="Spread radius"
             value={settings.spiderRadius}
             min={30}
             max={150}
@@ -156,11 +134,12 @@ export function AdvancedSettings({
             unit="px"
             minLabel="Small (30px)"
             maxLabel="Large (150px)"
+            description="How far markers spread out when expanded"
             onChange={(val) => onSettingChange('spiderRadius', val)}
             theme={theme}
           />
           <SettingsSlider
-            label="Spider Animation Duration"
+            label="Animation duration"
             value={settings.spiderAnimationDuration}
             min={0}
             max={1000}
@@ -172,7 +151,7 @@ export function AdvancedSettings({
             theme={theme}
           />
           <SettingsSlider
-            label="Spider Collapse Margin"
+            label="Collapse margin"
             value={settings.spiderCollapseMargin}
             min={10}
             max={100}
@@ -180,116 +159,20 @@ export function AdvancedSettings({
             unit="px"
             minLabel="Tight (10px)"
             maxLabel="Loose (100px)"
+            description="How far the cursor can stray from the spread markers before they collapse"
             onChange={(val) => onSettingChange('spiderCollapseMargin', val)}
             theme={theme}
           />
           <SettingsSlider
-            label="Spider Clear Zoom"
+            label="Return zoom level"
             value={settings.spiderClearZoom}
             min={5}
             max={18}
             step={1}
             minLabel="Zoomed out (5)"
             maxLabel="Zoomed in (18)"
+            description="Spread markers automatically collapse when zooming below this level"
             onChange={(val) => onSettingChange('spiderClearZoom', val)}
-            theme={theme}
-          />
-        </SettingsSection>
-
-        <SettingsSection
-          title="Tile Settings"
-          expanded={expandedSections.tiles}
-          onToggle={() => toggleSection('tiles')}
-          theme={theme}
-        >
-          <div>
-            <SettingsSlider
-              label="Manual Zoom Limit (Tile Max Zoom)"
-              value={settings.tileMaxZoom}
-              min={15}
-              max={19}
-              step={1}
-              minLabel="Conservative (15)"
-              maxLabel="Maximum (19)"
-              onChange={(val) => onSettingChange('tileMaxZoom', val)}
-              theme={theme}
-            />
-            <p
-              style={{
-                fontSize: '0.7rem',
-                color: colors.textMuted,
-                margin: '0.25rem 0 0 0',
-                fontStyle: 'italic',
-              }}
-            >
-              Maximum zoom level for map tiles. Limits how far you can manually zoom with
-              mouse/trackpad. Also limits auto-fit zoom. OSM tiles go to 19, but 18 is safer to
-              avoid missing tiles.
-            </p>
-          </div>
-        </SettingsSection>
-
-        <SettingsSection
-          title="Photo Scanning"
-          expanded={expandedSections.scanning}
-          onToggle={() => toggleSection('scanning')}
-          theme={theme}
-        >
-          <div>
-            <SettingsSlider
-              label="Maximum File Size"
-              value={settings.maxFileSizeMB}
-              min={50}
-              max={300}
-              step={10}
-              unit="MB"
-              minLabel="Small (50MB)"
-              maxLabel="Large (300MB)"
-              onChange={(val) => onSettingChange('maxFileSizeMB', val)}
-              theme={theme}
-            />
-            <p
-              style={{
-                fontSize: '0.7rem',
-                color: colors.textMuted,
-                margin: '0.25rem 0 0 0',
-                fontStyle: 'italic',
-              }}
-            >
-              Maximum individual file size to process during folder scanning. Larger files (e.g.,
-              professional medium-format RAW files) require more memory. Default: 150MB.
-            </p>
-          </div>
-        </SettingsSection>
-
-        <SettingsSection
-          title="Glassmorphism Effects"
-          expanded={expandedSections.glass}
-          onToggle={() => toggleSection('glass')}
-          theme={theme}
-        >
-          <SettingsSlider
-            label="Glass Blur"
-            value={settings.glassBlur}
-            min={0}
-            max={30}
-            step={1}
-            unit="px"
-            minLabel="None (0px)"
-            maxLabel="Maximum (30px)"
-            onChange={(val) => onSettingChange('glassBlur', val)}
-            theme={theme}
-          />
-          <SettingsSlider
-            label="Glass Surface Opacity"
-            value={settings.glassSurfaceOpacity}
-            min={20}
-            max={100}
-            step={5}
-            unit="%"
-            minLabel="Transparent (20%)"
-            maxLabel="Opaque (100%)"
-            onChange={(val) => onSettingChange('glassSurfaceOpacity', val)}
             theme={theme}
           />
         </SettingsSection>

@@ -2,10 +2,8 @@
  * TimelineSettings - Timeline playback configuration
  */
 
-import { useState } from 'react';
 import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
-import { SettingsSection } from './SettingsSection';
 import type { AppSettings } from '../Settings';
 
 interface TimelineSettingsProps {
@@ -22,16 +20,6 @@ export function TimelineSettings({
   onReset,
 }: TimelineSettingsProps) {
   const colors = useThemeColors(theme);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    playback: false,
-  });
-
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [sectionId]: !prev[sectionId],
-    }));
-  };
 
   return (
     <div>
@@ -45,7 +33,7 @@ export function TimelineSettings({
       >
         <div>
           <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
-            ⏱️ Timeline
+            Timeline
           </h3>
           <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
             Control timeline behavior and playback settings
@@ -69,12 +57,22 @@ export function TimelineSettings({
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        <SettingsSection
-          title="Playback Settings"
-          expanded={expandedSections.playback}
-          onToggle={() => toggleSection('playback')}
-          theme={theme}
+        <div
+          style={{
+            backgroundColor: colors.surface,
+            padding: '1rem',
+            borderRadius: '8px',
+            border: `1px solid ${colors.border}`,
+          }}
         >
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 500, color: colors.textPrimary }}>
+              Playback Speed
+            </div>
+            <div style={{ fontSize: '0.75rem', color: colors.textMuted, marginTop: '0.25rem' }}>
+              Control how fast the timeline moves during playback
+            </div>
+          </div>
           <div>
             <label
               style={{
@@ -124,7 +122,7 @@ export function TimelineSettings({
               <span>Infrequent/Low CPU (500ms)</span>
             </div>
           </div>
-        </SettingsSection>
+        </div>
       </div>
     </div>
   );
