@@ -5,6 +5,25 @@ All notable changes to Placemark will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-03-16
+
+### Added
+
+- Redesigned FloatingHeader control bar with five logical groups and visual dividers
+- Rollup CVE override (GHSA-mw96-cpmx-2vgc) pinned via pnpm resolutions
+
+### Changed
+
+- All workflow buttons now uniform: outlined border, icon + text label
+- "Add Folder" renamed to "Add" with FolderPlus icon; trash action labelled "Clear"
+- Button order reflects user workflow: Clear/Add → Timeline → Select/Organize → Stats/Settings
+- Electron 40 → 41
+- electron-builder 26.7.0 → 26.8.1 (security: tar, minimatch CVEs)
+- better-sqlite3 12.6.2 → 12.8.0
+- maplibre-gl 5.17.0 → 5.20.1
+- lucide-react 0.563.0 → 0.577.0
+- vitest 4.0.18 → 4.1.0
+
 ## [0.6.0] - 2026-02-08
 
 ### Added

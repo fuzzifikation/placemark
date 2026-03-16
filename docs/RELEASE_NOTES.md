@@ -1,5 +1,37 @@
 # Release Notes
 
+## v0.7.1 - UI & Dependency Update (2026-03-16)
+
+### ✨ UI Improvements
+
+- **Redesigned control bar:** Buttons are now grouped into five logical sections separated by visual dividers, matching the natural user workflow: *Library (Clear / Add)* → *Timeline* → *Selection tools (Select / Organize)* → *App utilities (Stats / Settings)*.
+- **Consistent button style:** All workflow buttons now use a uniform icon + text label with an outlined style. No more mixing of text buttons and icon-only buttons within the same workflow group.
+- **Better icons:** "Add" uses `FolderPlus` (folder with +); "Organize" uses `FolderOpen` — no more duplicate icons.
+- **Clear label on trash:** The clear-library action now shows a "Clear" text label for consistency.
+
+### 🔒 Security
+
+- **Rollup CVE fixed (GHSA-mw96-cpmx-2vgc):** Pinned `rollup ≥ 4.59.0` via pnpm override to resolve an Arbitrary File Write path traversal vulnerability in the build chain.
+- **electron-builder 26.8.1:** Resolves `tar` (GHSA-83g3-92jg-28cx) and `minimatch` (GHSA-3ppc-4f35-3m26) CVEs.
+
+### 📦 Dependency Updates
+
+- **Electron 40 → 41** with native module rebuild
+- electron-builder 26.7.0 → 26.8.1
+- better-sqlite3 12.6.2 → 12.8.0
+- maplibre-gl 5.17.0 → 5.20.1
+- lucide-react 0.563.0 → 0.577.0
+- vitest 4.0.18 → 4.1.0
+- vite-plugin-electron 0.29.0 → 0.29.1
+- @types/node, @types/react minor updates
+
+### 📝 Notes
+
+- No database schema changes. No migration needed.
+- Vite 7 and @vitejs/plugin-react 5 are intentionally held — vite 8 requires a dedicated testing session.
+
+---
+
 ## v0.7.0 - RAW Format Support (2026-02-14)
 
 📷 **Professional camera RAW formats now fully supported.**
