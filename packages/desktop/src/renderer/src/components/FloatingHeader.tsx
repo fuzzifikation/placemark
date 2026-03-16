@@ -1,5 +1,8 @@
 /**
  * FloatingHeader - top navigation bar with controls
+ *
+ * Layout (left → right):
+ *   [Branding] │ [🗑 Clear, 📁+ Add Folder] │ [⏱ Timeline] │ [◎ Select, 📁 Organize] │ [📊 Stats, ⚙️ Settings]
  */
 
 import type { SelectionMode } from './MapView';
@@ -11,7 +14,7 @@ import {
   FONT_FAMILY,
   Z_INDEX,
 } from '../constants/ui';
-import { Lasso, FolderOpen, Settings, History, BarChart3, Trash2 } from 'lucide-react';
+import { Lasso, FolderOpen, FolderPlus, Settings, History, BarChart3, Trash2 } from 'lucide-react';
 import type { ThemeColors } from '../theme';
 
 interface FloatingHeaderProps {
@@ -51,6 +54,60 @@ export function FloatingHeader({
   onScanFolder,
   onClearLibrary,
 }: FloatingHeaderProps) {
+  // Reusable styles
+  const divider = (
+    <div
+      style={{
+        width: '1px',
+        height: '24px',
+        backgroundColor: colors.border,
+        opacity: 0.5,
+        flexShrink: 0,
+      }}
+    />
+  );
+
+  const outlinedButtonBase: React.CSSProperties = {
+    padding: `${SPACING.SM} ${SPACING.LG}`,
+    fontSize: FONT_SIZE.SM,
+    fontWeight: FONT_WEIGHT.MEDIUM,
+    border: `1px solid ${colors.border}`,
+    borderRadius: BORDER_RADIUS.LG,
+    cursor: 'pointer',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: SPACING.SM,
+    transform: 'scale(1)',
+    fontFamily: FONT_FAMILY,
+  };
+
+  const iconButtonBase: React.CSSProperties = {
+    padding: SPACING.SM,
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: BORDER_RADIUS.FULL,
+    cursor: 'pointer',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '36px',
+    height: '36px',
+    transform: 'scale(1)',
+  };
+
+  const iconButtonHoverOn = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.backgroundColor = colors.surfaceHover;
+    e.currentTarget.style.transform = 'scale(1.05)';
+    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+  };
+  const iconButtonHoverOff = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.backgroundColor = 'transparent';
+    e.currentTarget.style.transform = 'scale(1)';
+    e.currentTarget.style.boxShadow = 'none';
+  };
+
   return (
     <div
       style={{
@@ -68,22 +125,17 @@ export function FloatingHeader({
         boxShadow: colors.shadow,
         display: 'flex',
         alignItems: 'center',
-        gap: SPACING.XXL,
+        gap: SPACING.LG,
         zIndex: Z_INDEX.HEADER,
         transition: 'background-color 0.2s ease, border-color 0.2s ease',
       }}
     >
-      {/* Title */}
+      {/* ── Group 1: Branding ─────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.SM }}>
         <img
           src="./icon.png"
           alt="Placemark"
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: '4px',
-            flexShrink: 0,
-          }}
+          style={{ width: 32, height: 32, borderRadius: '4px', flexShrink: 0 }}
         />
         <div>
           <h1
@@ -112,9 +164,112 @@ export function FloatingHeader({
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div style={{ display: 'flex', gap: SPACING.MD }}>
-        {/* Selection Mode Button */}
+      {divider}
+
+      {/* ── Group 2: Library DB — Clear & Add ────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.SM }}>
+        {/* Clear Library */}
+        <button
+          onClick={onClearLibrary}
+          className="floating-header-button"
+          style={{
+            ...outlinedButtonBase,
+            backgroundColor: 'transparent',
+            color: colors.textPrimary,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = colors.surfaceHover;
+            e.currentTarget.style.transform = 'scale(1.02)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+          title="Clear library (remove all photos from database)"
+        >
+          <Trash2 size={16} />
+          Clear
+        </button>
+
+        {/* Add Folder */}
+        <button
+          onClick={onScanFolder}
+          disabled={scanning}
+          className="floating-header-button"
+          style={{
+            ...outlinedButtonBase,
+            backgroundColor: 'transparent',
+            color: scanning ? colors.textMuted : colors.textPrimary,
+            opacity: scanning ? 0.6 : 1,
+            cursor: scanning ? 'not-allowed' : 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            if (!scanning) {
+              e.currentTarget.style.backgroundColor = colors.surfaceHover;
+              e.currentTarget.style.borderColor = colors.primary;
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!scanning) {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.borderColor = colors.border;
+              e.currentTarget.style.transform = 'scale(1)';
+            }
+          }}
+        >
+          <FolderPlus size={16} />
+          Add
+        </button>
+      </div>
+
+      {divider}
+
+      {/* ── Group 3: Timeline ─────────────────────────────── */}
+      <button
+        title={
+          selectionMode === 'lasso'
+            ? 'Timeline unavailable during selection'
+            : !dateRangeAvailable
+              ? 'No date information available in library'
+              : showTimeline
+                ? 'Hide Timeline'
+                : 'Show Timeline'
+        }
+        onClick={onTimelineToggle}
+        disabled={!dateRangeAvailable || selectionMode === 'lasso'}
+        className="floating-header-button"
+        style={{
+          ...outlinedButtonBase,
+          backgroundColor: showTimeline ? colors.primary : 'transparent',
+          color: showTimeline ? colors.buttonText : colors.textPrimary,
+          border: showTimeline ? 'none' : `1px solid ${colors.border}`,
+          boxShadow: showTimeline ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
+          opacity: !dateRangeAvailable || selectionMode === 'lasso' ? 0.4 : 1,
+          cursor: dateRangeAvailable && selectionMode !== 'lasso' ? 'pointer' : 'not-allowed',
+        }}
+        onMouseEnter={(e) => {
+          if (dateRangeAvailable && selectionMode !== 'lasso' && !showTimeline) {
+            e.currentTarget.style.backgroundColor = colors.surfaceHover;
+            e.currentTarget.style.transform = 'scale(1.02)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!showTimeline) {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.transform = 'scale(1)';
+          }
+        }}
+      >
+        <History size={16} />
+        Timeline
+      </button>
+
+      {divider}
+
+      {/* ── Group 4: File Tools — Select & Organize ───────── */}
+      <div style={{ display: 'flex', gap: SPACING.SM }}>
+        {/* Select (Lasso) */}
         <button
           title={
             selectionMode === 'lasso'
@@ -124,20 +279,11 @@ export function FloatingHeader({
           onClick={onSelectionModeToggle}
           className="floating-header-button"
           style={{
-            padding: `${SPACING.SM} ${SPACING.LG}`,
-            fontSize: FONT_SIZE.SM,
-            fontWeight: FONT_WEIGHT.MEDIUM,
+            ...outlinedButtonBase,
             backgroundColor: selectionMode === 'lasso' ? colors.primary : 'transparent',
             color: selectionMode === 'lasso' ? colors.buttonText : colors.textPrimary,
             border: selectionMode === 'lasso' ? 'none' : `1px solid ${colors.border}`,
-            borderRadius: BORDER_RADIUS.LG,
-            cursor: 'pointer',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: SPACING.SM,
             boxShadow: selectionMode === 'lasso' ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
-            transform: 'scale(1)',
           }}
           onMouseEnter={(e) => {
             if (selectionMode !== 'lasso') {
@@ -156,26 +302,18 @@ export function FloatingHeader({
           Select
         </button>
 
-        {/* Operations Button */}
+        {/* Organize */}
         <button
+          title="Organize selected photos (copy/move to folder)"
           onClick={onOperationsOpen}
           disabled={photoCount === 0}
           className="floating-header-button"
           style={{
-            padding: `${SPACING.SM} ${SPACING.LG}`,
-            fontSize: FONT_SIZE.SM,
-            fontWeight: FONT_WEIGHT.MEDIUM,
+            ...outlinedButtonBase,
             backgroundColor: 'transparent',
             color: photoCount === 0 ? colors.textMuted : colors.textPrimary,
-            border: `1px solid ${colors.border}`,
-            borderRadius: BORDER_RADIUS.LG,
-            cursor: photoCount > 0 ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: SPACING.SM,
-            transform: 'scale(1)',
             opacity: photoCount === 0 ? 0.6 : 1,
+            cursor: photoCount > 0 ? 'pointer' : 'not-allowed',
           }}
           onMouseEnter={(e) => {
             if (photoCount > 0) {
@@ -193,193 +331,34 @@ export function FloatingHeader({
           }}
         >
           <FolderOpen size={16} />
-          Organize ({selectionCount > 0 ? selectionCount : 0})
+          Organize {selectionCount > 0 ? `(${selectionCount})` : ''}
         </button>
+      </div>
 
-        {/* Stats Button */}
+      {divider}
+
+      {/* ── Group 5: App utilities — Stats & Settings ─────── */}
+      <div style={{ display: 'flex', gap: SPACING.XS }}>
         <button
           onClick={onStatsOpen}
           className="floating-header-button"
-          style={{
-            padding: SPACING.SM,
-            fontSize: FONT_SIZE.LG,
-            backgroundColor: 'transparent',
-            color: colors.textPrimary,
-            border: 'none',
-            borderRadius: BORDER_RADIUS.FULL,
-            cursor: 'pointer',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '40px',
-            height: '40px',
-            transform: 'scale(1)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = colors.surfaceHover;
-            e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
+          style={{ ...iconButtonBase, color: colors.textPrimary }}
+          onMouseEnter={iconButtonHoverOn}
+          onMouseLeave={iconButtonHoverOff}
           title="Library Statistics"
         >
-          <BarChart3 size={20} />
+          <BarChart3 size={18} />
         </button>
 
-        {/* Settings Button */}
         <button
           onClick={onSettingsOpen}
           className="floating-header-button"
-          style={{
-            padding: SPACING.SM,
-            fontSize: FONT_SIZE.LG,
-            backgroundColor: 'transparent',
-            color: colors.textPrimary,
-            border: 'none',
-            borderRadius: BORDER_RADIUS.FULL,
-            cursor: 'pointer',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '40px',
-            height: '40px',
-            transform: 'scale(1)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = colors.surfaceHover;
-            e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
+          style={{ ...iconButtonBase, color: colors.textPrimary }}
+          onMouseEnter={iconButtonHoverOn}
+          onMouseLeave={iconButtonHoverOff}
           title="Settings"
         >
-          <Settings size={20} />
-        </button>
-
-        {/* Timeline Button */}
-        <button
-          onClick={onTimelineToggle}
-          disabled={!dateRangeAvailable || selectionMode === 'lasso'}
-          className="floating-header-button"
-          style={{
-            padding: SPACING.SM,
-            fontSize: FONT_SIZE.LG,
-            backgroundColor: showTimeline ? colors.primary : 'transparent',
-            color: showTimeline ? colors.buttonText : colors.textPrimary,
-            opacity: selectionMode === 'lasso' ? 0.3 : 1,
-            border: 'none',
-            borderRadius: BORDER_RADIUS.FULL,
-            cursor: dateRangeAvailable && selectionMode !== 'lasso' ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '40px',
-            height: '40px',
-            transform: 'scale(1)',
-            boxShadow: showTimeline ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
-          }}
-          onMouseEnter={(e) => {
-            if (dateRangeAvailable && !showTimeline) {
-              e.currentTarget.style.backgroundColor = colors.surfaceHover;
-              e.currentTarget.style.transform = 'scale(1.05)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!showTimeline) {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = 'none';
-            }
-          }}
-          title="Toggle Timeline"
-        >
-          <History size={20} />
-        </button>
-
-        {/* Scan (Add Folder) Button */}
-        <button
-          onClick={onScanFolder}
-          disabled={scanning}
-          className="floating-header-button"
-          style={{
-            padding: `${SPACING.SM} ${SPACING.XL}`,
-            fontSize: FONT_SIZE.SM,
-            fontWeight: FONT_WEIGHT.MEDIUM,
-            backgroundColor: colors.primary,
-            color: colors.buttonText,
-            border: 'none',
-            borderRadius: BORDER_RADIUS.LG,
-            cursor: scanning ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
-            transform: 'scale(1)',
-            opacity: scanning ? 0.7 : 1,
-            display: 'flex',
-            alignItems: 'center',
-            gap: SPACING.SM,
-          }}
-          onMouseEnter={(e) => {
-            if (!scanning) {
-              e.currentTarget.style.backgroundColor = colors.primaryHover;
-              e.currentTarget.style.transform = 'scale(1.02)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.4)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!scanning) {
-              e.currentTarget.style.backgroundColor = colors.primary;
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 99, 235, 0.3)';
-            }
-          }}
-        >
-          <FolderOpen size={16} />
-          Add Folder
-        </button>
-
-        {/* Clear Library Button */}
-        <button
-          onClick={onClearLibrary}
-          title="Clear library (remove all photos from database)"
-          className="floating-header-button"
-          style={{
-            padding: SPACING.SM,
-            fontSize: FONT_SIZE.LG,
-            backgroundColor: 'transparent',
-            color: colors.error,
-            border: 'none',
-            borderRadius: BORDER_RADIUS.FULL,
-            cursor: 'pointer',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '40px',
-            height: '40px',
-            transform: 'scale(1)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = colors.surfaceHover;
-            e.currentTarget.style.transform = 'scale(1.05)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-        >
-          <Trash2 size={18} />
+          <Settings size={18} />
         </button>
       </div>
     </div>
