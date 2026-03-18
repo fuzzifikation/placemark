@@ -290,20 +290,20 @@ export function FloatingHeader({
         <button
           title="Organize selected photos (copy/move to folder)"
           onClick={onOperationsOpen}
-          disabled={photoCount === 0}
+          disabled={selectionCount === 0}
           className="floating-header-button"
           style={{
             ...outlinedButtonBase,
             backgroundColor: 'transparent',
-            color: photoCount === 0 ? colors.textMuted : colors.textPrimary,
-            opacity: photoCount === 0 ? 0.6 : 1,
-            cursor: photoCount > 0 ? 'pointer' : 'not-allowed',
+            color: selectionCount === 0 ? colors.textMuted : colors.textPrimary,
+            opacity: selectionCount === 0 ? 0.6 : 1,
+            cursor: selectionCount > 0 ? 'pointer' : 'not-allowed',
           }}
           onMouseEnter={(e) => {
-            if (photoCount > 0) outlinedHoverOn(e);
+            if (selectionCount > 0) outlinedHoverOn(e);
           }}
           onMouseLeave={(e) => {
-            if (photoCount > 0) outlinedHoverOff(e);
+            if (selectionCount > 0) outlinedHoverOff(e);
           }}
         >
           <FolderOpen size={16} />

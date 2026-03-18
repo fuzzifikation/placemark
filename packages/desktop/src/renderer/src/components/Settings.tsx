@@ -16,7 +16,7 @@ import { AboutSection } from './Settings/AboutSection';
 import { AppearanceSettings } from './Settings/AppearanceSettings';
 import { MapDisplaySettings } from './Settings/MapDisplaySettings';
 import { FONT_FAMILY } from '../constants/ui';
-import { Palette, Database, Map as MapIcon, Info } from 'lucide-react';
+import { Palette, Database, Map as MapIcon, Info, X } from 'lucide-react';
 import type { SpiderSettings } from './MapView';
 
 interface SettingsProps {
@@ -149,8 +149,8 @@ export function Settings({
 
   const sections = [
     { id: 'general', label: 'Appearance', icon: <Palette size={16} /> },
-    { id: 'library', label: 'Library', icon: <Database size={16} /> },
     { id: 'map', label: 'Map', icon: <MapIcon size={16} /> },
+    { id: 'library', label: 'Library', icon: <Database size={16} /> },
   ];
 
   useEffect(() => {
@@ -229,6 +229,7 @@ export function Settings({
     >
       <div
         style={{
+          position: 'relative',
           backgroundColor: colors.modalBackground,
           color: colors.textPrimary,
           borderRadius: '12px',
@@ -242,6 +243,28 @@ export function Settings({
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Close button — top-right corner of modal */}
+        <button
+          onClick={onClose}
+          title="Close settings"
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            zIndex: 10,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: colors.textSecondary,
+            padding: '4px',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <X size={18} />
+        </button>
         {/* Sidebar Navigation */}
         <div
           style={{
@@ -382,34 +405,6 @@ export function Settings({
           )}
 
           {activeSection === 'about' && <AboutSection theme={theme} />}
-
-          {/* Footer Actions */}
-          <div
-            style={{
-              marginTop: 'auto',
-              paddingTop: '1.5rem',
-              borderTop: `1px solid ${colors.border}`,
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-            }}
-          >
-            <button
-              onClick={onClose}
-              style={{
-                padding: '0.5rem 1.5rem',
-                fontSize: '0.875rem',
-                backgroundColor: colors.primary,
-                color: colors.buttonText,
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontWeight: 500,
-              }}
-            >
-              Done
-            </button>
-          </div>
         </div>
       </div>
     </div>

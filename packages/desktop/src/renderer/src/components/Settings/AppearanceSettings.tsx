@@ -38,37 +38,13 @@ export function AppearanceSettings({
 
   return (
     <div>
-      <div
-        style={{
-          marginBottom: '1.5rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-        }}
-      >
-        <div>
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
-            Appearance
-          </h3>
-          <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
-            Customize the app's look and feel
-          </p>
-        </div>
-        <button
-          onClick={onReset}
-          style={{
-            padding: '0.25rem 0.75rem',
-            fontSize: '0.75rem',
-            backgroundColor: colors.surface,
-            color: colors.textSecondary,
-            border: `1px solid ${colors.border}`,
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-          title="Reset appearance settings"
-        >
-          Reset
-        </button>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
+          Appearance
+        </h3>
+        <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
+          Customize the app's look and feel
+        </p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -169,6 +145,27 @@ export function AppearanceSettings({
             theme={theme}
           />
         </SettingsSection>
+      </div>
+
+      {/* Section footer */}
+      <div
+        style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: `1px solid ${colors.border}` }}
+      >
+        <button
+          onClick={onReset}
+          title="Reset appearance settings to defaults"
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            fontSize: '0.75rem',
+            color: colors.textMuted,
+            cursor: 'pointer',
+            textDecoration: 'underline',
+          }}
+        >
+          Reset to defaults
+        </button>
       </div>
     </div>
   );

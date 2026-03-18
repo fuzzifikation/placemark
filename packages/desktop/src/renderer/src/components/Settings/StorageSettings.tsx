@@ -147,23 +147,6 @@ export function StorageSettings({
             Manage your photo library and storage
           </p>
         </div>
-        {onReset && (
-          <button
-            onClick={onReset}
-            style={{
-              padding: '0.25rem 0.75rem',
-              fontSize: '0.75rem',
-              backgroundColor: colors.surface,
-              color: colors.textSecondary,
-              border: `1px solid ${colors.border}`,
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-            title="Reset library settings"
-          >
-            Reset
-          </button>
-        )}
       </div>
 
       {/* Database Statistics */}
@@ -364,6 +347,33 @@ export function StorageSettings({
           theme={theme}
         />
       </SettingsSection>
+
+      {/* Section footer */}
+      {onReset && (
+        <div
+          style={{
+            marginTop: '1.5rem',
+            paddingTop: '1rem',
+            borderTop: `1px solid ${colors.border}`,
+          }}
+        >
+          <button
+            onClick={onReset}
+            title="Reset library settings to defaults"
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              fontSize: '0.75rem',
+              color: colors.textMuted,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
+          >
+            Reset to defaults
+          </button>
+        </div>
+      )}
     </div>
   );
 }

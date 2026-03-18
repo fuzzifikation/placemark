@@ -37,37 +37,13 @@ export function MapDisplaySettings({
 
   return (
     <div>
-      <div
-        style={{
-          marginBottom: '1.5rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-        }}
-      >
-        <div>
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
-            Map & Display
-          </h3>
-          <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
-            Configure how photos are displayed on the map
-          </p>
-        </div>
-        <button
-          onClick={onReset}
-          style={{
-            padding: '0.25rem 0.75rem',
-            fontSize: '0.75rem',
-            backgroundColor: colors.surface,
-            color: colors.textSecondary,
-            border: `1px solid ${colors.border}`,
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-          title="Reset map settings"
-        >
-          Reset
-        </button>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: 600 }}>
+          Map & Display
+        </h3>
+        <p style={{ margin: 0, color: colors.textSecondary, fontSize: '0.875rem' }}>
+          Configure how photos are displayed on the map
+        </p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -306,6 +282,27 @@ export function MapDisplaySettings({
             theme={theme}
           />
         </SettingsSection>
+      </div>
+
+      {/* Section footer */}
+      <div
+        style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: `1px solid ${colors.border}` }}
+      >
+        <button
+          onClick={onReset}
+          title="Reset map settings to defaults"
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            fontSize: '0.75rem',
+            color: colors.textMuted,
+            cursor: 'pointer',
+            textDecoration: 'underline',
+          }}
+        >
+          Reset to defaults
+        </button>
       </div>
     </div>
   );

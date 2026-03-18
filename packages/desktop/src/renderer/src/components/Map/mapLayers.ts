@@ -172,10 +172,4 @@ export function addClusterLayers(
       'circle-opacity': unclusteredPointOpacity,
     },
   });
-
-  // Hide cluster layers if heatmap is active
-  if (showHeatmap) {
-    map.setLayoutProperty('clusters', 'visibility', 'none');
-    map.setLayoutProperty('cluster-count', 'visibility', 'none');
-  }
 }

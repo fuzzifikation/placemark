@@ -190,6 +190,7 @@ export function OperationsPanel({
       justifyContent: 'center',
       zIndex: 50,
       padding: '1rem',
+      cursor: 'default',
     },
     modal: {
       backgroundColor: colors.surface,
@@ -235,8 +236,8 @@ export function OperationsPanel({
   };
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
+    <div style={styles.overlay} onClick={!executing ? onClose : undefined}>
+      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div style={styles.header}>
           <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>

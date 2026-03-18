@@ -218,6 +218,100 @@ export function MapView({
     }
   }, [currentZoom, isSpiderActive, clearSpider, spiderSettings.clearZoom]);
 
+  // ========== MAP CONTROLS GLASS STYLE ==========
+  // Inject CSS overrides for MapLibre NavigationControl to match the floating header glass style.
+  useEffect(() => {
+    const isDark = theme === 'dark';
+    const bgRgb = isDark ? '30, 41, 59' : '255, 255, 255';
+    const opacity = glassSurfaceOpacity / 100;
+    const border = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.3)';
+    const textColor = isDark ? '#f1f5f9' : '#1e293b';
+    const hoverBg = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)';
+    const linkColor = isDark ? '#3b82f6' : '#2563eb';
+
+    const css = `
+      .maplibregl-ctrl-group {
+        background: rgba(${bgRgb}, ${opacity}) !important;
+        backdrop-filter: blur(${glassBlur}px) !important;
+        -webkit-backdrop-filter: blur(${glassBlur}px) !important;
+        border: 1px solid ${border} !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+        overflow: hidden;
+      }
+      .maplibregl-ctrl-group button {
+        background: transparent !important;
+        color: ${textColor} !important;
+        border-bottom: 1px solid ${border} !important;
+        width: 36px !important;
+        height: 36px !important;
+        transition: background 0.15s ease !important;
+      }
+      .maplibregl-ctrl-group button:last-child {
+        border-bottom: none !important;
+      }
+      .maplibregl-ctrl-group button:hover {
+        background: ${hoverBg} !important;
+      }
+      .maplibregl-ctrl-group button span {
+        filter: ${isDark ? 'invert(1) brightness(2)' : 'none'} !important;
+      }
+
+      /* Attribution control (ⓘ button + expanded panel) */
+      .maplibregl-ctrl-attrib {
+        background: rgba(${bgRgb}, ${opacity}) !important;
+        backdrop-filter: blur(${glassBlur}px) !important;
+        -webkit-backdrop-filter: blur(${glassBlur}px) !important;
+        border: 1px solid ${border} !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+        color: ${textColor} !important;
+      }
+      .maplibregl-ctrl-attrib a {
+        color: ${linkColor} !important;
+      }
+      .maplibregl-ctrl-attrib-button {
+        background-color: transparent !important;
+        filter: ${isDark ? 'invert(1) brightness(2)' : 'none'} !important;
+        transition: background-color 0.15s ease !important;
+      }
+      .maplibregl-ctrl-attrib-button:hover {
+        background-color: ${hoverBg} !important;
+      }
+    `;
+
+    const styleId = 'placemark-map-ctrl-glass';
+    let el = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!el) {
+      el = document.createElement('style');
+      el.id = styleId;
+      document.head.appendChild(el);
+    }
+    el.textContent = css;
+
+    return () => {
+      document.getElementById(styleId)?.remove();
+    };
+  }, [glassBlur, glassSurfaceOpacity, theme]);
+
+  // ========== ATTRIBUTION LINK INTERCEPTION ==========
+  // MapLibre renders <a> tags in the attribution panel. In Electron, clicking
+  // them would navigate the renderer window. Instead, open them in the OS browser.
+  useEffect(() => {
+    const container = mapContainer.current;
+    if (!container) return;
+    const handleClick = (e: MouseEvent) => {
+      const anchor = (e.target as Element).closest('a');
+      if (!anchor) return;
+      const href = anchor.getAttribute('href');
+      if (!href || !href.startsWith('http')) return;
+      e.preventDefault();
+      window.api?.system?.openExternal?.(href);
+    };
+    container.addEventListener('click', handleClick);
+    return () => container.removeEventListener('click', handleClick);
+  }, []);
+
   // ========== RENDER ==========
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

@@ -90,6 +90,10 @@ export function useMapInitialization({
 
     mapRef.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
+    // Default MapLibre wheel zoom rate is 1/450 — raise it to feel closer to Google Maps.
+    // Adjust this value if trackpad overshooting is reported (lower = slower).
+    mapRef.current.scrollZoom.setWheelZoomRate(1 / 180);
+
     mapRef.current.on('load', () => {
       setMapLoaded(true);
       if (mapRef.current) {
