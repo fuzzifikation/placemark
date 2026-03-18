@@ -69,8 +69,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   clusteringEnabled: true,
   clusterRadius: 30,
   clusterMaxZoom: 14,
-  clusterOpacity: 0.85,
-  unclusteredPointOpacity: 0.9,
+  clusterOpacity: 0.65,
+  unclusteredPointOpacity: 0.75,
   mapPadding: 50,
   mapTransitionDuration: 200,
   showHeatmap: false,
@@ -90,8 +90,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   spiderCollapseMargin: 30, // pixels - mouse distance beyond spider before collapse
   spiderClearZoom: 7, // auto-clear spider when zooming below this
   // Glassmorphism defaults
-  glassBlur: 12, // 12px blur
-  glassSurfaceOpacity: 70, // 70% opacity
+  glassBlur: 5, // 5px blur
+  glassSurfaceOpacity: 30, // 30% opacity
 };
 
 // Default spider settings as a SpiderSettings object

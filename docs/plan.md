@@ -985,9 +985,6 @@ pnpm -r test                           # Test all
   - **Schema:** Add `media_type TEXT DEFAULT 'photo'` column (`'photo'` | `'video'`), and update `mime_type` to include `video/mp4`, `video/quicktime`, etc.
   - **Phase suggestion:** Phase 12.5 or a dedicated Phase 18, after mobile foundation.
 
-- **Timeline Animation Bug:** The end-bars of the timeline do not move with the bar during play mode ✅ FIXED
-- **About Section Updates:** Update the about section with the correct GitHub link and add a donate button ✅ FIXED (GitHub link corrected, donation link removed pending proper sponsor setup)
-- **Settings Architecture Refactor:** Consolidate default values to single source of truth ✅ FIXED
 - **Moved Photos Scope Decision:** When photos are moved outside originally scanned folders, decide behavior:
   - Option A: Keep tracking (current behavior) - database-centric, photos stay on map
   - Option B: Remove from database - folder-centric, clear but loses user's work
@@ -998,6 +995,7 @@ pnpm -r test                           # Test all
   - Proposed: Settings panel showing past operations with "Export to JSON" option
   - Challenge: Cannot guarantee files still exist/unchanged after days/weeks - history is informational only
   - Value proposition: Transparency ("where did my photos go?"), audit trail, differentiates from file explorer
+  - → Tracked in SUGGESTIONS.md
   - Implementation: Auto-prune after configurable period (30 days default), JSON export for long-term records
   - Requires decision: Is operation history a core feature or unnecessary database bloat?
 - **macOS App Store:** Revisit if Windows Store traction exceeds 1,000 downloads/month (see [business_model.md](business_model.md) §9)

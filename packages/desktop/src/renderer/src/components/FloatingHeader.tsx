@@ -108,6 +108,16 @@ export function FloatingHeader({
     e.currentTarget.style.boxShadow = 'none';
   };
 
+  // Shared hover handlers for all outlined (text+icon) buttons
+  const outlinedHoverOn = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.backgroundColor = colors.surfaceHover;
+    e.currentTarget.style.transform = 'scale(1.02)';
+  };
+  const outlinedHoverOff = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.backgroundColor = 'transparent';
+    e.currentTarget.style.transform = 'scale(1)';
+  };
+
   return (
     <div
       style={{
@@ -177,14 +187,8 @@ export function FloatingHeader({
             backgroundColor: 'transparent',
             color: colors.textPrimary,
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = colors.surfaceHover;
-            e.currentTarget.style.transform = 'scale(1.02)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
+          onMouseEnter={outlinedHoverOn}
+          onMouseLeave={outlinedHoverOff}
           title="Clear library (remove all photos from database)"
         >
           <Trash2 size={16} />
@@ -204,18 +208,10 @@ export function FloatingHeader({
             cursor: scanning ? 'not-allowed' : 'pointer',
           }}
           onMouseEnter={(e) => {
-            if (!scanning) {
-              e.currentTarget.style.backgroundColor = colors.surfaceHover;
-              e.currentTarget.style.borderColor = colors.primary;
-              e.currentTarget.style.transform = 'scale(1.02)';
-            }
+            if (!scanning) outlinedHoverOn(e);
           }}
           onMouseLeave={(e) => {
-            if (!scanning) {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.borderColor = colors.border;
-              e.currentTarget.style.transform = 'scale(1)';
-            }
+            if (!scanning) outlinedHoverOff(e);
           }}
         >
           <FolderPlus size={16} />
@@ -249,16 +245,10 @@ export function FloatingHeader({
           cursor: dateRangeAvailable && selectionMode !== 'lasso' ? 'pointer' : 'not-allowed',
         }}
         onMouseEnter={(e) => {
-          if (dateRangeAvailable && selectionMode !== 'lasso' && !showTimeline) {
-            e.currentTarget.style.backgroundColor = colors.surfaceHover;
-            e.currentTarget.style.transform = 'scale(1.02)';
-          }
+          if (dateRangeAvailable && selectionMode !== 'lasso' && !showTimeline) outlinedHoverOn(e);
         }}
         onMouseLeave={(e) => {
-          if (!showTimeline) {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.transform = 'scale(1)';
-          }
+          if (!showTimeline) outlinedHoverOff(e);
         }}
       >
         <History size={16} />
@@ -286,16 +276,10 @@ export function FloatingHeader({
             boxShadow: selectionMode === 'lasso' ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
           }}
           onMouseEnter={(e) => {
-            if (selectionMode !== 'lasso') {
-              e.currentTarget.style.backgroundColor = colors.surfaceHover;
-              e.currentTarget.style.transform = 'scale(1.02)';
-            }
+            if (selectionMode !== 'lasso') outlinedHoverOn(e);
           }}
           onMouseLeave={(e) => {
-            if (selectionMode !== 'lasso') {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.transform = 'scale(1)';
-            }
+            if (selectionMode !== 'lasso') outlinedHoverOff(e);
           }}
         >
           <Lasso size={16} />
@@ -316,18 +300,10 @@ export function FloatingHeader({
             cursor: photoCount > 0 ? 'pointer' : 'not-allowed',
           }}
           onMouseEnter={(e) => {
-            if (photoCount > 0) {
-              e.currentTarget.style.backgroundColor = colors.surfaceHover;
-              e.currentTarget.style.borderColor = colors.primary;
-              e.currentTarget.style.transform = 'scale(1.02)';
-            }
+            if (photoCount > 0) outlinedHoverOn(e);
           }}
           onMouseLeave={(e) => {
-            if (photoCount > 0) {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.borderColor = colors.border;
-              e.currentTarget.style.transform = 'scale(1)';
-            }
+            if (photoCount > 0) outlinedHoverOff(e);
           }}
         >
           <FolderOpen size={16} />
