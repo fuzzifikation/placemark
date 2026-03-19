@@ -6,7 +6,6 @@ export type OperationType = 'copy' | 'move';
 
 export type OperationStatus =
   | 'pending'
-  | 'in-progress'
   | 'completed'
   | 'failed'
   | 'cancelled'
@@ -15,7 +14,9 @@ export type OperationStatus =
 
 // Batch-level statuses used by the desktop app's operation history/undo system.
 // Keeping them in core avoids type drift between core/desktop.
-export type BatchStatus = OperationStatus | 'undone' | 'archived';
+// Intentionally explicit (not derived from OperationStatus) — batches should
+// never be 'skipped' or 'conflict', and the DB CHECK constraint enforces this.
+export type BatchStatus = 'pending' | 'completed' | 'failed' | 'cancelled' | 'undone' | 'archived';
 
 export interface FileOperation {
   id: string; // Unique ID for tracking

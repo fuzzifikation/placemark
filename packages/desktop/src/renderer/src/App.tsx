@@ -229,6 +229,14 @@ function App() {
           glassSurfaceOpacity={settings.glassSurfaceOpacity}
           clusterOpacity={settings.clusterOpacity}
           unclusteredPointOpacity={settings.unclusteredPointOpacity}
+          fitPadding={{
+            // Clear the floating header (top: 1rem offset + ~52px height + buffer)
+            top: settings.mapPadding + 88,
+            right: settings.mapPadding,
+            // Clear the timeline panel when visible (bottom: 2rem + ~120px panel height)
+            bottom: showTimeline ? settings.mapPadding + 160 : settings.mapPadding,
+            left: settings.mapPadding,
+          }}
         />
       </div>
 

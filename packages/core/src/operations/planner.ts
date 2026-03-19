@@ -15,17 +15,6 @@ import { Photo } from '../models/Photo';
 import { FileOperation, DryRunResult, OperationType } from '../models/Operation';
 
 /**
- * Generate a simple UUID v4-like string (not cryptographically secure, but sufficient for operation IDs)
- */
-function generateOpId(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-/**
  * Extract filename from a path (platform-agnostic)
  */
 function getBasename(path: string): string {
@@ -54,7 +43,10 @@ export function generateOperationPlan(
   const warnings: string[] = [];
   let totalSize = 0;
 
-  // Track filenames to detect collisions within this batch
+  // Track filenames to detect collisions within this batch.
+  // Uses lowercase keys so collisions are caught on case-insensitive
+  // filesystems (Windows/macOS). Slightly over-conservative on Linux
+  // but safe — a harmless " (1)" suffix is better than an EEXIST crash.
   const destFilenames = new Set<string>();
 
   // Normalise once — these depend only on destFolder, not on individual photos
@@ -69,23 +61,23 @@ export function generateOperationPlan(
     let uniqueFilename = filename;
     let counter = 1;
 
-    if (destFilenames.has(uniqueFilename)) {
+    if (destFilenames.has(uniqueFilename.toLowerCase())) {
       const dotIndex = filename.lastIndexOf('.');
       const hasExtension = dotIndex > 0;
       const namePart = hasExtension ? filename.slice(0, dotIndex) : filename;
       const extPart = hasExtension ? filename.slice(dotIndex) : '';
 
-      while (destFilenames.has(uniqueFilename)) {
+      while (destFilenames.has(uniqueFilename.toLowerCase())) {
         uniqueFilename = `${namePart} (${counter})${extPart}`;
         counter++;
       }
     }
 
-    destFilenames.add(uniqueFilename);
+    destFilenames.add(uniqueFilename.toLowerCase());
     const finalDestPath = `${cleanDestFolder}${sep}${uniqueFilename}`;
 
     operations.push({
-      id: generateOpId(),
+      id: String(operations.length + 1),
       photoId: photo.id,
       type,
       sourcePath: photo.path,

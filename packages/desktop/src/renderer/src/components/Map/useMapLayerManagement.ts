@@ -27,6 +27,7 @@ interface UseMapLayerManagementProps {
   clusterMaxZoom: number;
   transitionDuration: number;
   padding: number;
+  fitPadding?: { top: number; right: number; bottom: number; left: number };
   autoFit: boolean;
   showHeatmap: boolean;
   selectionMode: SelectionMode;
@@ -64,6 +65,7 @@ export function useMapLayerManagement({
   clusterMaxZoom,
   transitionDuration,
   padding,
+  fitPadding,
   autoFit,
   showHeatmap,
   selectionMode,
@@ -241,7 +243,13 @@ export function useMapLayerManagement({
         photosWithLocation.forEach((photo) => {
           bounds.extend([photo.longitude!, photo.latitude!]);
         });
-        mapRef.current.fitBounds(bounds, { padding, duration: transitionDuration });
+        const effectivePadding = fitPadding ?? {
+          top: padding,
+          right: padding,
+          bottom: padding,
+          left: padding,
+        };
+        mapRef.current.fitBounds(bounds, { padding: effectivePadding, duration: transitionDuration });
         hasInitialFit.current = true;
       }
     }
@@ -253,6 +261,7 @@ export function useMapLayerManagement({
     clusterMaxZoom,
     transitionDuration,
     padding,
+    fitPadding,
     autoFit,
     showHeatmap,
     clusterOpacity,

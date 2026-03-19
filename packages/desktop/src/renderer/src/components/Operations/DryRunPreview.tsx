@@ -181,10 +181,11 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
         <div
           style={{
             padding: '0.75rem',
-            backgroundColor: '#fffbeb',
-            color: '#92400e',
+            backgroundColor: `${colors.warning}18`,
+            color: colors.warning,
             borderRadius: '4px',
             fontSize: '0.875rem',
+            border: `1px solid ${colors.warning}40`,
           }}
         >
           <strong>Warnings:</strong>

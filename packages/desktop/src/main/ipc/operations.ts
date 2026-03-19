@@ -117,9 +117,13 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
         try {
           const destStat = await fs.stat(op.destPath);
           // File exists at destination - check if it's identical (same size)
-          // For photos, matching size is a strong indicator of identical content
+          // Size-equality heuristic: if sizes match we assume the file has already
+          // been copied (idempotent re-run).  This can give false positives when two
+          // completely different photos share the same filename AND file size, but
+          // that is rare enough in practice to accept.  A hash-based check would be
+          // more accurate at the cost of scanning every file.
           if (destStat.size === op.fileSize) {
-            // Identical file already exists - treat as success, skip copy/move
+            // Likely the same file already at destination — skip silently.
             enrichedOp.status = 'skipped';
           } else {
             // Different file with same name - real conflict
@@ -192,6 +196,11 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
 
       return result;
     } catch (err: any) {
+      // Always clear stored state — the plan is stale after any execution attempt
+      // (rollback has already restored the filesystem on failure)
+      lastDryRunResult = null;
+      lastOpType = null;
+
       if (err?.type === 'cancelled' || err?.name === 'CancelledError') {
         return { success: false, cancelled: true, message: err.message };
       }

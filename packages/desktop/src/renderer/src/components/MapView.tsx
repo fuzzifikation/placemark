@@ -3,7 +3,7 @@
  * Refactored to use extracted hooks for better maintainability
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, type MutableRefObject } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Photo } from '@placemark/core';
@@ -18,6 +18,48 @@ import { useMapEventHandlers } from './Map/useMapEventHandlers';
 import { getDefaultSpiderSettings } from './Settings';
 
 export type SelectionMode = 'pan' | 'lasso';
+
+// ============================================================================
+// Fit-to-content custom MapLibre control
+// ============================================================================
+
+/**
+ * A MapLibre IControl that adds a single "fit to photos" button to the map.
+ * Uses a ref so the click handler always sees the latest photos/selection.
+ */
+class FitToContentControl {
+  private _container: HTMLElement | null = null;
+  private _onClickRef: MutableRefObject<() => void>;
+
+  constructor(onClickRef: MutableRefObject<() => void>) {
+    this._onClickRef = onClickRef;
+  }
+
+  onAdd(): HTMLElement {
+    this._container = document.createElement('div');
+    this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.title = 'Fit map to photos (or selection)';
+    button.setAttribute('aria-label', 'Fit map to photos');
+    // 4-corner expand icon
+    button.innerHTML = `<span aria-hidden="true" style="display:flex;align-items:center;justify-content:center">
+      <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 6V1h5M12 1h5v5M1 12v5h5M17 12v5h-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>`;
+    button.addEventListener('click', () => this._onClickRef.current());
+
+    this._container.appendChild(button);
+    return this._container;
+  }
+
+  onRemove(): void {
+    this._container?.remove();
+    this._container = null;
+  }
+}
 
 // Spider configuration from settings
 export interface SpiderSettings {
@@ -54,6 +96,8 @@ interface MapViewProps {
   // Cluster opacity settings
   clusterOpacity?: number;
   unclusteredPointOpacity?: number;
+  // Fit-to-content padding — accounts for floating header (top) and timeline (bottom)
+  fitPadding?: { top: number; right: number; bottom: number; left: number };
 }
 
 export function MapView({
@@ -78,6 +122,7 @@ export function MapView({
   glassSurfaceOpacity = 70,
   clusterOpacity = 0.85,
   unclusteredPointOpacity = 0.9,
+  fitPadding,
 }: MapViewProps) {
   // ========== STATE ==========
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -183,6 +228,7 @@ export function MapView({
     clusterMaxZoom,
     transitionDuration,
     padding,
+    fitPadding,
     autoFit,
     showHeatmap,
     selectionMode,
@@ -293,6 +339,52 @@ export function MapView({
       document.getElementById(styleId)?.remove();
     };
   }, [glassBlur, glassSurfaceOpacity, theme]);
+
+  // ========== FIT TO CONTENT ==========
+  // A ref holds the fit function so the MapLibre control can always call the latest version.
+  const fitToContentRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    fitToContentRef.current = () => {
+      if (!mapRef.current) return;
+      // Fit to selection if any; otherwise fit to all displayed photos.
+      const photosToFit =
+        selectedIds && selectedIds.size > 0
+          ? photos.filter((p) => selectedIds.has(p.id))
+          : photos;
+      const geo = photosToFit.filter((p) => p.latitude != null && p.longitude != null);
+      if (geo.length === 0) return;
+
+      const bounds = new maplibregl.LngLatBounds();
+      geo.forEach((p) => bounds.extend([p.longitude!, p.latitude!]));
+
+      const effectivePadding = fitPadding ?? {
+        top: padding,
+        right: padding,
+        bottom: padding,
+        left: padding,
+      };
+      mapRef.current.fitBounds(bounds, {
+        padding: effectivePadding,
+        duration: transitionDuration,
+        maxZoom: tileMaxZoom,
+      });
+    };
+  }, [photos, selectedIds, padding, fitPadding, transitionDuration, tileMaxZoom]);
+
+  // Mount the fit-to-content control once the map is ready (stays mounted for lifetime of map).
+  const fitControlRef = useRef<FitToContentControl | null>(null);
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    fitControlRef.current = new FitToContentControl(fitToContentRef);
+    mapRef.current.addControl(fitControlRef.current, 'top-right');
+    return () => {
+      if (fitControlRef.current && mapRef.current) {
+        mapRef.current.removeControl(fitControlRef.current);
+        fitControlRef.current = null;
+      }
+    };
+  }, [mapLoaded]);
 
   // ========== ATTRIBUTION LINK INTERCEPTION ==========
   // MapLibre renders <a> tags in the attribution panel. In Electron, clicking

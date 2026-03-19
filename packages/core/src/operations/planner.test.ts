@@ -74,4 +74,12 @@ describe('generateOperationPlan', () => {
     expect(plan.summary.totalSize).toBe(5000);
     expect(plan.summary.totalFiles).toBe(3);
   });
+
+  it('detects collisions case-insensitively (Windows/macOS safety)', () => {
+    const photos = [photo(1, '/folder-a/IMG_001.jpg'), photo(2, '/folder-b/img_001.jpg')];
+    const plan = generateOperationPlan(photos, '/dest', 'copy');
+
+    expect(plan.operations[0].destPath).toBe('/dest/IMG_001.jpg');
+    expect(plan.operations[1].destPath).toBe('/dest/img_001 (1).jpg');
+  });
 });

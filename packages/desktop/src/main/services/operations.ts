@@ -128,22 +128,22 @@ export async function executeOperations(
     phase: 'executing',
   });
 
-  // Log batch to database BEFORE execution
-  const batchId = logOperationBatch({
-    operation: opType,
-    files: toExecute.map((op) => ({
-      photoId: op.photoId,
-      sourcePath: op.sourcePath,
-      destPath: op.destPath,
-    })),
-    timestamp: Date.now(),
-    status: 'pending',
-  });
-
   // Execute operations
+  let batchId = 0;
   const completedOps: FileOperation[] = [];
 
   try {
+    // Log batch to database — inside try so activeExecution is always released by finally
+    batchId = logOperationBatch({
+      operation: opType,
+      files: toExecute.map((op) => ({
+        photoId: op.photoId,
+        sourcePath: op.sourcePath,
+        destPath: op.destPath,
+      })),
+      timestamp: Date.now(),
+      status: 'pending',
+    });
     for (let i = 0; i < toExecute.length; i++) {
       if (activeExecution?.cancelRequested) {
         throw new CancelledError('Operation cancelled by user.');
@@ -232,18 +232,22 @@ export async function executeOperations(
     logger.error(`${failureLabel}: ${error.message}. Rolling back...`);
 
     const rollbackFailures = await rollbackCompletedOps(completedOps, opType);
-    updateBatchStatus(batchId, wasCancelled ? 'cancelled' : 'failed', error.message);
-
-    const rollbackNote =
-      rollbackFailures === 0
-        ? `${completedOps.length} completed files have been rolled back.`
-        : `${completedOps.length - rollbackFailures} rolled back, ${rollbackFailures} rollback steps failed. Manual review recommended.`;
-
-    if (wasCancelled) {
-      throw new CancelledError(`Cancelled. ${rollbackNote}`);
+    if (batchId !== 0) {
+      updateBatchStatus(batchId, wasCancelled ? 'cancelled' : 'failed', error.message);
     }
 
-    throw new Error(`Operation failed: ${error.message}. ${rollbackNote}`);
+    const rollbackNote =
+      completedOps.length === 0
+        ? ''
+        : rollbackFailures === 0
+          ? ` ${completedOps.length} completed files have been rolled back.`
+          : ` ${completedOps.length - rollbackFailures} rolled back, ${rollbackFailures} rollback steps failed. Manual review recommended.`;
+
+    if (wasCancelled) {
+      throw new CancelledError(`Cancelled.${rollbackNote}`);
+    }
+
+    throw new Error(`Operation failed: ${error.message}.${rollbackNote}`);
   } finally {
     activeExecution = null;
   }

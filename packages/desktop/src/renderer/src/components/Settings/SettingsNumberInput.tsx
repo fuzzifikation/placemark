@@ -56,7 +56,12 @@ export function SettingsNumberInput({
         </div>
         {description && (
           <div
-            style={{ fontSize: '0.7rem', color: colors.textMuted, marginTop: '0.125rem', lineHeight: 1.3 }}
+            style={{
+              fontSize: '0.7rem',
+              color: colors.textMuted,
+              marginTop: '0.125rem',
+              lineHeight: 1.3,
+            }}
           >
             {description}
           </div>
