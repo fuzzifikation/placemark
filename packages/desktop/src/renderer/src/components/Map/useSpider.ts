@@ -61,12 +61,52 @@ interface UseSpiderOptions {
   findOverlappingPhotosInPixels?: FindOverlappingPhotosInPixels;
 }
 
+// Minimum pixel gap between adjacent markers on a ring (prevents visual overlap)
+const MIN_MARKER_SPACING_PX = 22;
+
+// Radius multipliers for concentric rings (sub-linear growth for visual balance)
+const RING_RADIUS_MULTIPLIERS = [1, 1.7, 2.4, 3.1, 3.8];
+
 /**
- * Calculate spider offsets for a set of photos arranged in a circle
+ * Assign photos to concentric rings based on capacity.
+ * Each ring's capacity = floor(2π × ringRadius / MIN_MARKER_SPACING_PX).
+ * Returns array of { radiusPx, count } per ring.
+ */
+function assignRings(
+  totalCount: number,
+  baseRadiusPx: number
+): { radiusPx: number; count: number }[] {
+  // Single photo: no ring needed, place at center offset
+  if (totalCount <= 1) return [{ radiusPx: baseRadiusPx, count: totalCount }];
+
+  const rings: { radiusPx: number; count: number }[] = [];
+  let remaining = totalCount;
+
+  for (const mult of RING_RADIUS_MULTIPLIERS) {
+    const ringRadius = baseRadiusPx * mult;
+    const capacity = Math.max(1, Math.floor((2 * Math.PI * ringRadius) / MIN_MARKER_SPACING_PX));
+    const take = Math.min(capacity, remaining);
+    rings.push({ radiusPx: ringRadius, count: take });
+    remaining -= take;
+    if (remaining <= 0) break;
+  }
+
+  // Overflow: any remaining photos go on the last ring
+  if (remaining > 0) {
+    rings[rings.length - 1].count += remaining;
+  }
+
+  return rings;
+}
+
+/**
+ * Calculate spider offsets for a set of photos arranged in concentric rings.
+ * Photos fill the innermost ring first, then spill onto outer rings.
+ * Adjacent rings have a half-step angular offset to avoid radial alignment.
  * @param photos - Photos to spider
  * @param center - Center point [lng, lat]
  * @param progress - Animation progress 0-1
- * @param radiusPixels - Radius in pixels
+ * @param radiusPixels - Base radius in pixels (innermost ring)
  * @param converter - Function to convert pixels to degrees at the center point
  */
 function calculateSpiderOffsets(
@@ -77,38 +117,49 @@ function calculateSpiderOffsets(
   converter?: PixelToDegreesConverter
 ): Map<number, SpiderOffset> {
   const offsets = new Map<number, SpiderOffset>();
-  const count = photos.length;
+  const rings = assignRings(photos.length, radiusPixels);
 
-  // Get radius in degrees - if no converter, use a fallback approximation
-  let lngRadius: number;
-  let latRadius: number;
+  let photoIndex = 0;
 
-  if (converter) {
-    const degreeOffsets = converter(center, radiusPixels * progress);
-    lngRadius = degreeOffsets.lngOffset;
-    latRadius = degreeOffsets.latOffset;
-  } else {
-    // Fallback: approximate 1 pixel ≈ 0.00001 degrees at high zoom
-    // This is only used if no converter is provided
-    const fallbackRadius = radiusPixels * progress * 0.00001;
-    lngRadius = fallbackRadius;
-    latRadius = fallbackRadius;
-  }
+  rings.forEach((ring, ringIndex) => {
+    // Convert this ring's pixel radius to degrees
+    let lngRadius: number;
+    let latRadius: number;
 
-  photos.forEach((photo, i) => {
-    if (photo.latitude == null || photo.longitude == null) return;
+    if (converter) {
+      const degreeOffsets = converter(center, ring.radiusPx * progress);
+      lngRadius = degreeOffsets.lngOffset;
+      latRadius = degreeOffsets.latOffset;
+    } else {
+      const fallbackRadius = ring.radiusPx * progress * 0.00001;
+      lngRadius = fallbackRadius;
+      latRadius = fallbackRadius;
+    }
 
-    const angle = (2 * Math.PI * i) / count - Math.PI / 2;
-    const offsetLng = center[0] + lngRadius * Math.cos(angle);
-    const offsetLat = center[1] + latRadius * Math.sin(angle);
+    // Half-step angular offset on odd rings to stagger markers
+    const angularOffset = ringIndex % 2 === 0 ? 0 : Math.PI / ring.count;
 
-    offsets.set(photo.id, {
-      photoId: photo.id,
-      originalLng: photo.longitude,
-      originalLat: photo.latitude,
-      offsetLng,
-      offsetLat,
-    });
+    for (let j = 0; j < ring.count; j++) {
+      const photo = photos[photoIndex];
+      if (!photo || photo.latitude == null || photo.longitude == null) {
+        photoIndex++;
+        continue;
+      }
+
+      const angle = (2 * Math.PI * j) / ring.count - Math.PI / 2 + angularOffset;
+      const offsetLng = center[0] + lngRadius * Math.cos(angle);
+      const offsetLat = center[1] + latRadius * Math.sin(angle);
+
+      offsets.set(photo.id, {
+        photoId: photo.id,
+        originalLng: photo.longitude,
+        originalLat: photo.latitude,
+        offsetLng,
+        offsetLat,
+      });
+
+      photoIndex++;
+    }
   });
 
   return offsets;
