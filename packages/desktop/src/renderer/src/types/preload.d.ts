@@ -3,7 +3,7 @@
  * Defines the shape of window.api exposed via contextBridge
  */
 
-import type { Photo } from '@placemark/core';
+import type { Photo, Placemark, CreatePlacemarkInput, UpdatePlacemarkInput } from '@placemark/core';
 
 export interface ScanProgress {
   currentFile: string;
@@ -107,6 +107,27 @@ export interface SystemAPI {
   openExternal: (url: string) => Promise<void>;
 }
 
+export interface PlacemarkWithCount extends Placemark {
+  photoCount: number;
+}
+
+export interface PlacemarkSmartCounts {
+  thisYear: number;
+  last3Months: number;
+}
+
+export interface PlacemarksGetAllResult {
+  placemarks: PlacemarkWithCount[];
+  smartCounts: PlacemarkSmartCounts;
+}
+
+export interface PlacemarksAPI {
+  getAll: () => Promise<PlacemarksGetAllResult>;
+  create: (input: CreatePlacemarkInput) => Promise<PlacemarkWithCount>;
+  update: (input: UpdatePlacemarkInput) => Promise<PlacemarkWithCount>;
+  delete: (id: number) => Promise<void>;
+}
+
 /**
  * Complete Placemark API exposed to renderer
  */
@@ -115,6 +136,7 @@ export interface PlacemarkAPI {
   thumbnails: ThumbnailsAPI;
   ops: OperationsAPI;
   system: SystemAPI;
+  placemarks: PlacemarksAPI;
 }
 
 /**

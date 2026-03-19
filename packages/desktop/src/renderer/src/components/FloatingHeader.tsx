@@ -23,6 +23,7 @@ import {
   BarChart3,
   Trash2,
   HelpCircle,
+  Bookmark,
 } from 'lucide-react';
 import type { ThemeColors } from '../theme';
 
@@ -32,6 +33,7 @@ interface FloatingHeaderProps {
   selectionMode: SelectionMode;
   dateRangeAvailable: boolean;
   showTimeline: boolean;
+  showPlacemarks: boolean;
   scanning: boolean;
   colors: ThemeColors;
   glassBlur: number; // blur in pixels
@@ -41,6 +43,7 @@ interface FloatingHeaderProps {
   onSettingsOpen: () => void;
   onStatsOpen: () => void;
   onTimelineToggle: () => void;
+  onPlacemarksToggle: () => void;
   onScanFolder: () => void;
   onClearLibrary: () => void;
   onHelpOpen: () => void;
@@ -52,6 +55,7 @@ export function FloatingHeader({
   selectionMode,
   dateRangeAvailable,
   showTimeline,
+  showPlacemarks,
   scanning,
   colors,
   glassBlur,
@@ -61,6 +65,7 @@ export function FloatingHeader({
   onSettingsOpen,
   onStatsOpen,
   onTimelineToggle,
+  onPlacemarksToggle,
   onScanFolder,
   onClearLibrary,
   onHelpOpen,
@@ -289,6 +294,28 @@ export function FloatingHeader({
       >
         <History size={16} />
         Timeline
+      </button>
+
+      <button
+        title={showPlacemarks ? 'Hide Placemarks' : 'Show Placemarks'}
+        onClick={onPlacemarksToggle}
+        className="floating-header-button"
+        style={{
+          ...outlinedButtonBase,
+          backgroundColor: showPlacemarks ? colors.primary : 'transparent',
+          color: showPlacemarks ? colors.buttonText : colors.textPrimary,
+          border: showPlacemarks ? 'none' : `1px solid ${colors.border}`,
+          boxShadow: showPlacemarks ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
+        }}
+        onMouseEnter={(e) => {
+          if (!showPlacemarks) outlinedHoverOn(e);
+        }}
+        onMouseLeave={(e) => {
+          if (!showPlacemarks) outlinedHoverOff(e);
+        }}
+      >
+        <Bookmark size={16} />
+        Placemarks
       </button>
 
       {divider}

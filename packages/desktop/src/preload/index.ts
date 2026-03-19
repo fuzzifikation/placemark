@@ -52,4 +52,10 @@ contextBridge.exposeInMainWorld('api', {
     getSystemLocale: () => ipcRenderer.invoke('system:getSystemLocale'),
     openExternal: (url: string) => ipcRenderer.invoke('system:openExternal', url),
   },
+  placemarks: {
+    getAll: () => ipcRenderer.invoke('placemarks:getAll'),
+    create: (input: unknown) => ipcRenderer.invoke('placemarks:create', input),
+    update: (input: unknown) => ipcRenderer.invoke('placemarks:update', input),
+    delete: (id: number) => ipcRenderer.invoke('placemarks:delete', id),
+  },
 });

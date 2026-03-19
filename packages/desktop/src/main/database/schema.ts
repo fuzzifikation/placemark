@@ -51,6 +51,22 @@ const SCHEMA_SQL = `
 
   CREATE INDEX IF NOT EXISTS idx_operation_batch_files_batch ON operation_batch_files(batch_id);
   CREATE INDEX IF NOT EXISTS idx_operation_batch_files_photo ON operation_batch_files(photo_id);
+
+  CREATE TABLE IF NOT EXISTS placemarks (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    type         TEXT NOT NULL DEFAULT 'user' CHECK(type IN ('user', 'suggested')),
+    bounds_north REAL,
+    bounds_south REAL,
+    bounds_east  REAL,
+    bounds_west  REAL,
+    date_start   TEXT,
+    date_end     TEXT,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_placemarks_type ON placemarks(type);
 `;
 
 export function initializeDatabase(options: DatabaseOptions): Database.Database {

@@ -3,6 +3,7 @@
 
 export * from './models/Photo';
 export * from './models/Operation';
+export * from './models/Placemark';
 export * from './operations/planner';
 export * from './operations/validator';
 export * from './filters/geographic';

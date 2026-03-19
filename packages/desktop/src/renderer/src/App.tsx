@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { MapView, SelectionMode } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { Settings, AppSettings, DEFAULT_SETTINGS } from './components/Settings';
 import { OperationsPanel } from './components/Operations/OperationsPanel';
 import { LibraryStatsPanel } from './components/LibraryStatsPanel';
+import { PlacemarksPanel } from './components/PlacemarksPanel';
 import { FloatingHeader } from './components/FloatingHeader';
 import { HelpModal } from './components/HelpModal';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
@@ -13,6 +14,7 @@ import { usePhotoData } from './hooks/usePhotoData';
 import { useTheme } from './hooks/useTheme';
 import { useFolderScan } from './hooks/useFolderScan';
 import { useToast } from './hooks/useToast';
+import { usePlacemarks } from './hooks/usePlacemarks';
 import { ToastContainer } from './components/Toast/ToastContainer';
 import { initSystemLocale } from './utils/formatLocale';
 import './types/preload.d'; // Import type definitions
@@ -46,14 +48,25 @@ function App() {
   const { theme, colors, toggleTheme } = useTheme();
   const folderScan = useFolderScan();
   const toast = useToast();
+  const placemarks = usePlacemarks();
 
   // Component state
   const [showTimeline, setShowTimeline] = useState(false);
+  const [isTimelinePlaying, setIsTimelinePlaying] = useState(false);
+  // Suppresses the first onViewChange after a programmatic fly-to (placemark activation)
+  const suppressNextViewChangeRef = useRef(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showOperations, setShowOperations] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showPlacemarks, setShowPlacemarks] = useState(false);
   const [showScanOverlay, setShowScanOverlay] = useState(false);
+  const [targetMapBounds, setTargetMapBounds] = useState<{
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  } | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [lastSelectedDateRange, setLastSelectedDateRange] = useState<{
     start: number;
@@ -146,6 +159,80 @@ function App() {
     // useEffect will auto-show scan overlay since photos.length becomes 0
   };
 
+  const handleViewChange = useCallback(
+    (bounds: { north: number; south: number; east: number; west: number }) => {
+      if (suppressNextViewChangeRef.current) {
+        // Ignore the moveend from the programmatic fly-to that placemark activation triggers
+        suppressNextViewChangeRef.current = false;
+      } else if (placemarks.activePlacemarkId !== null) {
+        // User panned/zoomed away — the view no longer matches the saved placemark
+        placemarks.setActivePlacemarkId(null);
+      }
+      photoData.trackMapBounds(bounds);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [placemarks.activePlacemarkId]
+  );
+
+  const handleActivatePlacemark = (id: number | 'thisYear' | 'last3Months' | null) => {
+    placemarks.setActivePlacemarkId(id);
+
+    if (id === null) {
+      // Only clear the map target; leave the timeline filter as-is
+      setTargetMapBounds(null);
+      return;
+    }
+
+    if (id === 'thisYear') {
+      const now = new Date();
+      const rangeMin = photoData.dateRange?.min;
+      const rangeMax = photoData.dateRange?.max;
+      const start = Math.max(new Date(now.getFullYear(), 0, 1).getTime(), rangeMin ?? 0);
+      const end = Math.min(now.getTime(), rangeMax ?? now.getTime());
+      photoData.filterByDateRange(start, end);
+      setLastSelectedDateRange({ start, end });
+      setShowTimeline(true);
+      setTargetMapBounds(null);
+      return;
+    }
+
+    if (id === 'last3Months') {
+      const now = Date.now();
+      const rangeMin = photoData.dateRange?.min;
+      const rangeMax = photoData.dateRange?.max;
+      const start = Math.max(now - 90 * 24 * 60 * 60 * 1000, rangeMin ?? 0);
+      const end = Math.min(now, rangeMax ?? now);
+      photoData.filterByDateRange(start, end);
+      setLastSelectedDateRange({ start, end });
+      setShowTimeline(true);
+      setTargetMapBounds(null);
+      return;
+    }
+
+    // User-saved placemark
+    const p = placemarks.placemarks.find((x) => x.id === id);
+    if (!p) return;
+
+    if (p.bounds) {
+      suppressNextViewChangeRef.current = true;
+      setTargetMapBounds({ ...p.bounds });
+    } else {
+      setTargetMapBounds(null);
+    }
+
+    if (p.dateStart || p.dateEnd) {
+      const start = p.dateStart
+        ? new Date(p.dateStart).getTime()
+        : (photoData.dateRange?.min ?? Date.now());
+      const end = p.dateEnd
+        ? new Date(p.dateEnd).getTime()
+        : (photoData.dateRange?.max ?? Date.now());
+      photoData.filterByDateRange(start, end);
+      setLastSelectedDateRange({ start, end });
+      setShowTimeline(true);
+    }
+  };
+
   const handleTimelineToggle = () => {
     const newShowTimeline = !showTimeline;
     setShowTimeline(newShowTimeline);
@@ -161,9 +248,10 @@ function App() {
   };
 
   const handleDateRangeChange = (start: number, end: number) => {
-    // If autoZoom is ON, we want to find ALL photos in the new date range (ignoring current map bounds)
-    // so the map can auto-fit to them.
-    // If autoZoom is OFF, we only want to see photos in the CURRENT view.
+    // User dragged the timeline — no longer viewing the saved placemark
+    if (placemarks.activePlacemarkId !== null) {
+      placemarks.setActivePlacemarkId(null);
+    }
     photoData.filterByDateRange(start, end);
     // Remember this selection for when timeline is reopened
     setLastSelectedDateRange({ start, end });
@@ -204,7 +292,7 @@ function App() {
               setSelectedPhoto(photo);
             }
           }}
-          onViewChange={photoData.trackMapBounds}
+          onViewChange={handleViewChange}
           clusteringEnabled={settings.clusteringEnabled}
           clusterRadius={settings.clusterRadius}
           clusterMaxZoom={settings.clusterMaxZoom}
@@ -212,7 +300,9 @@ function App() {
           tileMaxZoom={settings.tileMaxZoom}
           padding={settings.mapPadding}
           autoFit={
-            showTimeline && settings.autoZoomDuringPlay ? photoData.filterSource !== 'map' : false
+            showTimeline && settings.autoZoomDuringPlay && isTimelinePlaying
+              ? photoData.filterSource !== 'map'
+              : false
           }
           theme={theme}
           showHeatmap={settings.showHeatmap}
@@ -239,6 +329,7 @@ function App() {
             bottom: showTimeline ? settings.mapPadding + 160 : settings.mapPadding,
             left: settings.mapPadding,
           }}
+          targetBounds={targetMapBounds}
         />
       </div>
 
@@ -250,6 +341,7 @@ function App() {
           selectionMode={selectionMode}
           dateRangeAvailable={!!photoData.dateRange}
           showTimeline={showTimeline}
+          showPlacemarks={showPlacemarks}
           scanning={folderScan.scanning}
           colors={colors}
           glassBlur={settings.glassBlur}
@@ -259,6 +351,7 @@ function App() {
           onSettingsOpen={() => setShowSettings(true)}
           onStatsOpen={() => setShowStats(true)}
           onTimelineToggle={handleTimelineToggle}
+          onPlacemarksToggle={() => setShowPlacemarks((v) => !v)}
           onScanFolder={() => setShowScanOverlay(true)}
           onClearLibrary={handleClearLibrary}
           onHelpOpen={() => setShowHelp(true)}
@@ -336,6 +429,7 @@ function App() {
             onAutoZoomToggle={() =>
               setSettings((prev) => ({ ...prev, autoZoomDuringPlay: !prev.autoZoomDuringPlay }))
             }
+            onPlayingChange={setIsTimelinePlaying}
           />
         </div>
       )}
@@ -348,6 +442,26 @@ function App() {
           theme={theme}
           onThemeChange={toggleTheme}
           toast={toast}
+        />
+      )}
+
+      {/* Placemarks Panel - left-side floating glass panel for saved geo+time filters */}
+      {!showScanOverlay && showPlacemarks && (
+        <PlacemarksPanel
+          placemarks={placemarks.placemarks}
+          smartCounts={placemarks.smartCounts}
+          activePlacemarkId={placemarks.activePlacemarkId}
+          currentBounds={photoData.mapBounds ?? null}
+          currentDateRange={photoData.selectedDateRange}
+          onActivate={handleActivatePlacemark}
+          onCreate={placemarks.createPlacemark}
+          onDelete={placemarks.deletePlacemark}
+          onClose={() => setShowPlacemarks(false)}
+          theme={theme}
+          glassBlur={settings.glassBlur}
+          glassSurfaceOpacity={settings.glassSurfaceOpacity}
+          showTimeline={showTimeline}
+          reverseGeocodeEnabled={settings.reverseGeocodeEnabled}
         />
       )}
 

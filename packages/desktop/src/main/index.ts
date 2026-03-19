@@ -79,12 +79,14 @@ app.whenReady().then(async () => {
   try {
     // Register handlers
     // Dynamically import heavyweight modules (SQLite, Sharp) in parallel
-    const [photosModule, opsModule, storageModule, systemModule] = await Promise.all([
-      import('./ipc/photos'),
-      import('./ipc/operations'),
-      import('./services/storage'),
-      import('./ipc/system'),
-    ]);
+    const [photosModule, opsModule, storageModule, systemModule, placemarksModule] =
+      await Promise.all([
+        import('./ipc/photos'),
+        import('./ipc/operations'),
+        import('./services/storage'),
+        import('./ipc/system'),
+        import('./ipc/placemarks'),
+      ]);
 
     // Assign cleanup functions
     closeStorage = storageModule.closeStorage;
@@ -99,6 +101,7 @@ app.whenReady().then(async () => {
     // Pass a getter function so it can access win after createWindow()
     opsModule.registerOperationHandlers(() => win);
     systemModule.registerSystemHandlers();
+    placemarksModule.registerPlacemarksHandlers();
 
     createWindow();
   } catch (error) {

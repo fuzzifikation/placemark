@@ -127,6 +127,7 @@ export function usePhotoData() {
     mapPhotos, // Date-filtered photos for map display (no bounds filtering)
     allPhotos: allPhotosRef.current, // Expose for checking length/empty state
     visibleInBoundsCount, // Count of photos in current map view
+    mapBounds,
     dateRange,
     selectedDateRange,
     loading,

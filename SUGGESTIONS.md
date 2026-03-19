@@ -9,6 +9,30 @@
 
 ---
 
+## UI / Layout
+
+- **Align all floating glass panels to a shared layout grid.** The floating panels (FloatingHeader, PlacemarksPanel, Timeline, and any future panels) each use ad-hoc `top`, `left`, `bottom`, `right` offsets that are not coordinated. This results in misaligned edges that look inconsistent. Define a small set of layout constants (e.g. `PANEL_EDGE_OFFSET`, `PANEL_TOP`, `PANEL_BOTTOM`) in `ui.ts` and apply them uniformly across all panels so their edges snap to the same invisible grid lines. All four sides should be considered: left-aligned panels share the same `left` value, top-anchored panels share the same `top` value, and so on.
+
+---
+
+## Placemarks
+
+- **Dedicated "Placemarks" settings tab.** Move all placemarks-related toggles (e.g. `reverseGeocodeEnabled`) and all timeline-related settings (auto-zoom during play, play speed, timeline update interval) out of the Map and Library tabs and into a new "Placemarks" tab in the Settings modal. Keeps related controls together and reduces clutter in other tabs.
+
+- **Opening the Placemarks panel should automatically open the Timeline.** The two features are tightly coupled — placemarks store a date range, and the timeline reflects it. Opening the panel without the timeline is incomplete. When the user opens the Placemarks panel (via the toolbar button), the timeline should automatically appear if it isn't already visible.
+
+- **"Fit timeline to view" — clamp date range and viewport to visible photos.** Add the ability to compute the min/max dates of the photos currently visible in the map viewport and apply that as the active timeline filter. Two candidate approaches — could coexist:
+  - **Automatic on placemark activate.** When a placemark is selected, compute the date range from the photos in that placemark's map bounds and snap the timeline to that range instead of using the stored range.
+  - **Button in the Placemarks panel.** A small "Fit dates to view" button per placemark row (or in the panel header). On click, finds the min/max dates of currently visible photos and updates the timeline filter. Gives the user explicit control without surprising auto-behavior.
+
+- **Update (overwrite) an existing placemark's saved location.** Currently hovering a placemark row shows a delete button. Add a second hover action — a "Save here" or "Update" button — that overwrites the placemark's stored map bounds (and optionally date range) with the current map view and active timeline filter. This lets users refine a placemark after moving the map without having to delete and recreate it. The two hover buttons (Update + Delete) should be visually distinct to avoid accidental overwrites. The same hover state (or a subsequent inline edit mode) should also allow renaming — either an inline text field that appears on the row, or a double-click-to-rename gesture, so users don't need to delete and recreate just to fix a name.
+
+- **Align photo counts between Smart Placemarks and My Placemarks rows.** Photo counts are shown in both sections but their horizontal position is inconsistent — the Smart Placemarks count sits further right (pushed by the layout) while the My Placemarks count appears at a different offset. The Smart Placemarks position looks better. Normalise both rows so the photo count badge is always right-aligned at the same column, regardless of section.
+
+- **Show date range below the location label in placemark rows.** Currently the date range is displayed inline on the same line as the location name, causing it to overflow and become unreadable for longer place names. Move the date range to a second line beneath the location label (or beneath the name if no location is set). This keeps the row compact while making both pieces of information fully visible.
+
+---
+
 ### Small improvements (up to half a day each)
 
 ---
@@ -33,6 +57,8 @@
 - **Lasso overhaul: navigable select mode.** Currently lasso freezes the map. Proposed model: normal drag = pan (map always navigable), Shift+drag = add to selection, Alt+drag = remove from selection, Ctrl+A = select all (scoped to active timeline filter), Escape = exit lasso. The floating header should show a compact shortcut legend while lasso is active. _(consolidates: lasso navigation, Shift/Alt drag model, Ctrl+A, and in-map cheatsheet)_
 - **Operation history UI.** Archived batches persist in the database but there is no UI. Add a Settings panel listing past copy/move operations with an "Export to JSON" option. History is informational only — file existence cannot be guaranteed after the fact.
 - **[Low] Collapsible top floating toolbar.** Let the user hide/collapse the header bar for a clean full-screen map view.
+
+- **[Advanced / Experimental] 3D spatio-temporal photo graph.** Visualise the photo collection as a 3D scatter plot where X and Y are geographic coordinates (longitude/latitude) and Z is time. Each dot is a photo. The result is a "time tower" — clusters rise vertically as you photograph the same place across years. Interactions: slow auto-rotation, click-to-select a photo, timeline scrubbing animates the Z-slice. Optional map texture projected onto the XY plane as a ground overlay (raster tiles reprojected to screen space). Gate behind an "Advanced visualisations" setting to avoid overwhelming casual users. Candidate renderer: Three.js or deck.gl (both work in Electron's renderer process without a GPU server).
 
 ---
 

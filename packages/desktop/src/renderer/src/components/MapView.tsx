@@ -98,6 +98,8 @@ interface MapViewProps {
   unclusteredPointOpacity?: number;
   // Fit-to-content padding — accounts for floating header (top) and timeline (bottom)
   fitPadding?: { top: number; right: number; bottom: number; left: number };
+  // When set, the map flies to these bounds (e.g. when activating a saved placemark)
+  targetBounds?: { north: number; south: number; east: number; west: number } | null;
 }
 
 export function MapView({
@@ -123,6 +125,7 @@ export function MapView({
   clusterOpacity = 0.85,
   unclusteredPointOpacity = 0.9,
   fitPadding,
+  targetBounds,
 }: MapViewProps) {
   // ========== STATE ==========
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -263,6 +266,24 @@ export function MapView({
       clearSpider(false);
     }
   }, [currentZoom, isSpiderActive, clearSpider, spiderSettings.clearZoom]);
+
+  // ========== TARGET BOUNDS NAVIGATION ==========
+  // Fly to bounds when a placemark is activated
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current || !targetBounds) return;
+    const { north, south, east, west } = targetBounds;
+    mapRef.current.fitBounds(
+      [
+        [west, south],
+        [east, north],
+      ],
+      {
+        padding: fitPadding ?? { top: padding, right: padding, bottom: padding, left: padding },
+        duration: transitionDuration,
+      }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetBounds, mapLoaded]);
 
   // ========== MAP CONTROLS GLASS STYLE ==========
   // Inject CSS overrides for MapLibre NavigationControl to match the floating header glass style.

@@ -65,6 +65,8 @@ export interface AppSettings {
   // Glassmorphism UI Effects
   glassBlur: number; // Backdrop blur in pixels (0-30)
   glassSurfaceOpacity: number; // Glass surface opacity 0-100 (%)
+  // Privacy
+  reverseGeocodeEnabled: boolean; // Allow network calls to Nominatim to label saved placemarks
 }
 
 // SINGLE SOURCE OF TRUTH: All default values are defined here
@@ -100,6 +102,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // Glassmorphism defaults
   glassBlur: 5, // 5px blur
   glassSurfaceOpacity: 30, // 30% opacity
+  // Privacy defaults
+  reverseGeocodeEnabled: false, // opt-in, not opt-out
 };
 
 // Default spider settings as a SpiderSettings object
@@ -199,6 +203,7 @@ export function Settings({
 
   const resetLibrary = () => {
     updateSetting('maxFileSizeMB', DEFAULT_SETTINGS.maxFileSizeMB);
+    updateSetting('reverseGeocodeEnabled', DEFAULT_SETTINGS.reverseGeocodeEnabled);
     toast.success('Library settings reset');
   };
 

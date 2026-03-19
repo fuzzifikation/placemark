@@ -31,6 +31,7 @@ interface TimelineProps {
   theme: Theme;
   autoZoomDuringPlay: boolean;
   onAutoZoomToggle: () => void;
+  onPlayingChange?: (isPlaying: boolean) => void;
 }
 
 export function Timeline({
@@ -49,6 +50,7 @@ export function Timeline({
   theme,
   autoZoomDuringPlay,
   onAutoZoomToggle,
+  onPlayingChange,
 }: TimelineProps) {
   const [localStart, setLocalStart] = useState(startDate);
   const [localEnd, setLocalEnd] = useState(endDate);
@@ -102,6 +104,11 @@ export function Timeline({
       currentStart,
       currentEnd,
     });
+
+  // Notify parent when playback state changes
+  useEffect(() => {
+    onPlayingChange?.(isPlaying);
+  }, [isPlaying, onPlayingChange]);
 
   // Drag logic
   const {
