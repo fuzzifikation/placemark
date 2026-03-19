@@ -23,6 +23,11 @@
 
 ### Larger work (1–3 days)
 
+- **Dense cluster drill-down.** When a cluster exceeds ~30 photos at the same location (e.g. home), the spider doesn't scale. Two candidate approaches — both can coexist:
+  - **Filmstrip panel (Option B).** Clicking a dense cluster opens a floating horizontal thumbnail strip at the bottom of the map — 5–8 thumbnails visible, scrollable, with a local mini-scrubber above showing the temporal distribution of just those photos. No map explosion; the map stays calm. Feels like "drill into this place."
+
+  - **Investigate button.** A button appears (on the cluster popup or filmstrip) labeled "Investigate" or "Open in viewer". Clicking it opens the cluster's photos sorted by time in a dedicated list or viewer. Implementation TBD — options include: opening a temporary folder with symlinks/shortcuts and launching the system viewer, an in-app photo grid panel, or piping the file list to an external app. Leave this open until a clean approach is clear.
+
 - **Lasso overhaul: navigable select mode.** Currently lasso freezes the map. Proposed model: normal drag = pan (map always navigable), Shift+drag = add to selection, Alt+drag = remove from selection, Ctrl+A = select all (scoped to active timeline filter), Escape = exit lasso. The floating header should show a compact shortcut legend while lasso is active. _(consolidates: lasso navigation, Shift/Alt drag model, Ctrl+A, and in-map cheatsheet)_
 - **Operation history UI.** Archived batches persist in the database but there is no UI. Add a Settings panel listing past copy/move operations with an "Export to JSON" option. History is informational only — file existence cannot be guaranteed after the fact.
 - **[Low] Collapsible top floating toolbar.** Let the user hide/collapse the header bar for a clean full-screen map view.

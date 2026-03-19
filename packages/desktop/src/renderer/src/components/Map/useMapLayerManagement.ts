@@ -310,16 +310,19 @@ export function useMapLayerManagement({
       data: legsGeoJSON,
     });
 
-    // Add spider legs layer
-    mapRef.current.addLayer({
-      id: 'spider-legs',
-      type: 'line',
-      source: 'spider-legs',
-      paint: {
-        'line-color': '#666',
-        'line-width': 1.5,
-        'line-opacity': 0.7,
+    // Add spider legs layer — below unclustered-point so pins render on top of legs
+    mapRef.current.addLayer(
+      {
+        id: 'spider-legs',
+        type: 'line',
+        source: 'spider-legs',
+        paint: {
+          'line-color': '#666',
+          'line-width': 1.5,
+          'line-opacity': 0.7,
+        },
       },
-    });
+      'unclustered-point'
+    );
   }, [spiderState, mapLoaded, mapRef]);
 }

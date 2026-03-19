@@ -1,5 +1,20 @@
 # Release Notes
 
+## v0.7.4 - Timeline Histogram & Spider Improvements (2026-03-19)
+
+### ✨ Improvements
+
+- **Timeline histogram:** A two-layer bar chart now appears behind the range scrubber showing photo density over time. Blue bars show GPS-tagged photos; grey bars show non-GPS photos. 100 equi-temporal buckets, bars touch edge-to-edge. The controls row now shows "Showing: x of y photos" with an "All: minDate – maxDate" subtitle so the full library span is always visible.
+- **Multi-ring spider layout:** Dense clusters now distribute across concentric rings instead of cramming onto one circle. Each ring's capacity is calculated so markers never visually overlap. Outer rings use multipliers of the base radius (`×1.7`, `×2.4`, `×3.1`, `×3.8`), with alternate rings staggered by a half-step angle to avoid radial alignment.
+- **Spider legs render below markers:** Spider leg lines now draw underneath photo pins so inner-ring markers are always clearly visible.
+- **Help modal:** A `?` button in the floating header opens a keyboard shortcuts reference covering Selection Mode and Map Navigation.
+
+### 🐛 Bug Fixes
+
+- **Unused imports removed:** `PLAY_SPEEDS` import in `useTimelinePlayback.ts` and unused `showHeatmap` parameter in `mapLayers.ts` removed — TypeScript now compiles with zero errors.
+
+---
+
 ## v0.7.3 - Settings Polish (2026-03-19)
 
 ### ✨ Improvements
