@@ -65,6 +65,12 @@ export interface PhotosAPI {
   getDatabaseStats: () => Promise<DatabaseStats>;
   getLibraryStats: () => Promise<LibraryStats>;
   clearDatabase: () => Promise<void>;
+  getHistogram: (
+    minDate: number,
+    maxDate: number,
+    bucketCount: number,
+    gpsOnly: boolean
+  ) => Promise<{ bucket: number; count: number }[]>;
   onScanProgress: (callback: (progress: ScanProgress) => void) => () => void;
 }
 

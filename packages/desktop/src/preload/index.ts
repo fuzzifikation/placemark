@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('api', {
     getDatabaseStats: () => ipcRenderer.invoke('photos:getDatabaseStats'),
     getLibraryStats: () => ipcRenderer.invoke('photos:getLibraryStats'),
     clearDatabase: () => ipcRenderer.invoke('photos:clearDatabase'),
+    getHistogram: (minDate: number, maxDate: number, bucketCount: number, gpsOnly: boolean) =>
+      ipcRenderer.invoke('photos:getHistogram', minDate, maxDate, bucketCount, gpsOnly),
     onScanProgress: (callback: (progress: any) => void) => {
       const listener = (_event: any, progress: any) => callback(progress);
       ipcRenderer.on('photos:scanProgress', listener);

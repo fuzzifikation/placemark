@@ -299,7 +299,7 @@ function App() {
             border: `1px solid ${colors.glassBorder}`,
             borderRadius: '16px',
             boxShadow: colors.shadow,
-            padding: '1rem',
+            padding: '0.25rem 1rem 1rem',
             transition: 'all 0.3s ease',
             pointerEvents: selectionMode === 'lasso' ? 'none' : 'auto',
             opacity: selectionMode === 'lasso' ? 0.5 : 1,

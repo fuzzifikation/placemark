@@ -10,6 +10,7 @@ import {
   clearAllPhotos,
   getPhotoDateRange,
   getPhotosWithLocationInDateRange,
+  getPhotoHistogram,
   closeStorage,
   getPhotoById,
   getLibraryStats,
@@ -198,6 +199,14 @@ export function registerPhotoHandlers(): void {
   ipcMain.handle('photos:getLibraryStats', async () => {
     return getLibraryStats();
   });
+
+  // Histogram of photo counts per equi-temporal bucket
+  ipcMain.handle(
+    'photos:getHistogram',
+    async (_event, minDate: number, maxDate: number, bucketCount: number, gpsOnly: boolean) => {
+      return getPhotoHistogram(minDate, maxDate, bucketCount, gpsOnly);
+    }
+  );
 
   // Get thumbnail for photo
   ipcMain.handle('thumbnails:get', async (_event, photoId: number, photoPath: string) => {

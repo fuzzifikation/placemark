@@ -150,6 +150,41 @@ export function getPhotoDateRange(): { minDate: number | null; maxDate: number |
 }
 
 /**
+ * Histogram of photo counts per equi-temporal bucket.
+ * @param minDate     Range start (Unix ms)
+ * @param maxDate     Range end (Unix ms)
+ * @param bucketCount Number of buckets (e.g. 100)
+ * @param gpsOnly     When true, only photos with GPS coordinates are counted
+ */
+export function getPhotoHistogram(
+  minDate: number,
+  maxDate: number,
+  bucketCount: number,
+  gpsOnly: boolean
+): { bucket: number; count: number }[] {
+  const bucketWidth = (maxDate - minDate) / bucketCount;
+  if (bucketWidth <= 0) return [];
+
+  const gpsClause = gpsOnly ? 'AND latitude IS NOT NULL AND longitude IS NOT NULL' : '';
+  const rows = getDb()
+    .prepare(
+      `SELECT
+        MIN(CAST((timestamp - :min) / :width AS INTEGER), :n - 1) AS bucket,
+        COUNT(*) AS count
+       FROM photos
+       WHERE timestamp BETWEEN :min AND :max
+         ${gpsClause}
+       GROUP BY bucket
+       ORDER BY bucket`
+    )
+    .all({ min: minDate, max: maxDate, width: bucketWidth, n: bucketCount }) as {
+    bucket: number;
+    count: number;
+  }[];
+  return rows;
+}
+
+/**
  * Get photos with location data filtered by date range
  * @param startTimestamp Start of range (Unix milliseconds) or null for no lower bound
  * @param endTimestamp End of range (Unix milliseconds) or null for no upper bound

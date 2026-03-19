@@ -62,7 +62,7 @@ export function TimelineSlider({
         onPointerUp={onPointerUp}
         style={{
           position: 'relative',
-          height: '60px',
+          height: '40px',
           cursor: isDragging ? 'grabbing' : 'default',
         }}
       >
@@ -168,12 +168,12 @@ export function TimelineSlider({
             }
           }}
         />
-        {/* Start date label - moves with thumb */}
+        {/* Start date label - moves with thumb, shown below */}
         <div
           style={{
             position: 'absolute',
             left: `${startPosition * 100}%`,
-            top: '0px',
+            bottom: '-30px',
             transform: 'translateX(-50%)',
             fontSize: '0.75rem',
             color: colors.primary,
@@ -184,12 +184,12 @@ export function TimelineSlider({
         >
           {formatDate(localStart)}
         </div>
-        {/* End date label - moves with thumb */}
+        {/* End date label - moves with thumb, shown below */}
         <div
           style={{
             position: 'absolute',
             left: `${endPosition * 100}%`,
-            top: '0px',
+            bottom: '-30px',
             transform: 'translateX(-50%)',
             fontSize: '0.75rem',
             color: colors.primary,
@@ -199,29 +199,6 @@ export function TimelineSlider({
           }}
         >
           {formatDate(localEnd)}
-        </div>
-        {/* Timeline boundary dates - fixed */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            bottom: '0px',
-            fontSize: '0.7rem',
-            color: colors.textMuted,
-          }}
-        >
-          {formatDate(minDate)}
-        </div>
-        <div
-          style={{
-            position: 'absolute',
-            right: 0,
-            bottom: '0px',
-            fontSize: '0.7rem',
-            color: colors.textMuted,
-          }}
-        >
-          {formatDate(maxDate)}
         </div>
       </div>
     </div>

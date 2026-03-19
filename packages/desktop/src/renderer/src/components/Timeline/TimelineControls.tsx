@@ -4,6 +4,7 @@
 
 import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { formatDateWithOptions } from '../../utils/formatLocale';
 
 export type PlaySpeed = 'week' | 'month' | 'sixMonths';
 
@@ -16,6 +17,8 @@ export const PLAY_SPEEDS: Record<PlaySpeed, { increment: number; label: string }
 interface TimelineControlsProps {
   totalPhotos: number;
   filteredPhotos: number;
+  minDate: number;
+  maxDate: number;
   isPlaying: boolean;
   playSpeed: PlaySpeed;
   onPlayPause: () => void;
@@ -29,6 +32,8 @@ interface TimelineControlsProps {
 export function TimelineControls({
   totalPhotos,
   filteredPhotos,
+  minDate,
+  maxDate,
   isPlaying,
   playSpeed,
   onPlayPause,
@@ -53,9 +58,19 @@ export function TimelineControls({
         alignItems: 'center',
       }}
     >
-      <span style={{ fontSize: '0.875rem', fontWeight: 500, color: colors.textPrimary }}>
-        Timeline: {filteredPhotos} of {totalPhotos} photos
-      </span>
+      <div
+        style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', paddingTop: '0.25rem' }}
+      >
+        <span style={{ fontSize: '0.875rem', fontWeight: 500, color: colors.textPrimary }}>
+          Showing: {filteredPhotos} of {totalPhotos} photos
+        </span>
+        <span style={{ fontSize: '0.7rem', color: colors.textMuted }}>
+          {'All: '}
+          {formatDateWithOptions(minDate, { year: 'numeric', month: 'short', day: 'numeric' })}
+          {' – '}
+          {formatDateWithOptions(maxDate, { year: 'numeric', month: 'short', day: 'numeric' })}
+        </span>
+      </div>
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
         {/* Auto Zoom Toggle */}
         <label
