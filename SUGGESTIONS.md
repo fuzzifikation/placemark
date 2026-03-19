@@ -11,7 +11,6 @@
 
 ### Small improvements (up to half a day each)
 
-- **Floating header: replace bare dividers with visual pill containers.** The `|` separators are barely visible. Wrap [Clear | Add] in one pill and [Select | Organize] in another so the grouping is immediately legible.
 - **Expose timeline playback speed increments in Settings.** The three speeds (▶ = 7 days, ▶▶ = 30 days, ▶▶▶ = 180 days per tick) are hard-coded in `TimelineControls.tsx`. Move them to the Timeline settings tab alongside the existing update-interval slider.
 - **[Low] Setting: single-click pin opens system photo viewer.** An opt-in setting so clicking a photo pin directly opens the OS default photo viewer, bypassing the in-app preview.
 
@@ -49,3 +48,4 @@
 - **Heatmap additive, not exclusive.** Removed the `setLayoutProperty('visibility', 'none')` calls for cluster layers in `mapLayers.ts` so heatmap and clusters coexist.
 
 - **Inconsistent hover effects on floating header buttons.** Some outlined buttons showed a blue border flash on hover (Add, Organize) while others didn't; scale factor and shadow also differed. Fixed by extracting shared `outlinedHoverOn/Off` handlers applied uniformly to all outlined buttons.
+- **Floating header: replace bare dividers with visual pill containers.** Wrapped [Clear | Add] and [Select | Organize] button groups in invisible pill containers with "Library" and "Tools" labels positioned below for clear topic identification. Strengthened dividers (40px tall, textMuted color) and made header/buttons more dense for improved visual hierarchy.

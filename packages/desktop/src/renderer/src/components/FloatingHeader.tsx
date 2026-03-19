@@ -59,16 +59,16 @@ export function FloatingHeader({
     <div
       style={{
         width: '1px',
-        height: '24px',
-        backgroundColor: colors.border,
-        opacity: 0.5,
+        height: '40px',
+        backgroundColor: colors.textMuted,
+        opacity: 0.6,
         flexShrink: 0,
       }}
     />
   );
 
   const outlinedButtonBase: React.CSSProperties = {
-    padding: `${SPACING.SM} ${SPACING.LG}`,
+    padding: `${SPACING.XS} ${SPACING.MD}`,
     fontSize: FONT_SIZE.SM,
     fontWeight: FONT_WEIGHT.MEDIUM,
     border: `1px solid ${colors.border}`,
@@ -95,6 +95,13 @@ export function FloatingHeader({
     width: '36px',
     height: '36px',
     transform: 'scale(1)',
+  };
+
+  const pillContainer: React.CSSProperties = {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    gap: SPACING.SM,
   };
 
   const iconButtonHoverOn = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -124,7 +131,7 @@ export function FloatingHeader({
         position: 'absolute',
         top: SPACING.LG,
         left: SPACING.LG,
-        padding: `${SPACING.MD} ${SPACING.XL}`,
+        padding: `${SPACING.SM} ${SPACING.LG}`,
         backgroundColor: `rgba(${
           colors.glassSurface.includes('255') ? '255, 255, 255' : '30, 41, 59'
         }, ${glassSurfaceOpacity / 100})`,
@@ -135,7 +142,7 @@ export function FloatingHeader({
         boxShadow: colors.shadow,
         display: 'flex',
         alignItems: 'center',
-        gap: SPACING.LG,
+        gap: SPACING.MD,
         zIndex: Z_INDEX.HEADER,
         transition: 'background-color 0.2s ease, border-color 0.2s ease',
       }}
@@ -177,46 +184,64 @@ export function FloatingHeader({
       {divider}
 
       {/* ── Group 2: Library DB — Clear & Add ────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.SM }}>
-        {/* Clear Library */}
-        <button
-          onClick={onClearLibrary}
-          className="floating-header-button"
-          style={{
-            ...outlinedButtonBase,
-            backgroundColor: 'transparent',
-            color: colors.textPrimary,
-          }}
-          onMouseEnter={outlinedHoverOn}
-          onMouseLeave={outlinedHoverOff}
-          title="Clear library (remove all photos from database)"
-        >
-          <Trash2 size={16} />
-          Clear
-        </button>
+      <div style={pillContainer}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.SM }}>
+          {/* Clear Library */}
+          <button
+            onClick={onClearLibrary}
+            className="floating-header-button"
+            style={{
+              ...outlinedButtonBase,
+              backgroundColor: 'transparent',
+              color: colors.textPrimary,
+            }}
+            onMouseEnter={outlinedHoverOn}
+            onMouseLeave={outlinedHoverOff}
+            title="Clear library (remove all photos from database)"
+          >
+            <Trash2 size={16} />
+            Clear
+          </button>
 
-        {/* Add Folder */}
-        <button
-          onClick={onScanFolder}
-          disabled={scanning}
-          className="floating-header-button"
+          {/* Add Folder */}
+          <button
+            onClick={onScanFolder}
+            disabled={scanning}
+            className="floating-header-button"
+            style={{
+              ...outlinedButtonBase,
+              backgroundColor: 'transparent',
+              color: scanning ? colors.textMuted : colors.textPrimary,
+              opacity: scanning ? 0.6 : 1,
+              cursor: scanning ? 'not-allowed' : 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              if (!scanning) outlinedHoverOn(e);
+            }}
+            onMouseLeave={(e) => {
+              if (!scanning) outlinedHoverOff(e);
+            }}
+          >
+            <FolderPlus size={16} />
+            Add
+          </button>
+        </div>
+
+        <div
           style={{
-            ...outlinedButtonBase,
-            backgroundColor: 'transparent',
-            color: scanning ? colors.textMuted : colors.textPrimary,
-            opacity: scanning ? 0.6 : 1,
-            cursor: scanning ? 'not-allowed' : 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            if (!scanning) outlinedHoverOn(e);
-          }}
-          onMouseLeave={(e) => {
-            if (!scanning) outlinedHoverOff(e);
+            position: 'absolute',
+            bottom: '-12px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: FONT_SIZE.XS,
+            color: colors.textMuted,
+            fontWeight: 400,
+            fontFamily: FONT_FAMILY,
+            whiteSpace: 'nowrap',
           }}
         >
-          <FolderPlus size={16} />
-          Add
-        </button>
+          Library
+        </div>
       </div>
 
       {divider}
@@ -258,57 +283,75 @@ export function FloatingHeader({
       {divider}
 
       {/* ── Group 4: File Tools — Select & Organize ───────── */}
-      <div style={{ display: 'flex', gap: SPACING.SM }}>
-        {/* Select (Lasso) */}
-        <button
-          title={
-            selectionMode === 'lasso'
-              ? 'Exit Selection Mode'
-              : 'Enter Selection Mode (Shift+Drag to add, Alt+Drag to remove)'
-          }
-          onClick={onSelectionModeToggle}
-          className="floating-header-button"
-          style={{
-            ...outlinedButtonBase,
-            backgroundColor: selectionMode === 'lasso' ? colors.primary : 'transparent',
-            color: selectionMode === 'lasso' ? colors.buttonText : colors.textPrimary,
-            border: selectionMode === 'lasso' ? 'none' : `1px solid ${colors.border}`,
-            boxShadow: selectionMode === 'lasso' ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
-          }}
-          onMouseEnter={(e) => {
-            if (selectionMode !== 'lasso') outlinedHoverOn(e);
-          }}
-          onMouseLeave={(e) => {
-            if (selectionMode !== 'lasso') outlinedHoverOff(e);
-          }}
-        >
-          <Lasso size={16} />
-          Select
-        </button>
+      <div style={pillContainer}>
+        <div style={{ display: 'flex', gap: SPACING.SM }}>
+          {/* Select (Lasso) */}
+          <button
+            title={
+              selectionMode === 'lasso'
+                ? 'Exit Selection Mode'
+                : 'Enter Selection Mode (Shift+Drag to add, Alt+Drag to remove)'
+            }
+            onClick={onSelectionModeToggle}
+            className="floating-header-button"
+            style={{
+              ...outlinedButtonBase,
+              backgroundColor: selectionMode === 'lasso' ? colors.primary : 'transparent',
+              color: selectionMode === 'lasso' ? colors.buttonText : colors.textPrimary,
+              border: selectionMode === 'lasso' ? 'none' : `1px solid ${colors.border}`,
+              boxShadow: selectionMode === 'lasso' ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (selectionMode !== 'lasso') outlinedHoverOn(e);
+            }}
+            onMouseLeave={(e) => {
+              if (selectionMode !== 'lasso') outlinedHoverOff(e);
+            }}
+          >
+            <Lasso size={16} />
+            Select
+          </button>
 
-        {/* Organize */}
-        <button
-          title="Organize selected photos (copy/move to folder)"
-          onClick={onOperationsOpen}
-          disabled={selectionCount === 0}
-          className="floating-header-button"
+          {/* Organize */}
+          <button
+            title="Organize selected photos (copy/move to folder)"
+            onClick={onOperationsOpen}
+            disabled={selectionCount === 0}
+            className="floating-header-button"
+            style={{
+              ...outlinedButtonBase,
+              backgroundColor: 'transparent',
+              color: selectionCount === 0 ? colors.textMuted : colors.textPrimary,
+              opacity: selectionCount === 0 ? 0.6 : 1,
+              cursor: selectionCount > 0 ? 'pointer' : 'not-allowed',
+            }}
+            onMouseEnter={(e) => {
+              if (selectionCount > 0) outlinedHoverOn(e);
+            }}
+            onMouseLeave={(e) => {
+              if (selectionCount > 0) outlinedHoverOff(e);
+            }}
+          >
+            <FolderOpen size={16} />
+            Organize {selectionCount > 0 ? `(${selectionCount})` : ''}
+          </button>
+        </div>
+
+        <div
           style={{
-            ...outlinedButtonBase,
-            backgroundColor: 'transparent',
-            color: selectionCount === 0 ? colors.textMuted : colors.textPrimary,
-            opacity: selectionCount === 0 ? 0.6 : 1,
-            cursor: selectionCount > 0 ? 'pointer' : 'not-allowed',
-          }}
-          onMouseEnter={(e) => {
-            if (selectionCount > 0) outlinedHoverOn(e);
-          }}
-          onMouseLeave={(e) => {
-            if (selectionCount > 0) outlinedHoverOff(e);
+            position: 'absolute',
+            bottom: '-12px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: FONT_SIZE.XS,
+            color: colors.textMuted,
+            fontWeight: 400,
+            fontFamily: FONT_FAMILY,
+            whiteSpace: 'nowrap',
           }}
         >
-          <FolderOpen size={16} />
-          Organize {selectionCount > 0 ? `(${selectionCount})` : ''}
-        </button>
+          Tools
+        </div>
       </div>
 
       {divider}
