@@ -5,6 +5,7 @@ import { Settings, AppSettings, DEFAULT_SETTINGS } from './components/Settings';
 import { OperationsPanel } from './components/Operations/OperationsPanel';
 import { LibraryStatsPanel } from './components/LibraryStatsPanel';
 import { FloatingHeader } from './components/FloatingHeader';
+import { HelpModal } from './components/HelpModal';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { ScanOverlay } from './components/ScanOverlay';
 import type { Photo } from '@placemark/core';
@@ -51,6 +52,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showOperations, setShowOperations] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [showScanOverlay, setShowScanOverlay] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [lastSelectedDateRange, setLastSelectedDateRange] = useState<{
@@ -259,6 +261,7 @@ function App() {
           onTimelineToggle={handleTimelineToggle}
           onScanFolder={() => setShowScanOverlay(true)}
           onClearLibrary={handleClearLibrary}
+          onHelpOpen={() => setShowHelp(true)}
         />
       )}
 
@@ -375,6 +378,9 @@ function App() {
           theme={theme}
         />
       )}
+
+      {/* Help Modal */}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} theme={theme} />}
 
       {/* Toast Notifications */}
       <ToastContainer

@@ -349,9 +349,7 @@ export function MapView({
       if (!mapRef.current) return;
       // Fit to selection if any; otherwise fit to all displayed photos.
       const photosToFit =
-        selectedIds && selectedIds.size > 0
-          ? photos.filter((p) => selectedIds.has(p.id))
-          : photos;
+        selectedIds && selectedIds.size > 0 ? photos.filter((p) => selectedIds.has(p.id)) : photos;
       const geo = photosToFit.filter((p) => p.latitude != null && p.longitude != null);
       if (geo.length === 0) return;
 

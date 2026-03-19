@@ -249,7 +249,10 @@ export function useMapLayerManagement({
           bottom: padding,
           left: padding,
         };
-        mapRef.current.fitBounds(bounds, { padding: effectivePadding, duration: transitionDuration });
+        mapRef.current.fitBounds(bounds, {
+          padding: effectivePadding,
+          duration: transitionDuration,
+        });
         hasInitialFit.current = true;
       }
     }

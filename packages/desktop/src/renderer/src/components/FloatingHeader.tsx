@@ -14,7 +14,16 @@ import {
   FONT_FAMILY,
   Z_INDEX,
 } from '../constants/ui';
-import { Lasso, FolderOpen, FolderPlus, Settings, History, BarChart3, Trash2 } from 'lucide-react';
+import {
+  Lasso,
+  FolderOpen,
+  FolderPlus,
+  Settings,
+  History,
+  BarChart3,
+  Trash2,
+  HelpCircle,
+} from 'lucide-react';
 import type { ThemeColors } from '../theme';
 
 interface FloatingHeaderProps {
@@ -34,6 +43,7 @@ interface FloatingHeaderProps {
   onTimelineToggle: () => void;
   onScanFolder: () => void;
   onClearLibrary: () => void;
+  onHelpOpen: () => void;
 }
 
 export function FloatingHeader({
@@ -53,6 +63,7 @@ export function FloatingHeader({
   onTimelineToggle,
   onScanFolder,
   onClearLibrary,
+  onHelpOpen,
 }: FloatingHeaderProps) {
   // Reusable styles
   const divider = (
@@ -378,6 +389,17 @@ export function FloatingHeader({
           title="Settings"
         >
           <Settings size={18} />
+        </button>
+
+        <button
+          onClick={onHelpOpen}
+          className="floating-header-button"
+          style={{ ...iconButtonBase, color: colors.textPrimary }}
+          onMouseEnter={iconButtonHoverOn}
+          onMouseLeave={iconButtonHoverOff}
+          title="Keyboard shortcuts"
+        >
+          <HelpCircle size={18} />
         </button>
       </div>
     </div>

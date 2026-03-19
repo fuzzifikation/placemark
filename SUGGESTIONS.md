@@ -16,7 +16,7 @@
 ### Medium work (half day – 1 day each)
 
 - **[Future, skip for now] Drag and Drop.** Electron supports `webContents.startDrag({ files, icon })` for native OS drag. A drag handle chip in the floating header (visible when photos are selected) could let users drag a selection straight into Explorer. **Constraints:** copy-only (OS performs the copy — no dry-run, no undo, DB stays consistent); move via drag is unsafe (DB paths go stale). Not suitable for large batches (no progress/cancel). Complement to Organize, not a replacement. Implementation: drag handle in `FloatingHeader.tsx` → IPC → `event.sender.startDrag()`.
-- **Help modal (keyboard shortcuts + About).** Add a `?` icon button to the floating header opening a modal with all keyboard shortcuts (Shift+drag = add to selection, Alt+drag = remove, Ctrl+A = select all, Escape = exit lasso, etc.). The same modal should surface the About info currently buried in Settings, making the About tab removable. This also serves as the in-map cheatsheet shown during lasso mode.
+
 - **Timeline: photo-count histogram above the scrubber.** Show a bar chart of photo density over time directly above the range-selector handles so users can spot activity bursts before dragging.
 - **Spider effect: second ring for highly dense locations.** When too many photos share the same spot, add a second outer ring with a larger radius instead of cramming everything onto one ring.
 - **Pre-Store: audit and clean up `console.log` statements.** Remove or guard behind `isDev` before the Phase 8 Store build.
@@ -53,3 +53,5 @@
 - **Expose timeline playback speed increments in Settings.** Added `playSpeedSlowDays`, `playSpeedMediumDays`, `playSpeedFastDays` to `AppSettings` (defaults: 7/30/180 days), with sliders in Map Settings alongside the existing Playback Animation Speed slider. Values flow to `useTimelinePlayback` replacing the hard-coded `PLAY_SPEEDS` increments.
 
 - **[Low] Setting: single-click pin opens system photo viewer.** Added `singleClickOpensViewer` toggle (default: off) in General settings. When on, clicking a map pin calls `openInViewer` directly instead of opening the in-app preview modal.
+
+- **Help modal (keyboard shortcuts).** Added `HelpModal.tsx` opened by a `?` (`HelpCircle`) icon button in FloatingHeader Group 5 (alongside Stats and Settings). Two sections: Selection Mode (enter/exit lasso, drag, Shift+drag add, Alt+drag remove, Esc cancel) and Map Navigation (scroll zoom, drag pan, right-drag rotate/tilt, click pin, fit button). Icon rows show the actual `Lasso` icon and fit-button SVG inside `<kbd>` chips. ESC and backdrop click to close. No automatic opening.
