@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { type PlaySpeed, PLAY_SPEEDS } from './TimelineControls';
+import { type PlaySpeed } from './TimelineControls';
 
 interface UseTimelinePlaybackParams {
   minDate: number;
