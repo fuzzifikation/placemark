@@ -1,6 +1,8 @@
 # Copilot Instructions for Placemark
 
-Privacy-first, local-first photo organizer. Read [README.md](../README.md) for scope, [docs/plan.md](../docs/plan.md) for roadmap.
+Privacy-first, local-first photo organizer. Read [README.md](../README.md) for scope, [docs/plan.md](../docs/plan.md) for roadmap and current implementation phase.
+
+**Guiding priorities:** clarity > performance · safety > convenience · explicit > automatic. Placemark should feel trustworthy, predictable, and calm.
 
 ## Technology Stack
 
@@ -72,14 +74,13 @@ pnpm -C packages/desktop build    # Production build
 ## Privacy & Safety Principles
 
 - **No background operations:** User must explicitly trigger scans and operations
-- **Dry-run first:** Always preview file operations before executing
 - **Explicit permissions:** Never assume access to folders or OneDrive
 - **Local storage only:** All metadata stays on device (SQLite)
 - **No inference:** Don't guess missing GPS data unless user enables it
 
 ## File Operations
 
-- **Copy/move are safety-critical:** Implement dry-run preview showing source → destination
+- **Copy/move are safety-critical:** Always show the user what will happen before executing
 - **Validate before execute:** Check destination exists, has space, is writable
 - **Transactional:** Log operations in `operation_log` table, support rollback where possible
 - **Progress tracking:** Stream progress via IPC, allow cancellation mid-operation
@@ -179,14 +180,3 @@ Use `pnpm run version:update x.y.z` for version bumps (patch: bug fixes, minor: 
 - If a version changes the database schema, **instruct users to delete and rebuild** their database (`placemark.db` and `thumbnails.db` in the app data folder).
 - Do not invest effort in backward-compatible migrations until post-1.0.
 - Photo data is always rebuildable by re-scanning source folders.
-
-## Implementation Phase
-
-Currently in **Phase 5.5 Complete** — RAW format support (12 camera brands) with embedded thumbnail extraction. Phase 6 (Collections & Export) is next. See [docs/plan.md](../docs/plan.md) for 17-phase roadmap.
-
-**Pre-store:** ✅ Phase 5.5 (RAW) → Phase 6 (Collections & Export) → Phase 7 (Library Insights) → Phase 8 (Polish & Store Readiness) → 🏪 **v1.0 Microsoft Store Launch**
-**Post-store:** Phase 9 (Trip Detection) → Phase 10 (GPS Editing) → Phase 11–17 (Duplicates, Network, Import, Timestamps, OneDrive, Advanced, Mobile)
-
-Prioritize: **clarity > performance**, **safety > convenience**, **explicit > automatic**.
-
-Placemark should feel trustworthy, predictable, and calm.

@@ -4,7 +4,7 @@ Step-by-step roadmap for building Placemark. See [ARCHITECTURE.md](ARCHITECTURE.
 
 Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
 
-**Current Status:** ✅ Phase 0–5.5 Complete | ⚙️ Phase 6 Next (Collections & Export) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
+**Current Status:** ✅ Phase 0–5.5 Complete | ⚙️ Phase 6 Next (Placemarks & Export) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
 
 **Recent Work:**
 
@@ -295,22 +295,25 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 ---
 
-### Phase 6: Smart Collections & Export
+### Phase 6: Placemarks & Export
 
-**Goal:** Give users persistent filter shortcuts and let them export data in standard formats. Collections make the app feel polished; export reinforces the trust promise ("your data, your control"). Both provide immediate value for the Store listing.
+**Goal:** Give users persistent geo+time filter shortcuts and let them export data in standard formats. Placemarks make the app feel polished; export reinforces the trust promise ("your data, your control"). Both provide immediate value for the Store listing.
 
-#### 6.1 Saved Filter Collections
+See [collections_plan.md](collections_plan.md) for the full UX design of Placemarks.
+
+#### 6.1 Placemarks
 
 **Tasks:**
 
-1. Allow saving current filter state (date range + map bounds + name) as a "Collection"
-2. Store collections in SQLite (`collections` table: id, name, bounds, date_start, date_end)
-3. Collections sidebar in the UI — click to instantly apply that filter
-4. Built-in smart collections (auto-generated, read-only):
+1. Allow saving current filter state (date range + map bounds + name) as a "placemark"
+2. Store placemarks in SQLite (`placemarks` table: id, name, bounds, date_start, date_end)
+3. Placemarks sidebar in the UI — click to instantly apply that filter
+4. Built-in smart placemarks (auto-generated, read-only):
    - "All Photos" — no filter
    - "No GPS" — photos without location data
    - "This Year" — current calendar year
-5. User can create, rename, and delete custom collections
+5. Auto-detect vacation candidates after scan (temporal gaps + geographic concentration) and offer to save as placemarks
+6. User can create, rename, and delete custom placemarks
 
 #### 6.2 Export
 
@@ -320,7 +323,7 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 2. **GeoJSON export** — photo locations as a GeoJSON FeatureCollection (importable in QGIS, Google Earth, Mapbox). The standard for geo data.
 3. **GPX export** — photo locations as waypoints, importable in hiking/GPS apps. Also lays groundwork for Phase 9 trip route export.
 4. Add "Export" button to the toolbar with format picker
-5. Export respects current filters and collections — export only what's visible
+5. Export respects current filters and active placemark — export only what's visible
 
 **Dropped formats (can revisit post-1.0):**
 
@@ -331,18 +334,18 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 **Testing:**
 
-- [ ] Saved collection restores exact filter state
-- [ ] Deleting a collection doesn't affect photos
-- [ ] Smart collections update automatically when new photos are scanned
+- [ ] Saved placemark restores exact filter state
+- [ ] Deleting a placemark doesn't affect photos
+- [ ] Smart placemarks update automatically when new photos are scanned
 - [ ] CSV opens in Excel/LibreOffice with correct columns
 - [ ] GeoJSON export opens correctly in geojson.io
 - [ ] GPX export imports into a GPS app
-- [ ] Filtered/collection export only includes visible photos
+- [ ] Filtered/placemark export only includes visible photos
 - [ ] Export 10,000 photos in <5 seconds
 
 **Estimated Effort:** 3–4 days
 
-**Deliverable:** Saved filter collections and photo data export in 3 standard formats (CSV, GeoJSON, GPX).
+**Deliverable:** Saved geo+time placemarks (with auto-detection) and photo data export in 3 standard formats (CSV, GeoJSON, GPX).
 
 ---
 
@@ -435,7 +438,7 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 **At this point, Placemark ships to the Microsoft Store.**
 
-The app includes: local folder scanning, RAW format support, interactive map with clustering, timeline with playback, file operations (copy/move/undo), export in 5 formats, saved collections, library statistics, and a clean freemium model.
+The app includes: local folder scanning, RAW format support, interactive map with clustering, timeline with playback, file operations (copy/move/undo), export in 3 formats, saved placemarks, library statistics, and a clean freemium model.
 
 **Launch checklist:**
 

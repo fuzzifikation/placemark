@@ -23,6 +23,8 @@
 
 ### Larger work (1–3 days)
 
+- **[Phase 10 / GPS Editing] Show photos without GPS so users can assign location.** Currently photos without GPS are counted but not accessible from the map (they have no coordinates to plot). When GPS editing lands (Phase 10), users will need a way to surface these photos so they can drag them onto the map or assign coordinates manually. This is a prerequisite for geo-data editing to be useful. Implementation TBD — options: a dedicated "No GPS" panel/list, a sidebar badge that opens a photo grid, or a ghost-marker mode. Defer until Phase 10 design begins.
+
 - **Dense cluster drill-down.** When a cluster exceeds ~30 photos at the same location (e.g. home), the spider doesn't scale. Two candidate approaches — both can coexist:
   - **Filmstrip panel (Option B).** Clicking a dense cluster opens a floating horizontal thumbnail strip at the bottom of the map — 5–8 thumbnails visible, scrollable, with a local mini-scrubber above showing the temporal distribution of just those photos. No map explosion; the map stays calm. Feels like "drill into this place."
 
