@@ -119,10 +119,19 @@ function calculateSpiderOffsets(
   const offsets = new Map<number, SpiderOffset>();
   const rings = assignRings(photos.length, radiusPixels);
 
-  let photoIndex = 0;
-
+  // Build sliced photo ranges per ring (inner→outer assignment order)
+  const ringSlices: { ring: (typeof rings)[0]; ringIndex: number; startIdx: number }[] = [];
+  let idx = 0;
   rings.forEach((ring, ringIndex) => {
-    // Convert this ring's pixel radius to degrees
+    ringSlices.push({ ring, ringIndex, startIdx: idx });
+    idx += ring.count;
+  });
+
+  // Iterate outer→inner so outer legs/markers are drawn first (behind).
+  // Inner ring features end up last in the Map → rendered on top, visually clearest.
+  for (let s = ringSlices.length - 1; s >= 0; s--) {
+    const { ring, ringIndex, startIdx } = ringSlices[s];
+
     let lngRadius: number;
     let latRadius: number;
 
@@ -136,15 +145,11 @@ function calculateSpiderOffsets(
       latRadius = fallbackRadius;
     }
 
-    // Half-step angular offset on odd rings to stagger markers
     const angularOffset = ringIndex % 2 === 0 ? 0 : Math.PI / ring.count;
 
     for (let j = 0; j < ring.count; j++) {
-      const photo = photos[photoIndex];
-      if (!photo || photo.latitude == null || photo.longitude == null) {
-        photoIndex++;
-        continue;
-      }
+      const photo = photos[startIdx + j];
+      if (!photo || photo.latitude == null || photo.longitude == null) continue;
 
       const angle = (2 * Math.PI * j) / ring.count - Math.PI / 2 + angularOffset;
       const offsetLng = center[0] + lngRadius * Math.cos(angle);
@@ -157,10 +162,8 @@ function calculateSpiderOffsets(
         offsetLng,
         offsetLat,
       });
-
-      photoIndex++;
     }
-  });
+  }
 
   return offsets;
 }
