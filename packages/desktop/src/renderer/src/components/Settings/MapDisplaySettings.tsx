@@ -8,6 +8,7 @@ import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
 import { SettingsToggle } from './SettingsToggle';
 import { SettingsSlider } from './SettingsSlider';
+import { SettingsNumberInput } from './SettingsNumberInput';
 import type { AppSettings } from '../Settings';
 
 interface MapDisplaySettingsProps {
@@ -314,82 +315,78 @@ export function MapDisplaySettings({
           </div>
 
           {settings.devSettingsEnabled && (
-            <>
-              <SettingsSlider
-                label="Map Padding"
+            <div
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.75rem',
+                backgroundColor: colors.surface,
+                borderRadius: '6px',
+                border: `1px solid ${colors.border}`,
+              }}
+            >
+              <SettingsNumberInput
+                label="Map padding"
                 value={settings.mapPadding}
                 min={20}
                 max={100}
-                step={10}
+                step={1}
                 unit="px"
-                minLabel="Tight (20px)"
-                maxLabel="Loose (100px)"
                 onChange={(val) => onSettingChange('mapPadding', val)}
                 theme={theme}
               />
-              <SettingsSlider
-                label="Maximum zoom level"
+              <SettingsNumberInput
+                label="Max zoom level"
                 value={settings.tileMaxZoom}
                 min={15}
                 max={19}
                 step={1}
-                minLabel="Conservative (15)"
-                maxLabel="Maximum (19)"
-                description="How far you can zoom in with the mouse or trackpad. OSM tiles work up to 19, but 18 is safer to avoid missing tiles."
+                description="OSM tiles are reliable up to 18"
                 onChange={(val) => onSettingChange('tileMaxZoom', val)}
                 theme={theme}
               />
-              <SettingsSlider
-                label="Trigger zoom level"
+              <SettingsNumberInput
+                label="Spider trigger zoom"
                 value={settings.spiderTriggerZoom}
                 min={0}
                 max={18}
                 step={1}
-                minLabel="Always (0)"
-                maxLabel="Max zoom (18)"
-                description="Zoom level at which overlapping markers spread out instead of zooming in"
+                description="Zoom at which overlapping markers spread instead of zoom"
                 onChange={(val) => onSettingChange('spiderTriggerZoom', val)}
                 theme={theme}
               />
-              <SettingsSlider
+              <SettingsNumberInput
                 label="Overlap tolerance"
                 value={settings.spiderOverlapTolerance}
                 min={5}
                 max={50}
-                step={5}
+                step={1}
                 unit="px"
-                minLabel="Tight (5px)"
-                maxLabel="Loose (50px)"
-                description="How close markers must be (in pixels) before they are considered overlapping"
+                description="Pixel distance at which markers are considered overlapping"
                 onChange={(val) => onSettingChange('spiderOverlapTolerance', val)}
                 theme={theme}
               />
-              <SettingsSlider
+              <SettingsNumberInput
                 label="Collapse margin"
                 value={settings.spiderCollapseMargin}
                 min={10}
                 max={100}
-                step={10}
+                step={1}
                 unit="px"
-                minLabel="Tight (10px)"
-                maxLabel="Loose (100px)"
-                description="How far the cursor can stray from the spread markers before they collapse"
+                description="Cursor distance outside spider before it collapses"
                 onChange={(val) => onSettingChange('spiderCollapseMargin', val)}
                 theme={theme}
               />
-              <SettingsSlider
-                label="Return zoom level"
+              <SettingsNumberInput
+                label="Spider clear zoom"
                 value={settings.spiderClearZoom}
                 min={5}
                 max={18}
                 step={1}
-                minLabel="Zoomed out (5)"
-                maxLabel="Zoomed in (18)"
-                description="Spread markers automatically collapse when zooming below this level"
+                description="Spider auto-collapses when zooming below this level"
                 onChange={(val) => onSettingChange('spiderClearZoom', val)}
                 theme={theme}
               />
-            </>
+            </div>
           )}
         </SettingsSection>
       </div>

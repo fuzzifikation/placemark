@@ -1,5 +1,16 @@
 # Release Notes
 
+## v0.7.3 - Settings Polish (2026-03-19)
+
+### ✨ Improvements
+
+- **Timeline playback speeds now configurable:** The three playback speeds (▶ / ▶▶ / ▶▶▶) are now exposed as sliders in Map → Advanced settings (defaults: 7 / 30 / 180 days per second). Previously hard-coded.
+- **Map settings reorganised:** Advanced section gains clear sub-group headers (Clustering, Map, Overlapping Markers, Timeline Playback). Low-level tuning knobs moved behind a "Developer settings" toggle to reduce noise for normal users.
+- **Developer settings use compact number inputs:** The 6 developer settings (map padding, max zoom, spider internals) now render as single-row number inputs instead of full-width sliders — denser and more appropriate for precise value entry.
+- **Single-click pin opens system viewer:** New opt-in toggle in General settings. When enabled, clicking a map pin opens the OS default photo app directly, bypassing the in-app preview.
+
+---
+
 ## v0.7.2 - Code Quality & Bug Fixes (2026-03-16)
 
 ### 🐛 Bug Fixes
