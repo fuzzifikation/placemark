@@ -45,8 +45,12 @@ export interface AppSettings {
   // Timeline
   timelineUpdateInterval: number;
   autoZoomDuringPlay: boolean;
+  playSpeedSlowDays: number; // ▶ days advanced per second of real time
+  playSpeedMediumDays: number; // ▶▶
+  playSpeedFastDays: number; // ▶▶▶
   // UI Settings
   toastDuration: number; // ms - how long toasts stay visible
+  singleClickOpensViewer: boolean; // skip in-app preview and open OS photo viewer on pin click
   // Scanning Settings
   maxFileSizeMB: number; // Maximum file size in MB for photo scanning (prevents memory issues with huge files)
   // Developer Settings (fine-tuning)
@@ -76,8 +80,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   showHeatmap: false,
   timelineUpdateInterval: 100,
   autoZoomDuringPlay: true,
+  playSpeedSlowDays: 7,
+  playSpeedMediumDays: 30,
+  playSpeedFastDays: 180,
   // UI defaults
   toastDuration: 3000, // 3 seconds
+  singleClickOpensViewer: false,
   // Scanning defaults
   maxFileSizeMB: 150, // 150MB - accommodates professional RAW files (medium format cameras)
   // Developer defaults
@@ -185,6 +193,7 @@ export function Settings({
     updateSetting('glassBlur', DEFAULT_SETTINGS.glassBlur);
     updateSetting('glassSurfaceOpacity', DEFAULT_SETTINGS.glassSurfaceOpacity);
     updateSetting('toastDuration', DEFAULT_SETTINGS.toastDuration);
+    updateSetting('singleClickOpensViewer', DEFAULT_SETTINGS.singleClickOpensViewer);
     toast.success('Appearance settings reset');
   };
 
@@ -203,6 +212,9 @@ export function Settings({
     updateSetting('mapTransitionDuration', DEFAULT_SETTINGS.mapTransitionDuration);
     updateSetting('showHeatmap', DEFAULT_SETTINGS.showHeatmap);
     updateSetting('timelineUpdateInterval', DEFAULT_SETTINGS.timelineUpdateInterval);
+    updateSetting('playSpeedSlowDays', DEFAULT_SETTINGS.playSpeedSlowDays);
+    updateSetting('playSpeedMediumDays', DEFAULT_SETTINGS.playSpeedMediumDays);
+    updateSetting('playSpeedFastDays', DEFAULT_SETTINGS.playSpeedFastDays);
     updateSetting('tileMaxZoom', DEFAULT_SETTINGS.tileMaxZoom);
     updateSetting('spiderOverlapTolerance', DEFAULT_SETTINGS.spiderOverlapTolerance);
     updateSetting('spiderRadius', DEFAULT_SETTINGS.spiderRadius);

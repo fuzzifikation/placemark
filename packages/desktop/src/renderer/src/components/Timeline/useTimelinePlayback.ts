@@ -14,6 +14,9 @@ interface UseTimelinePlaybackParams {
   setLocalEnd: (value: number) => void;
   onRangeChange: (start: number, end: number) => void;
   updateInterval: number;
+  playSpeedSlowMs: number;
+  playSpeedMediumMs: number;
+  playSpeedFastMs: number;
   currentStart: React.MutableRefObject<number>;
   currentEnd: React.MutableRefObject<number>;
 }
@@ -27,6 +30,9 @@ export function useTimelinePlayback({
   setLocalEnd,
   onRangeChange,
   updateInterval,
+  playSpeedSlowMs,
+  playSpeedMediumMs,
+  playSpeedFastMs,
   currentStart,
   currentEnd,
 }: UseTimelinePlaybackParams) {
@@ -45,7 +51,12 @@ export function useTimelinePlayback({
       return;
     }
 
-    const increment = PLAY_SPEEDS[playSpeed].increment;
+    const speedIncrements: Record<PlaySpeed, number> = {
+      week: playSpeedSlowMs,
+      month: playSpeedMediumMs,
+      sixMonths: playSpeedFastMs,
+    };
+    const increment = speedIncrements[playSpeed];
     const windowSize = currentEnd.current - currentStart.current;
     let lastTime = Date.now();
     lastUpdateTime.current = Date.now();
@@ -96,6 +107,9 @@ export function useTimelinePlayback({
   }, [
     isPlaying,
     playSpeed,
+    playSpeedSlowMs,
+    playSpeedMediumMs,
+    playSpeedFastMs,
     minDate,
     maxDate,
     onRangeChange,

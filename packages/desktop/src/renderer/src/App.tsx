@@ -195,7 +195,13 @@ function App() {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
         <MapView
           photos={photoData.mapPhotos}
-          onPhotoClick={setSelectedPhoto}
+          onPhotoClick={(photo) => {
+            if (settings.singleClickOpensViewer) {
+              window.api.photos.openInViewer(photo.id);
+            } else {
+              setSelectedPhoto(photo);
+            }
+          }}
           onViewChange={photoData.trackMapBounds}
           clusteringEnabled={settings.clusteringEnabled}
           clusterRadius={settings.clusterRadius}
@@ -311,6 +317,9 @@ function App() {
             onRangeChange={handleDateRangeChange}
             onClose={handleTimelineClose}
             updateInterval={settings.timelineUpdateInterval}
+            playSpeedSlowMs={settings.playSpeedSlowDays * 24 * 60 * 60 * 1000}
+            playSpeedMediumMs={settings.playSpeedMediumDays * 24 * 60 * 60 * 1000}
+            playSpeedFastMs={settings.playSpeedFastDays * 24 * 60 * 60 * 1000}
             theme={theme}
             autoZoomDuringPlay={settings.autoZoomDuringPlay}
             onAutoZoomToggle={() =>

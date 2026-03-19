@@ -90,8 +90,21 @@ export function MapDisplaySettings({
           theme={theme}
           isAdvanced
         >
+          {/* Clustering */}
           {settings.clusteringEnabled && (
             <>
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: colors.textMuted,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '-0.25rem',
+                }}
+              >
+                Clustering
+              </div>
               <SettingsSlider
                 label="Cluster Radius"
                 value={settings.clusterRadius}
@@ -142,18 +155,23 @@ export function MapDisplaySettings({
               />
             </>
           )}
-          <SettingsSlider
-            label="Map Padding"
-            value={settings.mapPadding}
-            min={20}
-            max={100}
-            step={10}
-            unit="px"
-            minLabel="Tight (20px)"
-            maxLabel="Loose (100px)"
-            onChange={(val) => onSettingChange('mapPadding', val)}
-            theme={theme}
-          />
+
+          {/* Map */}
+          <div
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: colors.textMuted,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              paddingTop: settings.clusteringEnabled ? '0.75rem' : undefined,
+              borderTop: settings.clusteringEnabled ? `1px solid ${colors.border}` : undefined,
+              marginTop: settings.clusteringEnabled ? '0.25rem' : undefined,
+              marginBottom: '-0.25rem',
+            }}
+          >
+            Map
+          </div>
           <SettingsSlider
             label="Transition Speed"
             value={settings.mapTransitionDuration}
@@ -166,31 +184,8 @@ export function MapDisplaySettings({
             onChange={(val) => onSettingChange('mapTransitionDuration', val)}
             theme={theme}
           />
-          <SettingsSlider
-            label="Playback Animation Speed"
-            value={settings.timelineUpdateInterval}
-            min={50}
-            max={500}
-            step={50}
-            unit="ms"
-            minLabel="Fast / High CPU (50ms)"
-            maxLabel="Slow / Low CPU (500ms)"
-            description="How quickly the map updates during timeline playback"
-            onChange={(val) => onSettingChange('timelineUpdateInterval', val)}
-            theme={theme}
-          />
-          <SettingsSlider
-            label="Maximum zoom level"
-            value={settings.tileMaxZoom}
-            min={15}
-            max={19}
-            step={1}
-            minLabel="Conservative (15)"
-            maxLabel="Maximum (19)"
-            description="How far you can zoom in with the mouse or trackpad. OSM tiles work up to 19, but 18 is safer to avoid missing tiles."
-            onChange={(val) => onSettingChange('tileMaxZoom', val)}
-            theme={theme}
-          />
+
+          {/* Overlapping Markers */}
           <div
             style={{
               fontSize: '0.75rem',
@@ -206,31 +201,6 @@ export function MapDisplaySettings({
           >
             Overlapping Markers
           </div>
-          <SettingsSlider
-            label="Trigger zoom level"
-            value={settings.spiderTriggerZoom}
-            min={0}
-            max={18}
-            step={1}
-            minLabel="Always (0)"
-            maxLabel="Max zoom (18)"
-            description="Zoom level at which overlapping markers spread out instead of zooming in"
-            onChange={(val) => onSettingChange('spiderTriggerZoom', val)}
-            theme={theme}
-          />
-          <SettingsSlider
-            label="Overlap tolerance"
-            value={settings.spiderOverlapTolerance}
-            min={5}
-            max={50}
-            step={5}
-            unit="px"
-            minLabel="Tight (5px)"
-            maxLabel="Loose (50px)"
-            description="How close markers must be (in pixels) before they are considered overlapping"
-            onChange={(val) => onSettingChange('spiderOverlapTolerance', val)}
-            theme={theme}
-          />
           <SettingsSlider
             label="Spread radius"
             value={settings.spiderRadius}
@@ -256,31 +226,171 @@ export function MapDisplaySettings({
             onChange={(val) => onSettingChange('spiderAnimationDuration', val)}
             theme={theme}
           />
+
+          {/* Timeline Playback */}
+          <div
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: colors.textMuted,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              paddingTop: '0.75rem',
+              borderTop: `1px solid ${colors.border}`,
+              marginTop: '0.25rem',
+              marginBottom: '-0.25rem',
+            }}
+          >
+            Timeline Playback
+          </div>
           <SettingsSlider
-            label="Collapse margin"
-            value={settings.spiderCollapseMargin}
-            min={10}
-            max={100}
-            step={10}
-            unit="px"
-            minLabel="Tight (10px)"
-            maxLabel="Loose (100px)"
-            description="How far the cursor can stray from the spread markers before they collapse"
-            onChange={(val) => onSettingChange('spiderCollapseMargin', val)}
+            label="Map update frequency"
+            value={settings.timelineUpdateInterval}
+            min={50}
+            max={500}
+            step={50}
+            unit="ms"
+            minLabel="Fast / High CPU (50ms)"
+            maxLabel="Slow / Low CPU (500ms)"
+            description="How quickly the map updates during timeline playback"
+            onChange={(val) => onSettingChange('timelineUpdateInterval', val)}
             theme={theme}
           />
           <SettingsSlider
-            label="Return zoom level"
-            value={settings.spiderClearZoom}
-            min={5}
-            max={18}
+            label="▶ Slow speed (days/sec)"
+            value={settings.playSpeedSlowDays}
+            min={1}
+            max={14}
             step={1}
-            minLabel="Zoomed out (5)"
-            maxLabel="Zoomed in (18)"
-            description="Spread markers automatically collapse when zooming below this level"
-            onChange={(val) => onSettingChange('spiderClearZoom', val)}
+            unit=" days"
+            minLabel="1 day"
+            maxLabel="14 days"
+            description="Timeline days advanced per second during slow playback"
+            onChange={(val) => onSettingChange('playSpeedSlowDays', val)}
             theme={theme}
           />
+          <SettingsSlider
+            label="▶▶ Medium speed (days/sec)"
+            value={settings.playSpeedMediumDays}
+            min={7}
+            max={60}
+            step={7}
+            unit=" days"
+            minLabel="7 days"
+            maxLabel="60 days"
+            description="Timeline days advanced per second during medium playback"
+            onChange={(val) => onSettingChange('playSpeedMediumDays', val)}
+            theme={theme}
+          />
+          <SettingsSlider
+            label="▶▶▶ Fast speed (days/sec)"
+            value={settings.playSpeedFastDays}
+            min={30}
+            max={365}
+            step={15}
+            unit=" days"
+            minLabel="30 days"
+            maxLabel="365 days"
+            description="Timeline days advanced per second during fast playback"
+            onChange={(val) => onSettingChange('playSpeedFastDays', val)}
+            theme={theme}
+          />
+
+          {/* Developer settings gate */}
+          <div
+            style={{
+              paddingTop: '0.75rem',
+              borderTop: `1px solid ${colors.border}`,
+              marginTop: '0.25rem',
+            }}
+          >
+            <SettingsToggle
+              label="Developer settings"
+              value={settings.devSettingsEnabled}
+              description="Show low-level tuning options — not needed for normal use"
+              onChange={(val) => onSettingChange('devSettingsEnabled', val)}
+              theme={theme}
+            />
+          </div>
+
+          {settings.devSettingsEnabled && (
+            <>
+              <SettingsSlider
+                label="Map Padding"
+                value={settings.mapPadding}
+                min={20}
+                max={100}
+                step={10}
+                unit="px"
+                minLabel="Tight (20px)"
+                maxLabel="Loose (100px)"
+                onChange={(val) => onSettingChange('mapPadding', val)}
+                theme={theme}
+              />
+              <SettingsSlider
+                label="Maximum zoom level"
+                value={settings.tileMaxZoom}
+                min={15}
+                max={19}
+                step={1}
+                minLabel="Conservative (15)"
+                maxLabel="Maximum (19)"
+                description="How far you can zoom in with the mouse or trackpad. OSM tiles work up to 19, but 18 is safer to avoid missing tiles."
+                onChange={(val) => onSettingChange('tileMaxZoom', val)}
+                theme={theme}
+              />
+              <SettingsSlider
+                label="Trigger zoom level"
+                value={settings.spiderTriggerZoom}
+                min={0}
+                max={18}
+                step={1}
+                minLabel="Always (0)"
+                maxLabel="Max zoom (18)"
+                description="Zoom level at which overlapping markers spread out instead of zooming in"
+                onChange={(val) => onSettingChange('spiderTriggerZoom', val)}
+                theme={theme}
+              />
+              <SettingsSlider
+                label="Overlap tolerance"
+                value={settings.spiderOverlapTolerance}
+                min={5}
+                max={50}
+                step={5}
+                unit="px"
+                minLabel="Tight (5px)"
+                maxLabel="Loose (50px)"
+                description="How close markers must be (in pixels) before they are considered overlapping"
+                onChange={(val) => onSettingChange('spiderOverlapTolerance', val)}
+                theme={theme}
+              />
+              <SettingsSlider
+                label="Collapse margin"
+                value={settings.spiderCollapseMargin}
+                min={10}
+                max={100}
+                step={10}
+                unit="px"
+                minLabel="Tight (10px)"
+                maxLabel="Loose (100px)"
+                description="How far the cursor can stray from the spread markers before they collapse"
+                onChange={(val) => onSettingChange('spiderCollapseMargin', val)}
+                theme={theme}
+              />
+              <SettingsSlider
+                label="Return zoom level"
+                value={settings.spiderClearZoom}
+                min={5}
+                max={18}
+                step={1}
+                minLabel="Zoomed out (5)"
+                maxLabel="Zoomed in (18)"
+                description="Spread markers automatically collapse when zooming below this level"
+                onChange={(val) => onSettingChange('spiderClearZoom', val)}
+                theme={theme}
+              />
+            </>
+          )}
         </SettingsSection>
       </div>
 

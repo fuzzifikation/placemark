@@ -19,6 +19,9 @@ interface TimelineProps {
   onRangeChange: (start: number, end: number) => void;
   onClose: () => void;
   updateInterval: number; // milliseconds between map updates during playback - from settings
+  playSpeedSlowMs: number;
+  playSpeedMediumMs: number;
+  playSpeedFastMs: number;
   theme: Theme;
   autoZoomDuringPlay: boolean;
   onAutoZoomToggle: () => void;
@@ -34,6 +37,9 @@ export function Timeline({
   onRangeChange,
   onClose,
   updateInterval,
+  playSpeedSlowMs,
+  playSpeedMediumMs,
+  playSpeedFastMs,
   theme,
   autoZoomDuringPlay,
   onAutoZoomToggle,
@@ -63,6 +69,9 @@ export function Timeline({
       setLocalEnd,
       onRangeChange,
       updateInterval,
+      playSpeedSlowMs,
+      playSpeedMediumMs,
+      playSpeedFastMs,
       currentStart,
       currentEnd,
     });

@@ -7,6 +7,7 @@ import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
 import { SettingsSlider } from './SettingsSlider';
+import { SettingsToggle } from './SettingsToggle';
 import type { AppSettings } from '../Settings';
 
 interface AppearanceSettingsProps {
@@ -84,6 +85,24 @@ export function AppearanceSettings({
           >
             {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
           </button>
+        </div>
+
+        {/* Behaviour */}
+        <div
+          style={{
+            backgroundColor: colors.surface,
+            padding: '1rem 1rem 0 1rem',
+            borderRadius: '8px',
+            border: `1px solid ${colors.border}`,
+          }}
+        >
+          <SettingsToggle
+            label="Single-click opens system viewer"
+            value={settings.singleClickOpensViewer}
+            description="Clicking a photo pin opens the OS default photo app instead of the in-app preview"
+            onChange={(val) => onSettingChange('singleClickOpensViewer', val)}
+            theme={theme}
+          />
         </div>
 
         <SettingsSection
