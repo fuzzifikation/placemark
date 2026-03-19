@@ -130,7 +130,12 @@ export function updatePhotoPath(photoId: number, newPath: string): void {
  * Clear all photos from database
  */
 export function clearAllPhotos(): void {
-  getDb().prepare('DELETE FROM photos').run();
+  const db = getDb();
+  // Also clear operation history — old batches reference file paths that are
+  // no longer valid once the library is wiped, so undo would be meaningless.
+  db.prepare('DELETE FROM operation_batch_files').run();
+  db.prepare('DELETE FROM operation_batch').run();
+  db.prepare('DELETE FROM photos').run();
 }
 
 /**
