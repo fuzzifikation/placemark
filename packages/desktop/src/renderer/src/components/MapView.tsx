@@ -16,6 +16,7 @@ import { useMapInitialization } from './Map/useMapInitialization';
 import { useMapLayerManagement } from './Map/useMapLayerManagement';
 import { useMapEventHandlers } from './Map/useMapEventHandlers';
 import { getDefaultSpiderSettings } from './Settings';
+import { LAYOUT } from '../constants/ui';
 
 export type SelectionMode = 'pan' | 'lasso';
 
@@ -296,7 +297,13 @@ export function MapView({
     const hoverBg = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)';
     const linkColor = isDark ? '#3b82f6' : '#2563eb';
 
+    const inset = `${LAYOUT.PANEL_INSET_PX}px`;
+
     const css = `
+      /* Align map controls with the floating panel inset */
+      .maplibregl-ctrl-top-right .maplibregl-ctrl { margin: ${inset} ${inset} 0 0 !important; }
+      .maplibregl-ctrl-bottom-right .maplibregl-ctrl { margin: 0 ${inset} ${inset} 0 !important; }
+
       .maplibregl-ctrl-group {
         background: rgba(${bgRgb}, ${opacity}) !important;
         backdrop-filter: blur(${glassBlur}px) !important;

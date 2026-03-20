@@ -11,8 +11,6 @@
 
 ## UI / Layout
 
-- **Align all floating glass panels to a shared layout grid.** The floating panels (FloatingHeader, PlacemarksPanel, Timeline, and any future panels) each use ad-hoc `top`, `left`, `bottom`, `right` offsets that are not coordinated. This results in misaligned edges that look inconsistent. Define a small set of layout constants (e.g. `PANEL_EDGE_OFFSET`, `PANEL_TOP`, `PANEL_BOTTOM`) in `ui.ts` and apply them uniformly across all panels so their edges snap to the same invisible grid lines. All four sides should be considered: left-aligned panels share the same `left` value, top-anchored panels share the same `top` value, and so on.
-
 ---
 
 ## Placemarks
@@ -65,6 +63,8 @@
 ## Addressed
 
 <!-- Move items here once resolved -->
+
+- **Align all floating glass panels to a shared layout grid.** Introduced `LAYOUT` constants in `ui.ts` (`PANEL_INSET`, `PANEL_GAP`, `HEADER_HEIGHT`, `TIMELINE_HEIGHT`, `PLACEMARKS_WIDTH`). `App.tsx` is now the single layout authority — all panel `position/top/left/bottom/right` declarations live there; `FloatingHeader` and `PlacemarksPanel` are fully layout-agnostic. Map controls use `LAYOUT.PANEL_INSET_PX` margins so they align with the panels. `BORDER_RADIUS.XL` used consistently on all glass surfaces.
 
 - **File operations: merge Organize panel and preview into one window.** Eliminated the two-step "configure → Preview → Modify Settings → Execute" flow. The Organize modal is now a single scrollable panel: SourceSummary (collapsible) + Copy/Move radio + destination picker at top; dry-run preview auto-generates below as soon as a destination is selected, and auto-regenerates when op type or destination changes. Execute button lives in a permanent footer, disabled until a valid preview with pending ops is ready. Progress bar and "Cancel (Rollback)" appear inline during execution. No IPC or core-logic changes — renderer-only refactor in `OperationsPanel.tsx`.
 

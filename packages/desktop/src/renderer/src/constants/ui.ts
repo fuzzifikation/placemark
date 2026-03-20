@@ -49,3 +49,29 @@ export const TRANSITIONS = {
   MEDIUM: '0.3s ease',
   SLOW: '0.5s ease',
 } as const;
+
+/**
+ * Layout constants — single source of truth for all floating panel placement.
+ * CSS string values are used in inline styles; _PX counterparts feed numeric
+ * calculations (e.g. MapView fitPadding).
+ */
+export const LAYOUT = {
+  /** Distance from every viewport edge to the nearest panel edge. */
+  PANEL_INSET: '1rem',
+  PANEL_INSET_PX: 16,
+
+  /** Vertical gap between stacked panels (header → placemarks, placemarks → timeline). */
+  PANEL_GAP: '1rem',
+  PANEL_GAP_PX: 16,
+
+  /** FloatingHeader rendered height (padding + content). */
+  HEADER_HEIGHT: '3.5rem',
+  HEADER_HEIGHT_PX: 56,
+
+  /** Timeline panel rendered height. */
+  TIMELINE_HEIGHT: '8.5rem',
+  TIMELINE_HEIGHT_PX: 136,
+
+  /** PlacemarksPanel fixed width. */
+  PLACEMARKS_WIDTH: '260px',
+} as const;

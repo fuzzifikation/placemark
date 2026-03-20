@@ -8,14 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Bookmark, Plus, Trash2, Calendar, MapPin } from 'lucide-react';
 import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
-import {
-  FONT_FAMILY,
-  Z_INDEX,
-  BORDER_RADIUS,
-  SPACING,
-  FONT_SIZE,
-  FONT_WEIGHT,
-} from '../constants/ui';
+import { FONT_FAMILY, BORDER_RADIUS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../constants/ui';
 import type { PlacemarkWithCount, PlacemarkSmartCounts } from '../types/preload.d';
 import type { CreatePlacemarkInput, PlacemarkBounds } from '@placemark/core';
 import { formatNumber } from '../utils/formatLocale';
@@ -33,7 +26,6 @@ interface PlacemarksPanelProps {
   theme: Theme;
   glassBlur: number;
   glassSurfaceOpacity: number;
-  showTimeline: boolean;
   reverseGeocodeEnabled: boolean;
 }
 
@@ -90,7 +82,6 @@ export function PlacemarksPanel({
   theme,
   glassBlur,
   glassSurfaceOpacity,
-  showTimeline,
   reverseGeocodeEnabled,
 }: PlacemarksPanelProps) {
   const colors = useThemeColors(theme);
@@ -403,15 +394,9 @@ export function PlacemarksPanel({
   return (
     <div
       style={{
-        position: 'absolute',
-        top: '5rem',
-        left: SPACING.LG,
-        // Clear the timeline when it's visible; otherwise leave breathing room at the bottom
-        bottom: showTimeline ? 'calc(2rem + 180px)' : '2rem',
-        width: '260px',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        zIndex: Z_INDEX.HEADER,
         backgroundColor: glassBg,
         backdropFilter: `blur(${glassBlur}px)`,
         WebkitBackdropFilter: `blur(${glassBlur}px)`,
@@ -420,7 +405,6 @@ export function PlacemarksPanel({
         boxShadow: colors.shadow,
         fontFamily: FONT_FAMILY,
         overflow: 'hidden',
-        transition: 'bottom 0.3s ease',
       }}
     >
       {/* Header */}

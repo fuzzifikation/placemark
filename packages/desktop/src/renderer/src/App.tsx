@@ -17,6 +17,7 @@ import { useToast } from './hooks/useToast';
 import { usePlacemarks } from './hooks/usePlacemarks';
 import { ToastContainer } from './components/Toast/ToastContainer';
 import { initSystemLocale } from './utils/formatLocale';
+import { LAYOUT, Z_INDEX, TRANSITIONS, BORDER_RADIUS } from './constants/ui';
 import './types/preload.d'; // Import type definitions
 
 function App() {
@@ -322,11 +323,20 @@ function App() {
           clusterOpacity={settings.clusterOpacity}
           unclusteredPointOpacity={settings.unclusteredPointOpacity}
           fitPadding={{
-            // Clear the floating header (top: 1rem offset + ~52px height + buffer)
-            top: settings.mapPadding + 88,
+            // Clear the floating header: inset + header height + gap below it
+            top:
+              settings.mapPadding +
+              LAYOUT.PANEL_INSET_PX +
+              LAYOUT.HEADER_HEIGHT_PX +
+              LAYOUT.PANEL_GAP_PX,
             right: settings.mapPadding,
-            // Clear the timeline panel when visible (bottom: 2rem + ~120px panel height)
-            bottom: showTimeline ? settings.mapPadding + 160 : settings.mapPadding,
+            // Clear the timeline panel when visible: inset + timeline height + gap above it
+            bottom: showTimeline
+              ? settings.mapPadding +
+                LAYOUT.PANEL_INSET_PX +
+                LAYOUT.TIMELINE_HEIGHT_PX +
+                LAYOUT.PANEL_GAP_PX
+              : settings.mapPadding,
             left: settings.mapPadding,
           }}
           targetBounds={targetMapBounds}
@@ -335,27 +345,36 @@ function App() {
 
       {/* Floating Header - hidden when scan overlay is active */}
       {!showScanOverlay && hasPhotos && (
-        <FloatingHeader
-          photoCount={photoData.mapPhotos.length}
-          selectionCount={photoData.selection.size}
-          selectionMode={selectionMode}
-          dateRangeAvailable={!!photoData.dateRange}
-          showTimeline={showTimeline}
-          showPlacemarks={showPlacemarks}
-          scanning={folderScan.scanning}
-          colors={colors}
-          glassBlur={settings.glassBlur}
-          glassSurfaceOpacity={settings.glassSurfaceOpacity}
-          onSelectionModeToggle={handleSelectionModeToggle}
-          onOperationsOpen={() => setShowOperations(true)}
-          onSettingsOpen={() => setShowSettings(true)}
-          onStatsOpen={() => setShowStats(true)}
-          onTimelineToggle={handleTimelineToggle}
-          onPlacemarksToggle={() => setShowPlacemarks((v) => !v)}
-          onScanFolder={() => setShowScanOverlay(true)}
-          onClearLibrary={handleClearLibrary}
-          onHelpOpen={() => setShowHelp(true)}
-        />
+        <div
+          style={{
+            position: 'absolute',
+            top: LAYOUT.PANEL_INSET,
+            left: LAYOUT.PANEL_INSET,
+            zIndex: Z_INDEX.HEADER,
+          }}
+        >
+          <FloatingHeader
+            photoCount={photoData.mapPhotos.length}
+            selectionCount={photoData.selection.size}
+            selectionMode={selectionMode}
+            dateRangeAvailable={!!photoData.dateRange}
+            showTimeline={showTimeline}
+            showPlacemarks={showPlacemarks}
+            scanning={folderScan.scanning}
+            colors={colors}
+            glassBlur={settings.glassBlur}
+            glassSurfaceOpacity={settings.glassSurfaceOpacity}
+            onSelectionModeToggle={handleSelectionModeToggle}
+            onOperationsOpen={() => setShowOperations(true)}
+            onSettingsOpen={() => setShowSettings(true)}
+            onStatsOpen={() => setShowStats(true)}
+            onTimelineToggle={handleTimelineToggle}
+            onPlacemarksToggle={() => setShowPlacemarks((v) => !v)}
+            onScanFolder={() => setShowScanOverlay(true)}
+            onClearLibrary={handleClearLibrary}
+            onHelpOpen={() => setShowHelp(true)}
+          />
+        </div>
       )}
 
       {/* Scan Overlay - blocks map/header during scan or when library is empty */}
@@ -380,17 +399,17 @@ function App() {
         <div
           style={{
             position: 'absolute',
-            bottom: '2rem',
-            left: '2rem',
-            right: '2rem',
-            zIndex: 10,
+            bottom: LAYOUT.PANEL_INSET,
+            left: LAYOUT.PANEL_INSET,
+            right: LAYOUT.PANEL_INSET,
+            zIndex: Z_INDEX.TIMELINE,
             backgroundColor: `rgba(${
               colors.glassSurface.includes('255') ? '255, 255, 255' : '30, 41, 59'
             }, ${settings.glassSurfaceOpacity / 100})`,
             backdropFilter: `blur(${settings.glassBlur}px)`,
             WebkitBackdropFilter: `blur(${settings.glassBlur}px)`,
             border: `1px solid ${colors.glassBorder}`,
-            borderRadius: '16px',
+            borderRadius: BORDER_RADIUS.XL,
             boxShadow: colors.shadow,
             padding: '0.25rem 1rem 1rem',
             transition: 'all 0.3s ease',
@@ -447,22 +466,35 @@ function App() {
 
       {/* Placemarks Panel - left-side floating glass panel for saved geo+time filters */}
       {!showScanOverlay && showPlacemarks && (
-        <PlacemarksPanel
-          placemarks={placemarks.placemarks}
-          smartCounts={placemarks.smartCounts}
-          activePlacemarkId={placemarks.activePlacemarkId}
-          currentBounds={photoData.mapBounds ?? null}
-          currentDateRange={photoData.selectedDateRange}
-          onActivate={handleActivatePlacemark}
-          onCreate={placemarks.createPlacemark}
-          onDelete={placemarks.deletePlacemark}
-          onClose={() => setShowPlacemarks(false)}
-          theme={theme}
-          glassBlur={settings.glassBlur}
-          glassSurfaceOpacity={settings.glassSurfaceOpacity}
-          showTimeline={showTimeline}
-          reverseGeocodeEnabled={settings.reverseGeocodeEnabled}
-        />
+        <div
+          style={{
+            position: 'absolute',
+            top: `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.HEADER_HEIGHT} + ${LAYOUT.PANEL_GAP})`,
+            left: LAYOUT.PANEL_INSET,
+            bottom: showTimeline
+              ? `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.TIMELINE_HEIGHT} + ${LAYOUT.PANEL_GAP})`
+              : LAYOUT.PANEL_INSET,
+            width: LAYOUT.PLACEMARKS_WIDTH,
+            zIndex: Z_INDEX.HEADER,
+            transition: `bottom ${TRANSITIONS.MEDIUM}`,
+          }}
+        >
+          <PlacemarksPanel
+            placemarks={placemarks.placemarks}
+            smartCounts={placemarks.smartCounts}
+            activePlacemarkId={placemarks.activePlacemarkId}
+            currentBounds={photoData.mapBounds ?? null}
+            currentDateRange={photoData.selectedDateRange}
+            onActivate={handleActivatePlacemark}
+            onCreate={placemarks.createPlacemark}
+            onDelete={placemarks.deletePlacemark}
+            onClose={() => setShowPlacemarks(false)}
+            theme={theme}
+            glassBlur={settings.glassBlur}
+            glassSurfaceOpacity={settings.glassSurfaceOpacity}
+            reverseGeocodeEnabled={settings.reverseGeocodeEnabled}
+          />
+        </div>
       )}
 
       {/* Library Stats Panel - stays visible during scan for live updates */}
