@@ -13,5 +13,7 @@ export function photoFromProps(props: Record<string, unknown>): Photo {
     mimeType: props.mimeType as string,
     scannedAt: props.scannedAt as number,
     fileHash: (props.fileHash as string) || null,
+    cameraMake: (props.cameraMake as string) || null,
+    cameraModel: (props.cameraModel as string) || null,
   };
 }

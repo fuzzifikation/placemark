@@ -9,9 +9,20 @@
 
 ---
 
+- **Timeline auto-zoom is broken.** During timeline playback the map fails to auto-zoom or fits incorrectly; investigate `useTimelinePlayback` / fit-to-content logic.
+
 ## UI / Layout
 
 ---
+
+- **Picture preview modal: show camera model and reverse-geocoded location (respecting privacy setting).** Display camera make/model (from EXIF) in the preview modal header. If reverse geocoding is enabled in Settings (e.g. `reverseGeocodeEnabled`), show the human-readable location; otherwise show coordinates or a "Location hidden" label. Cache lookups when possible and respect the user's privacy opt-out.
+
+- **Global search box: search locations, GPS coordinates, and filenames.** Add a unified search input (global and/or map-scoped) that supports:
+  - **Place name lookup** — search by human-readable location (city, POI, admin area) with autocomplete and reverse-geocode suggestions (respect `reverseGeocodeEnabled`).
+  - **Direct GPS input** — accept decimal or DMS coordinate pairs and pan the map to the location, with an option to show matching nearby photos.
+  - **Filename/path search** — substring, prefix, and simple glob matches for filenames and folder paths; show preview thumbnails and counts in results.
+
+  Search results should highlight matching photos on the map and in the library, allow quick-focus (pan + zoom), and respect privacy settings (no reverse-geocode text if disabled). Consider a small results dropdown with keyboard navigation and a dedicated full results panel for advanced filtering.
 
 ## Placemarks
 
