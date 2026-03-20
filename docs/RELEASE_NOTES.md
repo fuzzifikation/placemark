@@ -1,5 +1,14 @@
 # Release Notes
 
+## v0.7.5 - Camera Data & Library Stats (2026-03-20)
+
+### ✨ Improvements
+
+- **Camera make/model tracking:** EXIF `Make` and `Model` fields are now extracted during scan and stored in the database. Camera brand names are normalised to title case (e.g. "SAMSUNG" → "Samsung"). Existing databases are migrated automatically via `ALTER TABLE ADD COLUMN`.
+- **Camera breakdown in Library Stats:** A new "Cameras" card in the Library Stats panel shows a proportional bar chart of the top 20 make/model combinations — same visual style as the File Formats card.
+
+---
+
 ## v0.7.4 - Timeline Histogram & Spider Improvements (2026-03-19)
 
 ### ✨ Improvements

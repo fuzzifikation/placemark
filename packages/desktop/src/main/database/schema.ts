@@ -21,6 +21,8 @@ const SCHEMA_SQL = `
     scanned_at INTEGER NOT NULL,
     file_size INTEGER NOT NULL,
     mime_type TEXT NOT NULL,
+    camera_make TEXT,
+    camera_model TEXT,
     UNIQUE(source, path)
   );
 
@@ -78,6 +80,19 @@ export function initializeDatabase(options: DatabaseOptions): Database.Database 
   db.pragma('foreign_keys = ON');
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA_SQL);
+
+  // Add camera columns to existing databases that pre-date this schema version.
+  // SQLite does not support ALTER TABLE ADD COLUMN IF NOT EXISTS, so we use try-catch.
+  try {
+    db.exec('ALTER TABLE photos ADD COLUMN camera_make TEXT');
+  } catch {
+    /* already exists */
+  }
+  try {
+    db.exec('ALTER TABLE photos ADD COLUMN camera_model TEXT');
+  } catch {
+    /* already exists */
+  }
 
   return db;
 }

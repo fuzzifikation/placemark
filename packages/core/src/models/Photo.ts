@@ -16,6 +16,8 @@ export interface Photo {
   scannedAt: number; // Unix epoch in milliseconds
   fileSize: number;
   mimeType: string;
+  cameraMake: string | null;
+  cameraModel: string | null;
 }
 
 export interface PhotoCreateInput {
@@ -27,4 +29,6 @@ export interface PhotoCreateInput {
   fileHash?: string;
   fileSize: number;
   mimeType: string;
+  cameraMake?: string;
+  cameraModel?: string;
 }

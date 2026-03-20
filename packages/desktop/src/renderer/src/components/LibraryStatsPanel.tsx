@@ -130,8 +130,9 @@ export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPa
     </div>
   );
 
-  // Build format bar max for proportional widths
+  // Build max counts for proportional bar widths
   const maxFormatCount = stats?.formatBreakdown[0]?.count ?? 1;
+  const maxCameraCount = stats?.cameraBreakdown[0]?.count ?? 1;
 
   return (
     <>
@@ -314,6 +315,76 @@ export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPa
                   </div>
                 ))}
               </div>
+
+              {/* Cameras */}
+              {stats.cameraBreakdown.length > 0 && (
+                <div style={cardStyle}>
+                  <div style={labelStyle}>Cameras</div>
+                  {stats.cameraBreakdown.map((cam) => {
+                    const label =
+                      cam.make === cam.model || cam.make === 'Unknown'
+                        ? cam.model
+                        : `${cam.make} ${cam.model}`;
+                    return (
+                      <div
+                        key={`${cam.make}-${cam.model}`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: SPACING.SM,
+                          padding: `${SPACING.XS} 0`,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: FONT_SIZE.SM,
+                            color: colors.textSecondary,
+                            width: '140px',
+                            flexShrink: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                          title={label}
+                        >
+                          {label}
+                        </span>
+                        <div
+                          style={{
+                            flex: 1,
+                            height: '8px',
+                            backgroundColor: colors.borderLight,
+                            borderRadius: '4px',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${(cam.count / maxCameraCount) * 100}%`,
+                              height: '100%',
+                              backgroundColor: colors.primary,
+                              borderRadius: '4px',
+                              transition: 'width 0.3s ease',
+                              minWidth: '4px',
+                            }}
+                          />
+                        </div>
+                        <span
+                          style={{
+                            fontSize: FONT_SIZE.XS,
+                            fontWeight: 600,
+                            color: colors.textPrimary,
+                            minWidth: '40px',
+                            textAlign: 'right',
+                          }}
+                        >
+                          {formatNumber(cam.count)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Date Range */}
               {stats.minTimestamp && stats.maxTimestamp && (

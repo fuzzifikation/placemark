@@ -33,9 +33,20 @@
 
 ### Small improvements (up to half a day each)
 
+- **Oldest / youngest photo: click to open in system viewer.** The Library Stats panel shows the oldest and youngest photo dates. Make those rows (or just the filename/date label) clickable — clicking opens the photo's full path in the OS default image viewer via `window.api.system.openExternal` (or a dedicated IPC call). A fun, low-stakes shortcut for jumping straight to your earliest memory or most recent shot without hunting through the map.
+
 ---
 
 ### Medium work (half day – 1 day each)
+
+- **Rename and expand the Stats panel into a "Stats & Filters" panel.** The panel becomes the primary filtering surface for the map — always usable alongside the live map (no modal blocking). Every stat row is a filter. Vision:
+  - **File formats** — click "HEIC (1 243)" to show only HEIC photos on the map. Multiple rows can be selected (OR logic). Active filters appear as dismissible chips in the floating header.
+  - **Cameras** — click "Samsung SM-G991B (412)" to filter. Same chip pattern.
+  - **No GPS** — a dedicated row/badge showing the count of photos that have no coordinates. Clicking it opens a side-list or separate view of those photos (this becomes the natural entry point for the Phase 10 GPS-editing workflow — users can see and act on their unlocated photos without a separate panel).
+  - **More filter dimensions over time:** rating, year, folder/source, orientation (landscape / portrait / square), file size buckets.
+  - **Filter summary header** — when any stats filter is active, a compact "Filtered: 412 of 3 204 photos" line appears at the top of the panel and a "Clear all filters" button appears in the floating header alongside the individual chips.
+  - **Panel stays open while interacting with the map** — important: the stats panel must not capture pointer events outside its own bounds. The map should remain pannable and zoomable while the panel is open.
+  - **Implementation path:** rename `LibraryStatsPanel` → `StatsFiltesPanel` (or keep filename, change title); add `activeFilters: StatsFilter[]` state to `usePhotoData`; extend `getPhotosWithLocation` SQL to accept format/camera/hasGps predicates; pass `onFilterToggle` callback into the panel; chips + "Clear" in `FloatingHeader`. No-GPS filter requires a separate IPC call + list view (Phase 10 dependency — stub the row as non-clickable until then).
 
 - **[Future, skip for now] Drag and Drop.** Electron supports `webContents.startDrag({ files, icon })` for native OS drag. A drag handle chip in the floating header (visible when photos are selected) could let users drag a selection straight into Explorer. **Constraints:** copy-only (OS performs the copy — no dry-run, no undo, DB stays consistent); move via drag is unsafe (DB paths go stale). Not suitable for large batches (no progress/cancel). Complement to Organize, not a replacement. Implementation: drag handle in `FloatingHeader.tsx` → IPC → `event.sender.startDrag()`.
 

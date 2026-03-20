@@ -676,22 +676,11 @@ _All phases below are post-Store-launch. Priority order may shift based on user 
 
 ---
 
-### Phase 12: Network Shares & Folder Watch
+### Phase 12: Folder Watch (Auto-Scan)
 
-**Goal:** Support network-mounted folders (NAS) and opt-in automatic detection of new photos.
+**Goal:** Opt-in automatic detection of new photos in scanned folders.
 
-#### 12.1 Network Shares
-
-**Tasks:**
-
-1. Add "Network Share" source type
-2. Handle UNC paths on Windows (`\\server\share`)
-3. Handle SMB/NFS mounts on macOS/Linux
-4. Test with slow network connections
-5. Add retry logic for network timeouts
-6. Cache scanned metadata locally (don't re-scan network on every launch)
-
-#### 12.2 Folder Watch (Auto-Scan)
+> **Note on network paths:** Placemark requires no special network share support. Network-mounted folders (NAS, UNC paths like `\\server\share`, SMB/NFS mounts) are surfaced by the OS and Electron's Node.js runtime as ordinary file system paths. Placemark already reads any path the user provides — network locations work out of the box. No dedicated integration is needed.
 
 **Tasks:**
 
@@ -703,16 +692,13 @@ _All phases below are post-Store-launch. Priority order may shift based on user 
 
 **Testing:**
 
-- [ ] Can scan network share via UNC path
-- [ ] Handles network disconnection gracefully
-- [ ] Cache works when network is unavailable
 - [ ] Folder watch detects new files within 5 seconds
 - [ ] No automatic scanning — only notification + user-triggered
 - [ ] Watch survives app minimize/restore
 
-**Estimated Effort:** 3–4 days
+**Estimated Effort:** 1–2 days
 
-**Deliverable:** Network share support and opt-in folder monitoring.
+**Deliverable:** Opt-in folder monitoring with user-triggered incremental scan.
 
 ---
 

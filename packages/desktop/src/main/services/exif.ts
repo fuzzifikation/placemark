@@ -10,6 +10,8 @@ export interface ExifData {
   latitude?: number;
   longitude?: number;
   timestamp?: number;
+  cameraMake?: string;
+  cameraModel?: string;
 }
 
 // Re-export format helper for convenience
@@ -34,7 +36,7 @@ export async function extractExif(filePath: string): Promise<ExifData> {
     const data = await exifr.parse(filePath, {
       gps: true, // GPS IFD → latitude, longitude
       exif: true, // EXIF IFD → DateTimeOriginal, CreateDate
-      tiff: true, // IFD0 → DateTime fallback
+      tiff: true, // IFD0 → DateTime, Make, Model
       makerNote: false, // Skip large camera maker notes
       iptc: false,
       xmp: false,
@@ -58,6 +60,17 @@ export async function extractExif(filePath: string): Promise<ExifData> {
       const dateTime = data.DateTimeOriginal || data.CreateDate || data.DateTime;
       if (dateTime) {
         result.timestamp = new Date(dateTime).getTime();
+      }
+
+      // Camera make / model — stored in IFD0 (tiff segment).
+      // Normalize Make to title case so "SAMSUNG", "Samsung", and "samsung" all
+      // become "Samsung". Model keeps original casing (e.g. "SM-G991B" is meaningful).
+      if (typeof data.Make === 'string' && data.Make.trim()) {
+        const make = data.Make.trim();
+        result.cameraMake = make.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+      }
+      if (typeof data.Model === 'string' && data.Model.trim()) {
+        result.cameraModel = data.Model.trim();
       }
     }
 

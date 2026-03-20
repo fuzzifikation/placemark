@@ -234,6 +234,8 @@ async function processImageFile(
     timestamp: exifData.timestamp,
     fileSize: stats.size,
     mimeType: getMimeType(ext),
+    cameraMake: exifData.cameraMake,
+    cameraModel: exifData.cameraModel,
   });
 
   if (exifData.latitude != null && exifData.longitude != null) {

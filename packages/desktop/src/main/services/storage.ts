@@ -44,6 +44,8 @@ function rowToPhoto(row: any): Photo {
     scannedAt: row.scanned_at,
     fileSize: row.file_size,
     mimeType: row.mime_type,
+    cameraMake: row.camera_make ?? null,
+    cameraModel: row.camera_model ?? null,
   };
 }
 
@@ -55,14 +57,16 @@ export function createPhoto(input: PhotoCreateInput): Photo {
   const result = db
     .prepare(
       `
-    INSERT INTO photos (source, path, latitude, longitude, timestamp, file_hash, scanned_at, file_size, mime_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO photos (source, path, latitude, longitude, timestamp, file_hash, scanned_at, file_size, mime_type, camera_make, camera_model)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(source, path) DO UPDATE SET
       latitude = excluded.latitude,
       longitude = excluded.longitude,
       timestamp = excluded.timestamp,
       file_size = excluded.file_size,
       mime_type = excluded.mime_type,
+      camera_make = excluded.camera_make,
+      camera_model = excluded.camera_model,
       scanned_at = excluded.scanned_at
     RETURNING *
   `
@@ -76,7 +80,9 @@ export function createPhoto(input: PhotoCreateInput): Photo {
       input.fileHash ?? null,
       Date.now(),
       input.fileSize,
-      input.mimeType
+      input.mimeType,
+      input.cameraMake ?? null,
+      input.cameraModel ?? null
     );
 
   return rowToPhoto(result);
@@ -243,6 +249,7 @@ export interface LibraryStats {
   minTimestamp: number | null;
   maxTimestamp: number | null;
   formatBreakdown: Array<{ mimeType: string; count: number }>;
+  cameraBreakdown: Array<{ make: string; model: string; count: number }>;
   lastScannedAt: number | null;
 }
 
@@ -282,9 +289,24 @@ export function getLibraryStats(): LibraryStats {
     )
     .all() as Array<{ mimeType: string; count: number }>;
 
+  const cameraRows = db
+    .prepare(
+      `SELECT
+         COALESCE(camera_make, 'Unknown') AS make,
+         COALESCE(camera_model, 'Unknown') AS model,
+         COUNT(*) AS count
+       FROM photos
+       WHERE camera_make IS NOT NULL OR camera_model IS NOT NULL
+       GROUP BY camera_make, camera_model
+       ORDER BY count DESC
+       LIMIT 20`
+    )
+    .all() as Array<{ make: string; model: string; count: number }>;
+
   return {
     ...summary,
     formatBreakdown: formatRows,
+    cameraBreakdown: cameraRows,
   };
 }
 
