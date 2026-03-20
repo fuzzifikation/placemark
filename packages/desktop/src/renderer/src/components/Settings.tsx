@@ -8,7 +8,7 @@
  * This ensures consistency and eliminates duplicate configuration maintenance.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { StorageSettings } from './Settings/StorageSettings';
@@ -21,6 +21,7 @@ import type { SpiderSettings } from './MapView';
 
 interface SettingsProps {
   onClose: () => void;
+  settings: AppSettings;
   onSettingsChange: (settings: AppSettings) => void;
   theme: Theme;
   onThemeChange: () => void;
@@ -116,47 +117,15 @@ export const getDefaultSpiderSettings = (): SpiderSettings => ({
   clearZoom: DEFAULT_SETTINGS.spiderClearZoom,
 });
 
-// Settings version for migration
-const SETTINGS_VERSION = 2; // Increment when settings format changes
-
-/**
- * Migrate old settings to new format
- */
-function migrateSettings(saved: Partial<AppSettings> & { _version?: number }): AppSettings {
-  const version = saved._version ?? 1;
-  const migrated = { ...DEFAULT_SETTINGS, ...saved };
-
-  // v1 -> v2: spiderRadius changed from degrees (~0.0004) to pixels (~60)
-  if (version < 2) {
-    // If spiderRadius is suspiciously small (< 1), it's the old degree-based value
-    if (migrated.spiderRadius < 1) {
-      migrated.spiderRadius = DEFAULT_SETTINGS.spiderRadius;
-    }
-  }
-
-  return migrated;
-}
-
 export function Settings({
   onClose,
+  settings,
   onSettingsChange,
   theme,
   onThemeChange,
   toast,
 }: SettingsProps) {
   const colors = useThemeColors(theme);
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('placemark-settings');
-    if (saved) {
-      try {
-        return migrateSettings(JSON.parse(saved));
-      } catch {
-        // Corrupt localStorage - fall back to defaults
-      }
-    }
-    return DEFAULT_SETTINGS;
-  });
-
   const [activeSection, setActiveSection] = useState('general');
 
   const sections = [
@@ -165,68 +134,61 @@ export function Settings({
     { id: 'library', label: 'Library', icon: <Database size={16} /> },
   ];
 
-  useEffect(() => {
-    // Save settings with version for future migrations
-    localStorage.setItem(
-      'placemark-settings',
-      JSON.stringify({ ...settings, _version: SETTINGS_VERSION })
-    );
-    onSettingsChange(settings);
-  }, [settings, onSettingsChange]);
+  const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+    onSettingsChange({ ...settings, [key]: value });
+  };
 
   const resetAllSettings = () => {
-    // Reset theme to light mode (default)
-    if (theme !== 'light') {
-      onThemeChange();
-    }
-    setSettings(DEFAULT_SETTINGS);
+    if (theme !== 'light') onThemeChange();
+    onSettingsChange(DEFAULT_SETTINGS);
     toast.success('All settings reset to defaults');
   };
 
-  const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
-
-  // Reset functions for individual sections
   const resetGeneral = () => {
-    // Reset theme to light mode (default)
-    if (theme !== 'light') {
-      onThemeChange();
-    }
-    updateSetting('devSettingsEnabled', DEFAULT_SETTINGS.devSettingsEnabled);
-    updateSetting('glassBlur', DEFAULT_SETTINGS.glassBlur);
-    updateSetting('glassSurfaceOpacity', DEFAULT_SETTINGS.glassSurfaceOpacity);
-    updateSetting('toastDuration', DEFAULT_SETTINGS.toastDuration);
-    updateSetting('singleClickOpensViewer', DEFAULT_SETTINGS.singleClickOpensViewer);
+    if (theme !== 'light') onThemeChange();
+    onSettingsChange({
+      ...settings,
+      devSettingsEnabled: DEFAULT_SETTINGS.devSettingsEnabled,
+      glassBlur: DEFAULT_SETTINGS.glassBlur,
+      glassSurfaceOpacity: DEFAULT_SETTINGS.glassSurfaceOpacity,
+      toastDuration: DEFAULT_SETTINGS.toastDuration,
+      singleClickOpensViewer: DEFAULT_SETTINGS.singleClickOpensViewer,
+    });
     toast.success('Appearance settings reset');
   };
 
   const resetLibrary = () => {
-    updateSetting('maxFileSizeMB', DEFAULT_SETTINGS.maxFileSizeMB);
-    updateSetting('reverseGeocodeEnabled', DEFAULT_SETTINGS.reverseGeocodeEnabled);
+    onSettingsChange({
+      ...settings,
+      maxFileSizeMB: DEFAULT_SETTINGS.maxFileSizeMB,
+      reverseGeocodeEnabled: DEFAULT_SETTINGS.reverseGeocodeEnabled,
+    });
     toast.success('Library settings reset');
   };
 
   const resetMap = () => {
-    updateSetting('clusteringEnabled', DEFAULT_SETTINGS.clusteringEnabled);
-    updateSetting('clusterRadius', DEFAULT_SETTINGS.clusterRadius);
-    updateSetting('clusterMaxZoom', DEFAULT_SETTINGS.clusterMaxZoom);
-    updateSetting('clusterOpacity', DEFAULT_SETTINGS.clusterOpacity);
-    updateSetting('unclusteredPointOpacity', DEFAULT_SETTINGS.unclusteredPointOpacity);
-    updateSetting('mapPadding', DEFAULT_SETTINGS.mapPadding);
-    updateSetting('mapTransitionDuration', DEFAULT_SETTINGS.mapTransitionDuration);
-    updateSetting('showHeatmap', DEFAULT_SETTINGS.showHeatmap);
-    updateSetting('timelineUpdateInterval', DEFAULT_SETTINGS.timelineUpdateInterval);
-    updateSetting('playSpeedSlowDays', DEFAULT_SETTINGS.playSpeedSlowDays);
-    updateSetting('playSpeedMediumDays', DEFAULT_SETTINGS.playSpeedMediumDays);
-    updateSetting('playSpeedFastDays', DEFAULT_SETTINGS.playSpeedFastDays);
-    updateSetting('tileMaxZoom', DEFAULT_SETTINGS.tileMaxZoom);
-    updateSetting('spiderOverlapTolerance', DEFAULT_SETTINGS.spiderOverlapTolerance);
-    updateSetting('spiderRadius', DEFAULT_SETTINGS.spiderRadius);
-    updateSetting('spiderAnimationDuration', DEFAULT_SETTINGS.spiderAnimationDuration);
-    updateSetting('spiderTriggerZoom', DEFAULT_SETTINGS.spiderTriggerZoom);
-    updateSetting('spiderCollapseMargin', DEFAULT_SETTINGS.spiderCollapseMargin);
-    updateSetting('spiderClearZoom', DEFAULT_SETTINGS.spiderClearZoom);
+    onSettingsChange({
+      ...settings,
+      clusteringEnabled: DEFAULT_SETTINGS.clusteringEnabled,
+      clusterRadius: DEFAULT_SETTINGS.clusterRadius,
+      clusterMaxZoom: DEFAULT_SETTINGS.clusterMaxZoom,
+      clusterOpacity: DEFAULT_SETTINGS.clusterOpacity,
+      unclusteredPointOpacity: DEFAULT_SETTINGS.unclusteredPointOpacity,
+      mapPadding: DEFAULT_SETTINGS.mapPadding,
+      mapTransitionDuration: DEFAULT_SETTINGS.mapTransitionDuration,
+      showHeatmap: DEFAULT_SETTINGS.showHeatmap,
+      timelineUpdateInterval: DEFAULT_SETTINGS.timelineUpdateInterval,
+      playSpeedSlowDays: DEFAULT_SETTINGS.playSpeedSlowDays,
+      playSpeedMediumDays: DEFAULT_SETTINGS.playSpeedMediumDays,
+      playSpeedFastDays: DEFAULT_SETTINGS.playSpeedFastDays,
+      tileMaxZoom: DEFAULT_SETTINGS.tileMaxZoom,
+      spiderOverlapTolerance: DEFAULT_SETTINGS.spiderOverlapTolerance,
+      spiderRadius: DEFAULT_SETTINGS.spiderRadius,
+      spiderAnimationDuration: DEFAULT_SETTINGS.spiderAnimationDuration,
+      spiderTriggerZoom: DEFAULT_SETTINGS.spiderTriggerZoom,
+      spiderCollapseMargin: DEFAULT_SETTINGS.spiderCollapseMargin,
+      spiderClearZoom: DEFAULT_SETTINGS.spiderClearZoom,
+    });
     toast.success('Map settings reset');
   };
 

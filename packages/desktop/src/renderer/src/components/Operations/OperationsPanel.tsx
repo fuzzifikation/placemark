@@ -95,8 +95,7 @@ export function OperationsPanel({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destPath, opType, previewVersion]);
+  }, [destPath, opType, previewVersion, selectedPhotos]);
 
   // Subscribe to progress events while executing
   useEffect(() => {

@@ -7,13 +7,10 @@ import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { TimelineControls } from './Timeline/TimelineControls';
 import { TimelineSlider } from './Timeline/TimelineSlider';
-import {
-  TimelineHistogram,
-  BUCKET_COUNT,
-  type HistogramBucket,
-} from './Timeline/TimelineHistogram';
+import { TimelineHistogram } from './Timeline/TimelineHistogram';
 import { useTimelineDrag } from './Timeline/useTimelineDrag';
 import { useTimelinePlayback } from './Timeline/useTimelinePlayback';
+import { useHistogram } from '../hooks/useHistogram';
 
 interface TimelineProps {
   minDate: number; // Unix milliseconds
@@ -60,24 +57,7 @@ export function Timeline({
   const colors = useThemeColors(theme);
 
   // Histogram data — fetched from SQLite via IPC
-  const [gpsHistogram, setGpsHistogram] = useState<HistogramBucket[]>([]);
-  const [allHistogram, setAllHistogram] = useState<HistogramBucket[]>([]);
-
-  useEffect(() => {
-    if (!minDate || !maxDate || maxDate <= minDate) return;
-    let cancelled = false;
-    Promise.all([
-      window.api.photos.getHistogram(minDate, maxDate, BUCKET_COUNT, true),
-      window.api.photos.getHistogram(minDate, maxDate, BUCKET_COUNT, false),
-    ]).then(([gps, all]) => {
-      if (cancelled) return;
-      setGpsHistogram(gps);
-      setAllHistogram(all);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [minDate, maxDate]);
+  const { gpsHistogram, allHistogram } = useHistogram(minDate, maxDate);
 
   // Update local state when props change
   useEffect(() => {

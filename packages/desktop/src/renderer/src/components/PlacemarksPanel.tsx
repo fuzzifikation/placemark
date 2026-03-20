@@ -8,7 +8,15 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Bookmark, Plus, Trash2, Calendar, MapPin } from 'lucide-react';
 import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
-import { FONT_FAMILY, BORDER_RADIUS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../constants/ui';
+import { useReverseGeocoding } from '../hooks/useReverseGeocoding';
+import {
+  FONT_FAMILY,
+  BORDER_RADIUS,
+  SPACING,
+  FONT_SIZE,
+  FONT_WEIGHT,
+  getGlassStyle,
+} from '../constants/ui';
 import type { PlacemarkWithCount, PlacemarkSmartCounts } from '../types/preload.d';
 import type { CreatePlacemarkInput, PlacemarkBounds } from '@placemark/core';
 import { formatNumber } from '../utils/formatLocale';
@@ -38,26 +46,6 @@ function suggestName(dateRange: { start: number; end: number } | null): string {
   const endYear = end.getFullYear();
   if (startYear === endYear) return String(startYear);
   return `${startYear}–${endYear}`;
-}
-
-// ── Nominatim reverse geocoding ─────────────────────────────────────────────
-
-interface NominatimAddress {
-  city?: string;
-  town?: string;
-  village?: string;
-  municipality?: string;
-  county?: string;
-  state?: string;
-  country?: string;
-}
-
-function buildGeoLabel(addr: NominatimAddress): string {
-  const place =
-    addr.city ?? addr.town ?? addr.village ?? addr.municipality ?? addr.county ?? addr.state;
-  if (place && addr.country) return `${place}, ${addr.country}`;
-  if (place) return place;
-  return addr.country ?? '';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -93,54 +81,8 @@ export function PlacemarksPanel({
   const [hoveredRowId, setHoveredRowId] = useState<number | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Reverse geocoding labels — fetched lazily from Nominatim, cached by placemark id.
-  // Only the center coordinate of the saved bounds is sent — no photo data.
-  const [geoLabels, setGeoLabels] = useState<Map<number, string>>(new Map());
-  const fetchedIdsRef = useRef<Set<number>>(new Set());
-
-  useEffect(() => {
-    if (!reverseGeocodeEnabled) return;
-    const toFetch = placemarks.filter((p) => p.bounds !== null && !fetchedIdsRef.current.has(p.id));
-    if (toFetch.length === 0) return;
-
-    let cancelled = false;
-
-    const run = async () => {
-      for (let i = 0; i < toFetch.length; i++) {
-        if (cancelled) return;
-        const p = toFetch[i];
-        fetchedIdsRef.current.add(p.id);
-
-        const lat = ((p.bounds!.north + p.bounds!.south) / 2).toFixed(4);
-        const lng = ((p.bounds!.east + p.bounds!.west) / 2).toFixed(4);
-
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
-            { headers: { 'Accept-Language': 'en' } }
-          );
-          if (!res.ok) continue;
-          const data = await res.json();
-          const label = buildGeoLabel(data.address ?? {});
-          if (label && !cancelled) {
-            setGeoLabels((prev) => new Map(prev).set(p.id, label));
-          }
-        } catch {
-          // Network unavailable or API error — silently degrade, no label shown
-        }
-
-        // Nominatim usage policy: max 1 request per second
-        if (i < toFetch.length - 1) {
-          await new Promise((r) => setTimeout(r, 1100));
-        }
-      }
-    };
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [placemarks, reverseGeocodeEnabled]);
+  // Reverse geocoding labels — lazily fetched from Nominatim, cached by placemark ID.
+  const geoLabels = useReverseGeocoding(placemarks, reverseGeocodeEnabled);
 
   // Set suggested name and focus input when form first opens.
   // currentDateRange is intentionally NOT in deps — we don't want to reset
@@ -387,22 +329,13 @@ export function PlacemarksPanel({
     );
   };
 
-  const glassBg = `rgba(${
-    colors.glassSurface.includes('255') ? '255, 255, 255' : '30, 41, 59'
-  }, ${glassSurfaceOpacity / 100})`;
-
   return (
     <div
       style={{
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: glassBg,
-        backdropFilter: `blur(${glassBlur}px)`,
-        WebkitBackdropFilter: `blur(${glassBlur}px)`,
-        border: `1px solid ${colors.glassBorder}`,
-        borderRadius: BORDER_RADIUS.XL,
-        boxShadow: colors.shadow,
+        ...getGlassStyle(colors, glassBlur, glassSurfaceOpacity),
         fontFamily: FONT_FAMILY,
         overflow: 'hidden',
       }}

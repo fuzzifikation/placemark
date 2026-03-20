@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { Photo } from '@placemark/core';
 import type { Theme } from '../theme';
 import { formatDateTime } from '../utils/formatLocale';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 interface PhotoPreviewModalProps {
   photo: Photo;
@@ -19,20 +20,17 @@ export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPrev
   // Use ref to track URL for cleanup (prevents stale closure bug)
   const urlRef = useRef<string | null>(null);
 
-  const isDark = theme === 'dark';
-  const modalBg = isDark ? '#1e293b' : '#ffffff';
-  const textColor = isDark ? '#f1f5f9' : '#000000';
-  const secondaryText = isDark ? '#94a3b8' : '#666666';
-  const placeholderBg = isDark ? '#0f172a' : '#f0f0f0';
-  const placeholderText = isDark ? '#64748b' : '#666666';
+  const colors = useThemeColors(theme);
 
   useEffect(() => {
     setLoading(true);
     setThumbnailUrl(null);
+    let isMounted = true;
 
     window.api.thumbnails
       .get(photo.id, photo.path)
       .then((thumbnailBuffer) => {
+        if (!isMounted) return;
         if (thumbnailBuffer) {
           const uint8Array = new Uint8Array(thumbnailBuffer as unknown as ArrayBuffer);
           const blob = new Blob([uint8Array], { type: 'image/jpeg' });
@@ -42,13 +40,14 @@ export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPrev
         }
       })
       .catch((error) => {
-        console.error('Failed to load thumbnail:', error);
+        if (isMounted) console.error('Failed to load thumbnail:', error);
       })
       .finally(() => {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       });
 
     return () => {
+      isMounted = false;
       if (urlRef.current) {
         URL.revokeObjectURL(urlRef.current);
         urlRef.current = null;
@@ -76,20 +75,20 @@ export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPrev
     >
       <div
         style={{
-          backgroundColor: modalBg,
+          backgroundColor: colors.modalBackground,
           borderRadius: '8px',
           padding: '1rem',
           maxWidth: '90vw',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: isDark ? '0 4px 6px rgba(0, 0, 0, 0.5)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
+          boxShadow: colors.shadow,
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: textColor }}>{filename}</h3>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: colors.textPrimary }}>{filename}</h3>
           <button
             onClick={onClose}
             style={{
@@ -98,7 +97,7 @@ export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPrev
               fontSize: '1.5rem',
               cursor: 'pointer',
               padding: '0 0.5rem',
-              color: textColor,
+              color: colors.textPrimary,
             }}
           >
             ×
@@ -113,11 +112,11 @@ export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPrev
               alignItems: 'center',
               justifyContent: 'center',
               height: '400px',
-              backgroundColor: placeholderBg,
+              backgroundColor: colors.surface,
               borderRadius: '4px',
             }}
           >
-            <p style={{ color: placeholderText }}>Loading thumbnail...</p>
+            <p style={{ color: colors.textMuted }}>Loading thumbnail...</p>
           </div>
         )}
 
@@ -141,30 +140,31 @@ export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPrev
               alignItems: 'center',
               justifyContent: 'center',
               height: '400px',
-              backgroundColor: placeholderBg,
+              backgroundColor: colors.surface,
               borderRadius: '4px',
             }}
           >
-            <p style={{ color: placeholderText }}>Thumbnail not available</p>
+            <p style={{ color: colors.textMuted }}>Thumbnail not available</p>
           </div>
         )}
 
         {/* Photo Details */}
-        <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: secondaryText }}>
+        <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: colors.textSecondary }}>
           <p style={{ margin: '0.25rem 0' }}>
-            <strong style={{ color: textColor }}>Path:</strong> {photo.path}
+            <strong style={{ color: colors.textPrimary }}>Path:</strong> {photo.path}
           </p>
           <p style={{ margin: '0.25rem 0' }}>
-            <strong style={{ color: textColor }}>Location:</strong> {photo.latitude?.toFixed(6)},{' '}
-            {photo.longitude?.toFixed(6)}
+            <strong style={{ color: colors.textPrimary }}>Location:</strong>{' '}
+            {photo.latitude?.toFixed(6)}, {photo.longitude?.toFixed(6)}
           </p>
           {photo.timestamp && (
             <p style={{ margin: '0.25rem 0' }}>
-              <strong style={{ color: textColor }}>Date:</strong> {formatDateTime(photo.timestamp)}
+              <strong style={{ color: colors.textPrimary }}>Date:</strong>{' '}
+              {formatDateTime(photo.timestamp)}
             </p>
           )}
           <p style={{ margin: '0.25rem 0' }}>
-            <strong style={{ color: textColor }}>Size:</strong>{' '}
+            <strong style={{ color: colors.textPrimary }}>Size:</strong>{' '}
             {(photo.fileSize / 1024 / 1024).toFixed(2)} MB
           </p>
         </div>
@@ -182,16 +182,13 @@ export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPrev
             onClick={() => window.api.photos.openInViewer(photo.id)}
             style={{
               padding: '0.5rem 1rem',
-              backgroundColor: '#0066cc',
-              color: 'white',
+              backgroundColor: colors.primary,
+              color: colors.buttonText,
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
               fontSize: '0.875rem',
-              opacity: isDark ? 0.9 : 1,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = isDark ? '1' : '0.9')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = isDark ? '0.9' : '1')}
           >
             Open in Viewer
           </button>
@@ -199,16 +196,13 @@ export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPrev
             onClick={() => window.api.photos.showInFolder(photo.id)}
             style={{
               padding: '0.5rem 1rem',
-              backgroundColor: isDark ? '#475569' : '#666666',
-              color: 'white',
+              backgroundColor: colors.secondary,
+              color: colors.buttonText,
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
               fontSize: '0.875rem',
-              opacity: isDark ? 0.9 : 1,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = isDark ? '0.9' : '1')}
           >
             Show in Folder
           </button>

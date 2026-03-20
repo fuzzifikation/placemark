@@ -6,7 +6,14 @@
  */
 
 import type { SelectionMode } from './MapView';
-import { SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, FONT_FAMILY } from '../constants/ui';
+import {
+  SPACING,
+  BORDER_RADIUS,
+  FONT_SIZE,
+  FONT_WEIGHT,
+  FONT_FAMILY,
+  getGlassStyle,
+} from '../constants/ui';
 import {
   Lasso,
   FolderOpen,
@@ -138,14 +145,7 @@ export function FloatingHeader({
     <div
       style={{
         padding: `${SPACING.SM} ${SPACING.LG}`,
-        backgroundColor: `rgba(${
-          colors.glassSurface.includes('255') ? '255, 255, 255' : '30, 41, 59'
-        }, ${glassSurfaceOpacity / 100})`,
-        backdropFilter: `blur(${glassBlur}px)`,
-        WebkitBackdropFilter: `blur(${glassBlur}px)`,
-        border: `1px solid ${colors.glassBorder}`,
-        borderRadius: BORDER_RADIUS.XL,
-        boxShadow: colors.shadow,
+        ...getGlassStyle(colors, glassBlur, glassSurfaceOpacity),
         display: 'flex',
         alignItems: 'center',
         gap: SPACING.MD,

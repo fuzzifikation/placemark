@@ -75,3 +75,42 @@ export const LAYOUT = {
   /** PlacemarksPanel fixed width. */
   PLACEMARKS_WIDTH: '260px',
 } as const;
+
+export const SHADOWS = {
+  sm: '0 1px 2px rgba(0,0,0,0.05)',
+  md: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)',
+  lg: '0 10px 15px -3px rgba(0,0,0,0.5)',
+  mapControl: '0 2px 8px rgba(0,0,0,0.15)',
+} as const;
+
+export const ICON_SIZE = {
+  XS: 12,
+  SM: 16,
+  MD: 20,
+  LG: 24,
+  XL: 32,
+} as const;
+
+/**
+ * Returns a consistent glass-panel style object for use in inline styles.
+ * Centralises the glassmorphism effect shared across all floating panels.
+ */
+import type { ThemeColors } from '../theme';
+import type { CSSProperties } from 'react';
+
+export function getGlassStyle(
+  colors: ThemeColors,
+  glassBlur: number,
+  glassSurfaceOpacity: number,
+  borderRadius: string = BORDER_RADIUS.XL
+): CSSProperties {
+  const isDark = !colors.glassSurface.includes('255, 255, 255');
+  return {
+    backgroundColor: `rgba(${isDark ? '30, 41, 59' : '255, 255, 255'}, ${glassSurfaceOpacity / 100})`,
+    backdropFilter: `blur(${glassBlur}px)`,
+    WebkitBackdropFilter: `blur(${glassBlur}px)`,
+    border: `1px solid ${colors.glassBorder}`,
+    borderRadius,
+    boxShadow: colors.shadow,
+  };
+}

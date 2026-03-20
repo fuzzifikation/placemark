@@ -3,13 +3,12 @@
  * Mirrors the Settings panel pattern (right-side overlay, themed, glassmorphic).
  */
 
-import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { formatNumber, formatDateWithOptions } from '../utils/formatLocale';
 import { FONT_FAMILY, Z_INDEX, BORDER_RADIUS, SPACING, FONT_SIZE } from '../constants/ui';
-import type { LibraryStats, DatabaseStats, ThumbnailStats } from '../types/preload';
+import { useLibraryStats } from '../hooks/useLibraryStats';
 
 /** Human-readable label for a MIME type */
 function formatMimeLabel(mimeType: string): string {
@@ -62,6 +61,7 @@ function timeAgo(timestamp: number): string {
 
 /** Format a duration in ms as a human-readable span (e.g. "2.3 years", "4 months", "12 days") */
 function formatSpan(ms: number): string {
+  if (!isFinite(ms) || ms < 0) return '—';
   const days = ms / (1000 * 60 * 60 * 24);
   if (days < 1) return 'same day';
   if (days < 31) {
@@ -88,42 +88,7 @@ interface LibraryStatsPanelProps {
 
 export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPanelProps) {
   const colors = useThemeColors(theme);
-  const [stats, setStats] = useState<LibraryStats | null>(null);
-  const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
-  const [thumbStats, setThumbStats] = useState<ThumbnailStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const loadStats = async () => {
-    try {
-      const [lib, db, thumb] = await Promise.all([
-        window.api.photos.getLibraryStats(),
-        window.api.photos.getDatabaseStats(),
-        window.api.thumbnails.getStats(),
-      ]);
-      setStats(lib);
-      setDbStats(db);
-      setThumbStats(thumb);
-    } catch (err) {
-      console.error('Failed to load library stats:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Initial load
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  // Poll every 1.5s during scan; do one final refresh when scan ends
-  useEffect(() => {
-    if (!isScanning) {
-      loadStats(); // refresh once when scan completes
-      return;
-    }
-    const interval = setInterval(loadStats, 1500);
-    return () => clearInterval(interval);
-  }, [isScanning]);
+  const { stats, dbStats, thumbStats, loading } = useLibraryStats(isScanning);
 
   const cardStyle: React.CSSProperties = {
     backgroundColor: colors.surface,

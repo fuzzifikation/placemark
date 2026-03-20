@@ -14,6 +14,7 @@ import {
   FONT_WEIGHT,
   SPACING,
   Z_INDEX,
+  getGlassStyle,
 } from '../constants/ui';
 
 interface ScanOverlayProps {
@@ -48,9 +49,10 @@ export function ScanOverlay({
   onClose,
   colors,
   glassBlur,
+  glassSurfaceOpacity,
 }: ScanOverlayProps) {
   const progressPercent = scanProgress
-    ? Math.round((scanProgress.processed / Math.max(scanProgress.total, 1)) * 100)
+    ? Math.round(Math.min(100, (scanProgress.processed / Math.max(scanProgress.total, 1)) * 100))
     : 0;
 
   const currentFileName = scanProgress?.currentFile
@@ -72,15 +74,11 @@ export function ScanOverlay({
     >
       <div
         style={{
+          ...getGlassStyle(colors, glassBlur + 8, glassSurfaceOpacity),
           backgroundColor: colors.surface,
-          backdropFilter: `blur(${glassBlur + 8}px)`,
-          WebkitBackdropFilter: `blur(${glassBlur + 8}px)`,
-          border: `1px solid ${colors.glassBorder}`,
-          borderRadius: BORDER_RADIUS.XL,
           padding: SPACING.XXL,
           width: '100%',
           maxWidth: '460px',
-          boxShadow: colors.shadow,
           position: 'relative',
         }}
       >

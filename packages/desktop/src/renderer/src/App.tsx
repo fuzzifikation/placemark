@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { MapView, SelectionMode } from './components/MapView';
 import { Timeline } from './components/Timeline';
-import { Settings, AppSettings, DEFAULT_SETTINGS } from './components/Settings';
+import { Settings } from './components/Settings';
 import { OperationsPanel } from './components/Operations/OperationsPanel';
 import { LibraryStatsPanel } from './components/LibraryStatsPanel';
 import { PlacemarksPanel } from './components/PlacemarksPanel';
@@ -15,9 +15,11 @@ import { useTheme } from './hooks/useTheme';
 import { useFolderScan } from './hooks/useFolderScan';
 import { useToast } from './hooks/useToast';
 import { usePlacemarks } from './hooks/usePlacemarks';
+import { useSettings } from './hooks/useSettings';
+import { useModals } from './hooks/useModals';
 import { ToastContainer } from './components/Toast/ToastContainer';
 import { initSystemLocale } from './utils/formatLocale';
-import { LAYOUT, Z_INDEX, TRANSITIONS, BORDER_RADIUS } from './constants/ui';
+import { LAYOUT, Z_INDEX, TRANSITIONS, getGlassStyle } from './constants/ui';
 import './types/preload.d'; // Import type definitions
 
 function App() {
@@ -52,16 +54,27 @@ function App() {
   const placemarks = usePlacemarks();
 
   // Component state
-  const [showTimeline, setShowTimeline] = useState(false);
-  const [isTimelinePlaying, setIsTimelinePlaying] = useState(false);
+  const {
+    showTimeline,
+    setShowTimeline,
+    isTimelinePlaying,
+    setIsTimelinePlaying,
+    showSettings,
+    setShowSettings,
+    showStats,
+    setShowStats,
+    showOperations,
+    setShowOperations,
+    showHelp,
+    setShowHelp,
+    showPlacemarks,
+    setShowPlacemarks,
+    togglePlacemarks,
+    showScanOverlay,
+    setShowScanOverlay,
+  } = useModals();
   // Suppresses the first onViewChange after a programmatic fly-to (placemark activation)
   const suppressNextViewChangeRef = useRef(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-  const [showOperations, setShowOperations] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const [showPlacemarks, setShowPlacemarks] = useState(false);
-  const [showScanOverlay, setShowScanOverlay] = useState(false);
   const [targetMapBounds, setTargetMapBounds] = useState<{
     north: number;
     south: number;
@@ -73,14 +86,7 @@ function App() {
     start: number;
     end: number;
   } | null>(null);
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    try {
-      const saved = localStorage.getItem('placemark-settings');
-      return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
-    } catch {
-      return DEFAULT_SETTINGS;
-    }
-  });
+  const { settings, setSettings } = useSettings();
 
   // Auto-show scan overlay when library is empty after init
   useEffect(() => {
@@ -369,7 +375,7 @@ function App() {
             onSettingsOpen={() => setShowSettings(true)}
             onStatsOpen={() => setShowStats(true)}
             onTimelineToggle={handleTimelineToggle}
-            onPlacemarksToggle={() => setShowPlacemarks((v) => !v)}
+            onPlacemarksToggle={togglePlacemarks}
             onScanFolder={() => setShowScanOverlay(true)}
             onClearLibrary={handleClearLibrary}
             onHelpOpen={() => setShowHelp(true)}
@@ -403,14 +409,7 @@ function App() {
             left: LAYOUT.PANEL_INSET,
             right: LAYOUT.PANEL_INSET,
             zIndex: Z_INDEX.TIMELINE,
-            backgroundColor: `rgba(${
-              colors.glassSurface.includes('255') ? '255, 255, 255' : '30, 41, 59'
-            }, ${settings.glassSurfaceOpacity / 100})`,
-            backdropFilter: `blur(${settings.glassBlur}px)`,
-            WebkitBackdropFilter: `blur(${settings.glassBlur}px)`,
-            border: `1px solid ${colors.glassBorder}`,
-            borderRadius: BORDER_RADIUS.XL,
-            boxShadow: colors.shadow,
+            ...getGlassStyle(colors, settings.glassBlur, settings.glassSurfaceOpacity),
             padding: '0.25rem 1rem 1rem',
             transition: 'all 0.3s ease',
             pointerEvents: selectionMode === 'lasso' ? 'none' : 'auto',
@@ -457,6 +456,7 @@ function App() {
       {!showScanOverlay && showSettings && (
         <Settings
           onClose={() => setShowSettings(false)}
+          settings={settings}
           onSettingsChange={setSettings}
           theme={theme}
           onThemeChange={toggleTheme}

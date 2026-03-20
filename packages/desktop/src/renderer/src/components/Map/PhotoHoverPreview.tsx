@@ -5,6 +5,8 @@
 import type { Photo } from '@placemark/core';
 import type { Theme } from '../../theme';
 import { formatDate } from '../../utils/formatLocale';
+import { useThemeColors } from '../../hooks/useThemeColors';
+import { getGlassStyle, BORDER_RADIUS, FONT_SIZE, SPACING } from '../../constants/ui';
 
 interface PhotoHoverPreviewProps {
   photo: Photo;
@@ -25,16 +27,7 @@ export function PhotoHoverPreview({
   glassBlur = 12,
   glassSurfaceOpacity = 70,
 }: PhotoHoverPreviewProps) {
-  const isDark = theme === 'dark';
-  const backgroundColor = isDark
-    ? `rgba(30, 41, 59, ${glassSurfaceOpacity / 100})`
-    : `rgba(255, 255, 255, ${glassSurfaceOpacity / 100})`;
-  const textColor = isDark ? '#ffffff' : '#000000';
-  const borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)';
-  const mutedColor = isDark ? '#aaa' : '#666';
-  const placeholderBg = isDark ? '#222' : '#f0f0f0';
-  const placeholderText = isDark ? '#888' : '#666';
-
+  const colors = useThemeColors(theme);
   const filename = photo.path.split(/[\\/]/).pop();
   const formattedDate = photo.timestamp ? formatDate(photo.timestamp) : null;
 
@@ -44,14 +37,9 @@ export function PhotoHoverPreview({
         position: 'fixed',
         left: position.x + 15,
         top: position.y + 15,
-        backgroundColor,
-        backdropFilter: `blur(${glassBlur}px)`,
-        WebkitBackdropFilter: `blur(${glassBlur}px)`,
-        color: textColor,
-        border: `1px solid ${borderColor}`,
-        borderRadius: '8px',
-        padding: '0.5rem',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+        ...getGlassStyle(colors, glassBlur, glassSurfaceOpacity, BORDER_RADIUS.MD),
+        color: colors.textPrimary,
+        padding: SPACING.SM,
         pointerEvents: 'none',
         zIndex: 999,
         maxWidth: '180px',
@@ -65,11 +53,11 @@ export function PhotoHoverPreview({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: placeholderBg,
-            borderRadius: '4px',
+            backgroundColor: colors.surface,
+            borderRadius: BORDER_RADIUS.SM,
           }}
         >
-          <span style={{ fontSize: '0.75rem', color: placeholderText }}>Loading...</span>
+          <span style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted }}>Loading...</span>
         </div>
       )}
       {!loading && thumbnailUrl && (
@@ -80,7 +68,7 @@ export function PhotoHoverPreview({
             width: '150px',
             height: '150px',
             objectFit: 'cover',
-            borderRadius: '4px',
+            borderRadius: BORDER_RADIUS.SM,
             display: 'block',
           }}
         />
@@ -93,14 +81,14 @@ export function PhotoHoverPreview({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: placeholderBg,
-            borderRadius: '4px',
+            backgroundColor: colors.surface,
+            borderRadius: BORDER_RADIUS.SM,
           }}
         >
-          <span style={{ fontSize: '0.75rem', color: placeholderText }}>No preview</span>
+          <span style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted }}>No preview</span>
         </div>
       )}
-      <div style={{ marginTop: '0.5rem', fontSize: '0.75rem' }}>
+      <div style={{ marginTop: SPACING.SM, fontSize: FONT_SIZE.XS }}>
         <div
           style={{
             fontWeight: 600,
@@ -112,7 +100,7 @@ export function PhotoHoverPreview({
           {filename}
         </div>
         {formattedDate && (
-          <div style={{ color: mutedColor, marginTop: '0.25rem' }}>{formattedDate}</div>
+          <div style={{ color: colors.textMuted, marginTop: SPACING.XS }}>{formattedDate}</div>
         )}
       </div>
     </div>
