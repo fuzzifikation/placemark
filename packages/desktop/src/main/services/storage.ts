@@ -248,6 +248,8 @@ export interface LibraryStats {
   avgFileSizeBytes: number;
   minTimestamp: number | null;
   maxTimestamp: number | null;
+  oldestPhotoId: number | null;
+  newestPhotoId: number | null;
   formatBreakdown: Array<{ mimeType: string; count: number }>;
   cameraBreakdown: Array<{ make: string; model: string; count: number }>;
   lastScannedAt: number | null;
@@ -280,6 +282,14 @@ export function getLibraryStats(): LibraryStats {
     lastScannedAt: number | null;
   };
 
+  const oldestRow = db
+    .prepare(`SELECT id FROM photos WHERE timestamp IS NOT NULL ORDER BY timestamp ASC LIMIT 1`)
+    .get() as { id: number } | undefined;
+
+  const newestRow = db
+    .prepare(`SELECT id FROM photos WHERE timestamp IS NOT NULL ORDER BY timestamp DESC LIMIT 1`)
+    .get() as { id: number } | undefined;
+
   const formatRows = db
     .prepare(
       `SELECT mime_type AS mimeType, COUNT(*) AS count
@@ -305,6 +315,8 @@ export function getLibraryStats(): LibraryStats {
 
   return {
     ...summary,
+    oldestPhotoId: oldestRow?.id ?? null,
+    newestPhotoId: newestRow?.id ?? null,
     formatBreakdown: formatRows,
     cameraBreakdown: cameraRows,
   };

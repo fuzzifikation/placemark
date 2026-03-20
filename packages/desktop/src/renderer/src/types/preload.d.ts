@@ -37,7 +37,10 @@ export interface LibraryStats {
   avgFileSizeBytes: number;
   minTimestamp: number | null;
   maxTimestamp: number | null;
+  oldestPhotoId: number | null;
+  newestPhotoId: number | null;
   formatBreakdown: Array<{ mimeType: string; count: number }>;
+  cameraBreakdown: Array<{ make: string; model: string; count: number }>;
   lastScannedAt: number | null;
 }
 

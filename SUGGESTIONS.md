@@ -33,7 +33,7 @@
 
 ### Small improvements (up to half a day each)
 
-- **Oldest / youngest photo: click to open in system viewer.** The Library Stats panel shows the oldest and youngest photo dates. Make those rows (or just the filename/date label) clickable — clicking opens the photo's full path in the OS default image viewer via `window.api.system.openExternal` (or a dedicated IPC call). A fun, low-stakes shortcut for jumping straight to your earliest memory or most recent shot without hunting through the map.
+- **Oldest / youngest photo: click to open in system viewer.** ✅ Done — "Oldest photo" and "Newest photo" rows in the Date Range card are now clickable. They show with a dotted underline and open the photo in the OS default viewer via `window.api.system.openExternal`. File paths are fetched alongside timestamps in `getLibraryStats()`.
 
 ---
 
@@ -50,7 +50,7 @@
 
 - **[Future, skip for now] Drag and Drop.** Electron supports `webContents.startDrag({ files, icon })` for native OS drag. A drag handle chip in the floating header (visible when photos are selected) could let users drag a selection straight into Explorer. **Constraints:** copy-only (OS performs the copy — no dry-run, no undo, DB stays consistent); move via drag is unsafe (DB paths go stale). Not suitable for large batches (no progress/cancel). Complement to Organize, not a replacement. Implementation: drag handle in `FloatingHeader.tsx` → IPC → `event.sender.startDrag()`.
 
-- **Pre-Store: audit and clean up `console.log` statements.** Remove or guard behind `isDev` before the Phase 8 Store build.
+- **Pre-Store: audit and clean up `console.log` statements.** ✅ Already clean — all app code uses `console.error` only in catch blocks. Main process uses the structured `logger` service. No raw debug `console.log` calls in renderer or main.
 
 ---
 

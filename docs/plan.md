@@ -4,14 +4,14 @@ Step-by-step roadmap for building Placemark. See [ARCHITECTURE.md](ARCHITECTURE.
 
 Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
 
-**Current Status:** ✅ Phase 0–5.5 Complete | ⚙️ Phase 6 Next (Placemarks & Export) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
+**Current Status:** ✅ Phase 0–6.1 Complete | ⚙️ Phase 6.2 Export + Phase 7 Stats & Filters in progress | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
 
 **Recent Work:**
 
-- **v0.6.0 — Locale-aware formatting:** All dates/numbers respect the OS regional format setting (e.g. German date format with English UI). New `formatLocale.ts` utility, `system:getSystemLocale` IPC channel.
+- **v0.7.5 — Camera data & Library Stats (Mar 2026):** EXIF `Make`/`Model` extracted and stored during scan; brand names normalised to title case. Camera breakdown bar chart added to Library Stats panel. `camera_make`/`camera_model` columns auto-migrated in existing databases.
+- **v0.7.4 — Timeline histogram & Spider improvements (Mar 2026):** Two-layer histogram behind the timeline scrubber (GPS vs non-GPS bars). Multi-ring spider layout for dense clusters. Help modal (keyboard shortcuts). Settings polish and locale-aware formatting.
+- **Phase 6.1 Complete — Placemarks:** Full placemarks system with `placemarks` table, PlacemarksPanel sidebar, Smart Placemarks ("This Year", "Last 3 Months"), reverse geocoding labels via Nominatim, create/rename/delete.
 - **Phase 5 Complete (v0.5.0):** Full file operations execution with atomic batch semantics, undo support, and database sync. Copy/move operations fully functional with conflict detection, rollback on failure, and OS trash integration for undo.
-- **Phase 4A Complete (v0.2.2):** Major code quality refactoring. Settings.tsx reduced from 854→388 lines (4 panels extracted). MapView.tsx reduced from 868→280 lines (3 hooks extracted). Zero TypeScript errors, all files under 400 lines.
-- **v0.2.2 (Jan 30, 2026):** Code quality improvements: Refactored Settings.tsx (719→357 lines) and MapView.tsx (664→534 lines) by extracting hooks (useMapHover, useSpiderfy). Fixed type safety issues, implemented spiderify for overlapping markers.
 
 ---
 
@@ -301,19 +301,16 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 See [collections_plan.md](collections_plan.md) for the full UX design of Placemarks.
 
-#### 6.1 Placemarks
+#### 6.1 Placemarks ✅ COMPLETE
 
-**Tasks:**
+**Completed:**
 
-1. Allow saving current filter state (date range + map bounds + name) as a "placemark"
-2. Store placemarks in SQLite (`placemarks` table: id, name, bounds, date_start, date_end)
-3. Placemarks sidebar in the UI — click to instantly apply that filter
-4. Built-in smart placemarks (auto-generated, read-only):
-   - "All Photos" — no filter
-   - "No GPS" — photos without location data
-   - "This Year" — current calendar year
-5. Auto-detect vacation candidates after scan (temporal gaps + geographic concentration) and offer to save as placemarks
-6. User can create, rename, and delete custom placemarks
+1. ✅ Placemarks table in SQLite (`id, name, type, bounds_north/south/east/west, date_start, date_end, created_at, updated_at`)
+2. ✅ `PlacemarksPanel.tsx` sidebar — click placemark to instantly apply filter
+3. ✅ Smart placemarks: "This Year", "Last 3 Months" (with live photo counts)
+4. ✅ User placemarks: create, rename, delete inline
+5. ✅ Optional reverse geocoding labels (Nominatim) on placemark rows
+6. ⚠️ Auto-detect vacation candidates after scan — deferred post-v1.0 (heuristic adds complexity for marginal value)
 
 #### 6.2 Export
 
@@ -332,48 +329,58 @@ See [collections_plan.md](collections_plan.md) for the full UX design of Placema
 
 **Privacy note:** All exports are local file writes. No data leaves the device.
 
-**Testing:**
+**Testing (6.1 — complete):**
 
-- [ ] Saved placemark restores exact filter state
-- [ ] Deleting a placemark doesn't affect photos
-- [ ] Smart placemarks update automatically when new photos are scanned
+- [x] Saved placemark restores exact filter state
+- [x] Deleting a placemark doesn't affect photos
+- [x] Smart placemarks update automatically when new photos are scanned
+
+**Testing (6.2 — pending):**
+
 - [ ] CSV opens in Excel/LibreOffice with correct columns
 - [ ] GeoJSON export opens correctly in geojson.io
 - [ ] GPX export imports into a GPS app
 - [ ] Filtered/placemark export only includes visible photos
 - [ ] Export 10,000 photos in <5 seconds
 
-**Estimated Effort:** 3–4 days
+**Estimated Effort (6.2 remaining):** ~1 day
 
-**Deliverable:** Saved geo+time placemarks (with auto-detection) and photo data export in 3 standard formats (CSV, GeoJSON, GPX).
+**Deliverable:** ✅ Placemarks complete. Photo data export (CSV/GeoJSON/GPX) pending.
 
 ---
 
-### Phase 7: Library Insights
+### Phase 7: Library Insights → Stats & Filters Panel
 
-**Goal:** Give users statistics and insights about their photo library. Makes the free tier feel complete before Store launch.
+**Goal:** Give users statistics and insights about their photo library, and evolve the stats panel into an interactive filtering surface. The "Stats & Filters" panel is the primary entry point for non-geographic filtering (camera, format, no-GPS) and coexists with the live map without blocking it.
 
-**Tasks:**
+#### Completed ✅
 
-1. "Library Stats" panel accessible from Settings or a dedicated tab
-2. Statistics computed from SQLite:
-   - Total photo count (with GPS / without GPS)
-   - Photos per year (bar chart)
-   - Top 10 locations by photo density (reverse geocode cluster centers)
-   - Camera make/model breakdown (from EXIF `Make` and `Model` fields)
-   - File format distribution (JPEG vs RAW vs HEIC etc.)
-   - Total storage scanned (sum of file sizes)
-3. Render charts with a lightweight library (e.g., `recharts` — React-compatible) or simple CSS bar charts (zero additional dependencies)
+1. ✅ `LibraryStatsPanel.tsx` — accessible via toolbar button, click-outside to close
+2. ✅ Overview card: total photos, GPS coverage %, date coverage %
+3. ✅ File Formats card: proportional CSS bar chart by MIME type (JPEG, RAW, HEIC, etc.) — no extra dependencies
+4. ✅ Cameras card: top 20 make/model combos with proportional bars; `camera_make`/`camera_model` stored from EXIF
+5. ✅ Date Range card: oldest/youngest photo (clickable — opens in system viewer), time span
+6. ✅ Storage card: total file size, avg photo size, DB sizes, cached thumbnail count
+7. ✅ Last Scanned timestamp
+8. ✅ **Photos per year** — satisfied by the timeline histogram (GPS + non-GPS bars over time)
+
+#### Remaining Tasks
+
+1. **Stats & Filters** — make format and camera rows clickable; active filter chips in `FloatingHeader`; SQL filter params in `getPhotosWithLocation`; "No GPS" stub row (entry point for Phase 10) — see SUGGESTIONS.md for full spec (~2–3 days)
+
+**Deferred:** Top locations (reverse-geocode top cluster centres) — deferred to Phase 9 trip finder.
 
 **Testing:**
 
-- [ ] Statistics dashboard loads in <1 second for 50,000 photos
-- [ ] Camera breakdown shows correct make/model from EXIF
-- [ ] Photos-per-year chart renders correctly with sparse data (gaps in years)
+- [x] Statistics dashboard loads in <1 second for 50,000 photos
+- [x] Camera breakdown shows correct make/model from EXIF
+- [x] Photos-per-year distribution — covered by the timeline histogram (GPS vs non-GPS bars)
+- [ ] Clicking a format or camera row filters the map
+- [ ] Active filter chips appear in FloatingHeader and can be cleared
 
-**Estimated Effort:** 2–3 days
+**Estimated Effort (remaining):** ~2–3 days
 
-**Deliverable:** Library statistics overview with charts and insights.
+**Deliverable:** ✅ Stats panel with overview, formats, cameras, storage, date range, photos-per-year. Remaining: interactive Stats & Filters.
 
 ---
 

@@ -130,6 +130,44 @@ export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPa
     </div>
   );
 
+  const clickableStatRow = (label: string, value: string, photoId: number): React.ReactNode => (
+    <div
+      key={label}
+      title="Click to open in system viewer"
+      onClick={() => window.api.photos.openInViewer(photoId)}
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: `${SPACING.XS} 0`,
+        cursor: 'pointer',
+        borderRadius: BORDER_RADIUS.SM,
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLDivElement).style.backgroundColor = colors.surface;
+        (e.currentTarget as HTMLDivElement).style.outline = `1px solid ${colors.border}`;
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent';
+        (e.currentTarget as HTMLDivElement).style.outline = 'none';
+      }}
+    >
+      <span style={{ fontSize: FONT_SIZE.SM, color: colors.textSecondary }}>{label}</span>
+      <span
+        style={{
+          fontSize: FONT_SIZE.SM,
+          fontWeight: 600,
+          color: colors.primary,
+          textDecoration: 'underline',
+          textDecorationStyle: 'dotted',
+          textUnderlineOffset: '2px',
+        }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+
   // Build max counts for proportional bar widths
   const maxFormatCount = stats?.formatBreakdown[0]?.count ?? 1;
   const maxCameraCount = stats?.cameraBreakdown[0]?.count ?? 1;
@@ -390,22 +428,42 @@ export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPa
               {stats.minTimestamp && stats.maxTimestamp && (
                 <div style={cardStyle}>
                   <div style={labelStyle}>Date Range</div>
-                  {statRow(
-                    'Oldest photo',
-                    formatDateWithOptions(stats.minTimestamp, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })
-                  )}
-                  {statRow(
-                    'Newest photo',
-                    formatDateWithOptions(stats.maxTimestamp, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })
-                  )}
+                  {stats.oldestPhotoId != null
+                    ? clickableStatRow(
+                        'Oldest photo',
+                        formatDateWithOptions(stats.minTimestamp, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        }),
+                        stats.oldestPhotoId
+                      )
+                    : statRow(
+                        'Oldest photo',
+                        formatDateWithOptions(stats.minTimestamp, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      )}
+                  {stats.newestPhotoId != null
+                    ? clickableStatRow(
+                        'Newest photo',
+                        formatDateWithOptions(stats.maxTimestamp, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        }),
+                        stats.newestPhotoId
+                      )
+                    : statRow(
+                        'Newest photo',
+                        formatDateWithOptions(stats.maxTimestamp, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      )}
                   {statRow('Span', formatSpan(stats.maxTimestamp - stats.minTimestamp))}
                 </div>
               )}
