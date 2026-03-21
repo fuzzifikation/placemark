@@ -7,7 +7,6 @@ import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { SettingsSection } from './SettingsSection';
 import { SettingsSlider } from './SettingsSlider';
-import { SettingsToggle } from './SettingsToggle';
 import { formatNumber } from '../../utils/formatLocale';
 import type { AppSettings } from '../Settings';
 
@@ -299,25 +298,6 @@ export function StorageSettings({
           </div>
         </div>
       )}
-
-      {/* Privacy */}
-      <div
-        style={{
-          backgroundColor: colors.surface,
-          padding: '1rem 1rem 0 1rem',
-          borderRadius: '8px',
-          border: `1px solid ${colors.border}`,
-          marginBottom: '1.5rem',
-        }}
-      >
-        <SettingsToggle
-          label="Location lookup for placemarks"
-          value={settings.reverseGeocodeEnabled}
-          description={`When enabled, the center coordinate of a saved placemark's map area is sent to OpenStreetMap Nominatim to display a human-readable place name (e.g. "Paris, France"). No photo data is ever sent.`}
-          onChange={(val) => onSettingChange('reverseGeocodeEnabled', val)}
-          theme={theme}
-        />
-      </div>
 
       {/* Database Management Actions */}
       <div

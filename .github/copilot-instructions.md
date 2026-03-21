@@ -73,10 +73,19 @@ pnpm -C packages/desktop build    # Production build
 
 ## Privacy & Safety Principles
 
-- **No background operations:** User must explicitly trigger scans and operations
-- **Explicit permissions:** Never assume access to folders or OneDrive
-- **Local storage only:** All metadata stays on device (SQLite)
-- **No inference:** Don't guess missing GPS data unless user enables it
+**Core Model: Zero Placemark Infrastructure**
+
+- Placemark does not operate cloud servers, user accounts, or data sync infrastructure.
+- All metadata, organization, and derived data stay on the user's local device (SQLite).
+- Cloud sources (OneDrive, etc.) are pass-through only: user ↔ provider directly via OAuth. Placemark is just a client; tokens are local-only; no Placemark servers see the data.
+
+**User Control & Transparency**
+
+- **No background operations:** User must explicitly trigger scans and add sources. Placemark never polls, syncs, or reaches out automatically.
+- **Explicit permissions:** Never assume access to folders, OneDrive, or any external resource. Always show what will be accessed and ask permission.
+- **Local storage only:** All metadata (photos, placemarks, filters, organization) stays on device (SQLite). Never sync to Placemark or any third party.
+- **No inference:** Don't guess missing GPS data unless user explicitly enables it. No AI enhancement without opt-in.
+- **Toggleable external APIs:** Map tiles (OpenStreetMap) and reverse geocoding (Nominatim) are optional. Users can disable both for fully offline operation. Coordinates sent to Nominatim are never logged or cached by Placemark.
 
 ## File Operations
 

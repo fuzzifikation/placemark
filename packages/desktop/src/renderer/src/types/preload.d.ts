@@ -108,10 +108,12 @@ export interface SystemAPI {
   getAppVersion: () => Promise<string>;
   getSystemLocale: () => Promise<string>;
   openExternal: (url: string) => Promise<void>;
+  reverseGeocode: (lat: number, lng: number) => Promise<string | null>;
 }
 
 export interface PlacemarkWithCount extends Placemark {
   photoCount: number;
+  geoLabel?: string | null;
 }
 
 export interface PlacemarkSmartCounts {
@@ -129,6 +131,7 @@ export interface PlacemarksAPI {
   create: (input: CreatePlacemarkInput) => Promise<PlacemarkWithCount>;
   update: (input: UpdatePlacemarkInput) => Promise<PlacemarkWithCount>;
   delete: (id: number) => Promise<void>;
+  setGeoLabel: (id: number, label: string) => Promise<void>;
 }
 
 /**

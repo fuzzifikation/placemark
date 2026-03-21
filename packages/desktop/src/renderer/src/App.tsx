@@ -307,9 +307,7 @@ function App() {
           tileMaxZoom={settings.tileMaxZoom}
           padding={settings.mapPadding}
           autoFit={
-            showTimeline && settings.autoZoomDuringPlay && isTimelinePlaying
-              ? photoData.filterSource !== 'map'
-              : false
+            showTimeline && settings.autoZoomDuringPlay ? photoData.filterSource !== 'map' : false
           }
           theme={theme}
           showHeatmap={settings.showHeatmap}
@@ -487,6 +485,9 @@ function App() {
             currentDateRange={photoData.selectedDateRange}
             onActivate={handleActivatePlacemark}
             onCreate={placemarks.createPlacemark}
+            onUpdate={async (id, input) => {
+              await placemarks.updatePlacemark({ id, ...input });
+            }}
             onDelete={placemarks.deletePlacemark}
             onClose={() => setShowPlacemarks(false)}
             theme={theme}
@@ -521,6 +522,7 @@ function App() {
         <PhotoPreviewModal
           photo={selectedPhoto}
           onClose={() => setSelectedPhoto(null)}
+          reverseGeocodeEnabled={settings.reverseGeocodeEnabled}
           theme={theme}
         />
       )}

@@ -9,6 +9,7 @@ import {
   createPlacemark,
   updatePlacemark,
   deletePlacemark,
+  setPlacemarkGeoLabel,
   getPlacemarkPhotoCount,
   getThisYearPhotoCount,
   getLast3MonthsPhotoCount,
@@ -40,5 +41,10 @@ export function registerPlacemarksHandlers(): void {
 
   ipcMain.handle('placemarks:delete', (_event, id: number) => {
     deletePlacemark(id);
+  });
+
+  ipcMain.handle('placemarks:setGeoLabel', (_event, id: number, label: string) => {
+    if (typeof label !== 'string' || label.trim().length === 0) return;
+    setPlacemarkGeoLabel(id, label.trim());
   });
 }

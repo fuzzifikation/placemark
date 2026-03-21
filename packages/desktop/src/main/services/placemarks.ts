@@ -9,6 +9,8 @@ import Database from 'better-sqlite3';
 import { Placemark, CreatePlacemarkInput, UpdatePlacemarkInput } from '@placemark/core';
 import { initializeDatabase, closeDatabase } from '../database/schema';
 
+export type PlacemarkWithGeoLabel = Placemark & { geoLabel: string | null };
+
 let db: Database.Database | null = null;
 
 function getDb(): Database.Database {
@@ -30,7 +32,7 @@ export function closePlacemarksStorage(): void {
 // Row mapping
 // ============================================================================
 
-function rowToPlacemark(row: any): Placemark {
+function rowToPlacemark(row: any): PlacemarkWithGeoLabel {
   const hasBounds =
     row.bounds_north !== null &&
     row.bounds_south !== null &&
@@ -51,6 +53,7 @@ function rowToPlacemark(row: any): Placemark {
       : null,
     dateStart: row.date_start ?? null,
     dateEnd: row.date_end ?? null,
+    geoLabel: row.geo_label ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -60,12 +63,12 @@ function rowToPlacemark(row: any): Placemark {
 // CRUD
 // ============================================================================
 
-export function getAllPlacemarks(): Placemark[] {
+export function getAllPlacemarks(): PlacemarkWithGeoLabel[] {
   const rows = getDb().prepare('SELECT * FROM placemarks ORDER BY created_at ASC').all();
   return rows.map(rowToPlacemark);
 }
 
-export function createPlacemark(input: CreatePlacemarkInput): Placemark {
+export function createPlacemark(input: CreatePlacemarkInput): PlacemarkWithGeoLabel {
   const row = getDb()
     .prepare(
       `INSERT INTO placemarks (name, type, bounds_north, bounds_south, bounds_east, bounds_west, date_start, date_end)
@@ -84,7 +87,7 @@ export function createPlacemark(input: CreatePlacemarkInput): Placemark {
   return rowToPlacemark(row);
 }
 
-export function updatePlacemark(input: UpdatePlacemarkInput): Placemark {
+export function updatePlacemark(input: UpdatePlacemarkInput): PlacemarkWithGeoLabel {
   const db = getDb();
   const existing = db.prepare('SELECT * FROM placemarks WHERE id = ?').get(input.id) as any;
   if (!existing) {
@@ -100,7 +103,7 @@ export function updatePlacemark(input: UpdatePlacemarkInput): Placemark {
     .prepare(
       `UPDATE placemarks
        SET name = ?, bounds_north = ?, bounds_south = ?, bounds_east = ?, bounds_west = ?,
-           date_start = ?, date_end = ?, updated_at = datetime('now')
+           date_start = ?, date_end = ?, geo_label = NULL, updated_at = datetime('now')
        WHERE id = ?
        RETURNING *`
     )
@@ -119,6 +122,16 @@ export function updatePlacemark(input: UpdatePlacemarkInput): Placemark {
 
 export function deletePlacemark(id: number): void {
   getDb().prepare('DELETE FROM placemarks WHERE id = ?').run(id);
+}
+
+export function setPlacemarkGeoLabel(id: number, geoLabel: string): void {
+  getDb()
+    .prepare(
+      `UPDATE placemarks
+       SET geo_label = ?
+       WHERE id = ?`
+    )
+    .run(geoLabel, id);
 }
 
 // ============================================================================

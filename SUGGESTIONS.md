@@ -9,13 +9,9 @@
 
 ---
 
-- **Timeline auto-zoom is broken.** During timeline playback the map fails to auto-zoom or fits incorrectly; investigate `useTimelinePlayback` / fit-to-content logic.
-
 ## UI / Layout
 
 ---
-
-- **Picture preview modal: show camera model and reverse-geocoded location (respecting privacy setting).** Display camera make/model (from EXIF) in the preview modal header. If reverse geocoding is enabled in Settings (e.g. `reverseGeocodeEnabled`), show the human-readable location; otherwise show coordinates or a "Location hidden" label. Cache lookups when possible and respect the user's privacy opt-out.
 
 - **Global search box: search locations, GPS coordinates, and filenames.** Add a unified search input (global and/or map-scoped) that supports:
   - **Place name lookup** — search by human-readable location (city, POI, admin area) with autocomplete and reverse-geocode suggestions (respect `reverseGeocodeEnabled`).
@@ -26,29 +22,37 @@
 
 ## Placemarks
 
-- **Dedicated "Placemarks" settings tab.** Move all placemarks-related toggles (e.g. `reverseGeocodeEnabled`) and all timeline-related settings (auto-zoom during play, play speed, timeline update interval) out of the Map and Library tabs and into a new "Placemarks" tab in the Settings modal. Keeps related controls together and reduces clutter in other tabs.
+- **"Fit timeline to view" + "Local view" timeline mode.** Two related but distinct features that both address the same precision problem: when photos at the current location span only weeks but the global timeline spans years, the scrub range is almost useless for fine selection.
 
-- **Opening the Placemarks panel should automatically open the Timeline.** The two features are tightly coupled — placemarks store a date range, and the timeline reflects it. Opening the panel without the timeline is incomplete. When the user opens the Placemarks panel (via the toolbar button), the timeline should automatically appear if it isn't already visible.
+  **Feature 1 — "Fit dates to view" button (quick snap)**
+  A button (in the timeline bar or the Placemarks panel) that instantly snaps the two range thumbs to the min and max dates of photos currently visible in the map viewport. One click, no mode change. The global timeline scale stays the same — only the thumb positions update. Gives the user explicit control without surprising auto-behaviour. Works equally well inside an active placemark.
 
-- **"Fit timeline to view" — clamp date range and viewport to visible photos.** Add the ability to compute the min/max dates of the photos currently visible in the map viewport and apply that as the active timeline filter. Two candidate approaches — could coexist:
-  - **Automatic on placemark activate.** When a placemark is selected, compute the date range from the photos in that placemark's map bounds and snap the timeline to that range instead of using the stored range.
-  - **Button in the Placemarks panel.** A small "Fit dates to view" button per placemark row (or in the panel header). On click, finds the min/max dates of currently visible photos and updates the timeline filter. Gives the user explicit control without surprising auto-behavior.
+  **Feature 2 — Local / Global timeline mode toggle (time-axis zoom)**
+  A toggle on the timeline (e.g. a small "globe / crosshair" icon, or a "Global | Local" pill) that switches between two timeline modes:
+  - **Global mode (default):** the timeline endpoints are the earliest and latest dates across the entire library. Current behaviour.
+  - **Local view mode:** the timeline endpoints are recomputed to the min/max dates of photos in the current map viewport. The entire time axis effectively "zooms in" on the visible location. The histogram bucket ranges and bar heights also recalculate for just those photos, so temporal density at that place is clearly visible. This makes fine-grained date selection practical — a location where you visited three times over two weeks becomes as easy to scrub as a global multi-year collection.
 
-- **Update (overwrite) an existing placemark's saved location.** Currently hovering a placemark row shows a delete button. Add a second hover action — a "Save here" or "Update" button — that overwrites the placemark's stored map bounds (and optionally date range) with the current map view and active timeline filter. This lets users refine a placemark after moving the map without having to delete and recreate it. The two hover buttons (Update + Delete) should be visually distinct to avoid accidental overwrites. The same hover state (or a subsequent inline edit mode) should also allow renaming — either an inline text field that appears on the row, or a double-click-to-rename gesture, so users don't need to delete and recreate just to fix a name.
+  **Behaviour details to nail down during implementation:**
+  - **Live update vs. demand:** in Local mode the timeline should update when the map finishes panning/zooming (debounced on `map idle` event, not on every mouse-move). This avoids the disorienting feeling of the scale shifting while dragging.
+  - **Thumb position preservation:** when switching modes, preserve the selected sub-range as a fraction of the current scale, not as absolute dates. This prevents the selection from snapping to the endpoints just because the domain changed.
+  - **Empty viewport:** if the viewport contains no photos with GPS, fall back to global endpoints and show a subtle indicator ("No photos in view — showing global range").
+  - **Placemark activation:** when a placemark is selected, it could auto-switch to Local mode (or offer a "Fit to placemark" shortcut). Keep this opt-in — don't hijack the mode automatically.
 
-- **Align photo counts between Smart Placemarks and My Placemarks rows.** Photo counts are shown in both sections but their horizontal position is inconsistent — the Smart Placemarks count sits further right (pushed by the layout) while the My Placemarks count appears at a different offset. The Smart Placemarks position looks better. Normalise both rows so the photo count badge is always right-aligned at the same column, regardless of section.
-
-- **Show date range below the location label in placemark rows.** Currently the date range is displayed inline on the same line as the location name, causing it to overflow and become unreadable for longer place names. Move the date range to a second line beneath the location label (or beneath the name if no location is set). This keeps the row compact while making both pieces of information fully visible.
+  **Implementation path:**
+  - New IPC query: `photos:getDateRangeInBounds(bounds)` — trivial SQL `SELECT MIN(timestamp), MAX(timestamp) FROM photos WHERE lat/lon in bounds AND timestamp IS NOT NULL`.
+  - `useTimelineData` (or equivalent): accept an optional `localBounds` param; when set, recalculate `timelineMin`, `timelineMax`, and the 100-bucket histogram array using only in-bounds photos.
+  - `App.tsx`: add `timelineMode: 'global' | 'local'` to settings (or ephemeral state); wire map `idle` → `getDateRangeInBounds` → update timeline domain when in Local mode.
+  - `TimelineBar.tsx`: render the mode toggle button; pass `localMin/Max` down to the scrubber and histogram SVG.
 
 ---
 
 ### Small improvements (up to half a day each)
 
-- **Oldest / youngest photo: click to open in system viewer.** ✅ Done — "Oldest photo" and "Newest photo" rows in the Date Range card are now clickable. They show with a dotted underline and open the photo in the OS default viewer via `window.api.system.openExternal`. File paths are fetched alongside timestamps in `getLibraryStats()`.
-
 ---
 
 ### Medium work (half day – 1 day each)
+
+- **Duplicate detection: strengthen the current heuristic before considering hashing.** The current `filename + filesize` rule is cheap, but it can incorrectly merge distinct photos once local and OneDrive libraries mix at scale. Investigate a safer duplicate-candidate approach that adds more lightweight metadata, such as **taken date/time**, and possibly camera info or source path context, before auto-skipping an import. Keep hashing as a last resort only — full-content hashes are more correct, but they significantly slow file reads and database ingest, which cuts against Placemark's large-library performance goals.
 
 - **Rename and expand the Stats panel into a "Stats & Filters" panel.** The panel becomes the primary filtering surface for the map — always usable alongside the live map (no modal blocking). Every stat row is a filter. Vision:
   - **File formats** — click "HEIC (1 243)" to show only HEIC photos on the map. Multiple rows can be selected (OR logic). Active filters appear as dismissible chips in the floating header.
@@ -99,12 +103,24 @@
 
 - **Auto-zoom fit-to-content button on the map.** Added a custom MapLibre `IControl` (`FitToContentControl` class in `MapView.tsx`) that renders a fit/expand button in the top-right control group, matching the existing glass style via the injected CSS. When clicked: fits to selected photos if any, otherwise fits to all displayed photos. Both the button and the reactive auto-zoom (timeline playback) use the same asymmetric `fitPadding`: `top: mapPadding + 88px` (clears floating header), `bottom: mapPadding + 160px` when timeline is visible / `mapPadding` otherwise, sides: `mapPadding`. Passed from `App.tsx` as `fitPadding` prop through `MapView → useMapLayerManagement`.
 
+- **Timeline auto-zoom during manual scrub.** Fixed timeline auto-fit gating so auto-zoom now applies when the user manually drags the timeline selector bar (not only during playback), as long as timeline auto-zoom is enabled.
+
+- **Show date range below the location label in placemark rows.** Placemarks now render location and date on separate lines (location first, date range beneath), preventing overflow and improving readability for longer place labels.
+
+- **Align photo counts between Smart Placemarks and My Placemarks rows.** Placemark photo count badges are now consistently aligned to the same right-side column across Smart and My Placemarks rows.
+
+- **Oldest / youngest photo: click to open in system viewer.** "Oldest photo" and "Newest photo" rows in the Date Range card are now clickable. They show with a dotted underline and open the photo in the OS default viewer via `window.api.system.openExternal`. File paths are fetched alongside timestamps in `getLibraryStats()`.
+
 - **Mouse-wheel zoom speed.** Raised `scrollZoom.setWheelZoomRate` from `1/450` (MapLibre default) to `1/200` in `useMapInitialization.ts`. Value is annotated for easy manual tuning.
 - **Map zoom/info buttons: match floating header glass style.** Injected a reactive `<style>` tag in `MapView.tsx` that overrides `.maplibregl-ctrl-group` and attribution panel CSS. Updates live with glass settings and theme. Attribution links intercepted and opened in the OS browser via `window.api.system.openExternal`.
 - **Consistent overlay dismissal + redundant button audit.** Settings: added X button (absolute top-right of modal); per-section Reset buttons moved from section headers to bottom-of-panel footer. OperationsPanel: backdrop click-to-close added, guarded when `executing`. LibraryStatsPanel: transparent backdrop div added for click-outside-to-close.
 
 - **Grey out Organize when nothing is selected.** Changed `disabled` condition from `photoCount === 0` to `selectionCount === 0` in `FloatingHeader.tsx`.
 - **Settings tab order: move Library to last.** Reordered sections array in `Settings.tsx` to Appearance → Map → Library.
+
+- **Dedicated "Placemarks" settings tab.** Moved all placemarks-related toggles (`reverseGeocodeEnabled`) and timeline settings (auto-zoom during play, play speed, timeline update interval) out of the Map and Library tabs and into a new "Placemarks" tab in the Settings modal. Created `PlacemarksSettings.tsx`, added `Bookmark` icon + `placemarks` section in `Settings.tsx`, removed the moved controls from `StorageSettings.tsx` and `MapDisplaySettings.tsx`.
+- **Update/rename existing placemarks from the row itself.** Added a hover-visible **Update** action that overwrites the placemark's saved bounds/date range from the current map view + active timeline filter. Added inline rename via **double-click placemark name** with Enter/Escape handling and duplicate-name validation, so users can refine and rename without deleting/recreating placemarks.
+- **Picture preview modal: show camera model and reverse-geocoded location (respecting privacy setting).** Added camera metadata display in the preview details and privacy-aware location text. When reverse geocoding is enabled, the modal resolves and shows a human-readable place label (with coordinate fallback and in-memory caching); when disabled, it shows coordinates only. Also fixed map-click data flow so `cameraMake`/`cameraModel` are passed through map feature properties and consistently visible in the modal.
 - **Heatmap additive, not exclusive.** Removed the `setLayoutProperty('visibility', 'none')` calls for cluster layers in `mapLayers.ts` so heatmap and clusters coexist.
 
 - **Inconsistent hover effects on floating header buttons.** Some outlined buttons showed a blue border flash on hover (Add, Organize) while others didn't; scale factor and shadow also differed. Fixed by extracting shared `outlinedHoverOn/Off` handlers applied uniformly to all outlined buttons.
@@ -119,3 +135,11 @@
 - **Timeline: photo-count histogram above the scrubber.** Two overlaid SVG bar layers behind the range slider: GPS photos (blue) and non-GPS only (grey). 100 equi-temporal buckets, bars grow upward and touch edge-to-edge. `Showing: x of y photos` header with `All: minDate – maxDate` subtitle moved to controls row. Boundary dates removed from slider area entirely.
 
 - **Spider effect: multi-ring for dense locations.** Replaced single-ring layout with concentric rings in `calculateSpiderOffsets()`. Each ring's capacity is `floor(2π × radius / 22px)` so markers never crowd. Rings use multipliers `[1, 1.7, 2.4, 3.1, 3.8]` of the base radius, with half-step angular offsets on alternate rings to avoid radial alignment. Overflow goes to the last ring. No new settings, layers, or interfaces — the existing `spiderRadius` setting controls the base ring.
+
+---
+
+## Deferred
+
+<!-- Features that are explicitly out of scope or require major rethinking -->
+
+- **EXIF editing workflow.** Out of scope for Placemark. EXIF is best edited by dedicated tools; Placemark should not attempt external editor integration or try to handle EXIF writes. User can click "Show in folder" in the photo preview modal to open the file location and edit with their preferred tool. Safer, simpler, and stays true to Placemark's focus: organize and visualize, not edit metadata.

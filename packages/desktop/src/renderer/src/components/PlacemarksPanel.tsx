@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Bookmark, Plus, Trash2, Calendar, MapPin } from 'lucide-react';
+import { X, Bookmark, Plus, Trash2, Calendar, MapPin, Save } from 'lucide-react';
 import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useReverseGeocoding } from '../hooks/useReverseGeocoding';
@@ -29,6 +29,15 @@ interface PlacemarksPanelProps {
   currentDateRange: { start: number; end: number } | null;
   onActivate: (id: number | 'thisYear' | 'last3Months' | null) => void;
   onCreate: (input: CreatePlacemarkInput) => Promise<PlacemarkWithCount>;
+  onUpdate: (
+    id: number,
+    input: {
+      name?: string;
+      bounds?: PlacemarkBounds | null;
+      dateStart?: string | null;
+      dateEnd?: string | null;
+    }
+  ) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   onClose: () => void;
   theme: Theme;
@@ -57,6 +66,13 @@ function formatDateLabel(iso: string | null): string {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
 }
 
+function formatCenterLabel(bounds: PlacemarkBounds | null): string | null {
+  if (!bounds) return null;
+  const lat = ((bounds.north + bounds.south) / 2).toFixed(4);
+  const lng = ((bounds.east + bounds.west) / 2).toFixed(4);
+  return `${lat}, ${lng}`;
+}
+
 export function PlacemarksPanel({
   placemarks,
   smartCounts,
@@ -65,6 +81,7 @@ export function PlacemarksPanel({
   currentDateRange,
   onActivate,
   onCreate,
+  onUpdate,
   onDelete,
   onClose,
   theme,
@@ -77,9 +94,14 @@ export function PlacemarksPanel({
   const [newName, setNewName] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [hoveredRowId, setHoveredRowId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   // Reverse geocoding labels — lazily fetched from Nominatim, cached by placemark ID.
   const geoLabels = useReverseGeocoding(placemarks, reverseGeocodeEnabled);
@@ -95,6 +117,13 @@ export function PlacemarksPanel({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showNewForm]);
+
+  useEffect(() => {
+    if (editingId !== null) {
+      editInputRef.current?.focus();
+      editInputRef.current?.select();
+    }
+  }, [editingId]);
 
   const handleOpenNewForm = () => {
     setShowNewForm(true);
@@ -140,6 +169,77 @@ export function PlacemarksPanel({
       await onDelete(id);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const getCurrentDateIso = () => {
+    if (!currentDateRange) {
+      return { dateStart: null as string | null, dateEnd: null as string | null };
+    }
+    return {
+      dateStart: new Date(currentDateRange.start).toISOString().slice(0, 10),
+      dateEnd: new Date(currentDateRange.end).toISOString().slice(0, 10),
+    };
+  };
+
+  const handleUpdatePlacemark = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const placemark = placemarks.find((x) => x.id === id);
+    const placemarkName = placemark?.name ?? 'this placemark';
+    const confirmUpdate = window.confirm(
+      `Update "${placemarkName}" with the current map view and timeline range?`
+    );
+    if (!confirmUpdate) return;
+
+    const { dateStart, dateEnd } = getCurrentDateIso();
+    setUpdatingId(id);
+    try {
+      await onUpdate(id, {
+        bounds: currentBounds ?? null,
+        dateStart,
+        dateEnd,
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const startRename = (p: PlacemarkWithCount, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(p.id);
+    setEditName(p.name);
+    setEditError(null);
+  };
+
+  const cancelRename = () => {
+    setEditingId(null);
+    setEditName('');
+    setEditError(null);
+  };
+
+  const submitRename = async (p: PlacemarkWithCount) => {
+    const name = editName.trim();
+    if (!name) {
+      setEditError('Name cannot be empty.');
+      return;
+    }
+    const duplicate = placemarks.some(
+      (x) => x.id !== p.id && x.name.toLowerCase() === name.toLowerCase()
+    );
+    if (duplicate) {
+      setEditError('A placemark with this name already exists.');
+      return;
+    }
+    if (name === p.name) {
+      cancelRename();
+      return;
+    }
+    setUpdatingId(p.id);
+    try {
+      await onUpdate(p.id, { name });
+      cancelRename();
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -222,18 +322,16 @@ export function PlacemarksPanel({
   const renderUserRow = (p: PlacemarkWithCount) => {
     const isActive = activePlacemarkId === p.id;
     const isDeleting = deletingId === p.id;
+    const isUpdating = updatingId === p.id;
+    const isEditing = editingId === p.id;
 
     const hasDate = p.dateStart !== null || p.dateEnd !== null;
     const geoLabel = geoLabels.get(p.id) ?? null;
-
-    const subtitle = [
-      geoLabel,
-      hasDate
-        ? `${formatDateLabel(p.dateStart)}${p.dateEnd && p.dateEnd !== p.dateStart ? ' – ' + formatDateLabel(p.dateEnd) : ''}`
-        : null,
-    ]
-      .filter(Boolean)
-      .join(' · ');
+    const centerLabel = formatCenterLabel(p.bounds);
+    const locationLabel = geoLabel ?? centerLabel;
+    const dateLabel = hasDate
+      ? `${formatDateLabel(p.dateStart)}${p.dateEnd && p.dateEnd !== p.dateStart ? ' – ' + formatDateLabel(p.dateEnd) : ''}`
+      : null;
 
     return (
       <div
@@ -261,19 +359,66 @@ export function PlacemarksPanel({
             style={{ flexShrink: 0 }}
           />
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div
-              style={{
-                fontSize: FONT_SIZE.SM,
-                fontWeight: isActive ? FONT_WEIGHT.MEDIUM : FONT_WEIGHT.NORMAL,
-                color: isActive ? colors.primary : colors.textPrimary,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {p.name}
-            </div>
-            {subtitle && (
+            {isEditing ? (
+              <div onClick={(e) => e.stopPropagation()}>
+                <input
+                  ref={editInputRef}
+                  type="text"
+                  value={editName}
+                  onChange={(e) => {
+                    setEditName(e.target.value);
+                    if (editError) setEditError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void submitRename(p);
+                    }
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      cancelRename();
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!isUpdating) cancelRename();
+                  }}
+                  maxLength={80}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '2px 6px',
+                    fontSize: FONT_SIZE.SM,
+                    backgroundColor: colors.surface,
+                    color: colors.textPrimary,
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: BORDER_RADIUS.SM,
+                    outline: 'none',
+                    fontFamily: FONT_FAMILY,
+                  }}
+                />
+                {editError && (
+                  <div style={{ fontSize: FONT_SIZE.XS, color: '#ef4444', marginTop: '2px' }}>
+                    {editError}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div
+                onDoubleClick={(e) => startRename(p, e)}
+                title="Double-click to rename"
+                style={{
+                  fontSize: FONT_SIZE.SM,
+                  fontWeight: isActive ? FONT_WEIGHT.MEDIUM : FONT_WEIGHT.NORMAL,
+                  color: isActive ? colors.primary : colors.textPrimary,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {p.name}
+              </div>
+            )}
+            {locationLabel && (
               <div
                 style={{
                   fontSize: FONT_SIZE.XS,
@@ -283,7 +428,20 @@ export function PlacemarksPanel({
                   whiteSpace: 'nowrap',
                 }}
               >
-                {subtitle}
+                {locationLabel}
+              </div>
+            )}
+            {dateLabel && (
+              <div
+                style={{
+                  fontSize: FONT_SIZE.XS,
+                  color: colors.textMuted,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {dateLabel}
               </div>
             )}
           </div>
@@ -297,26 +455,35 @@ export function PlacemarksPanel({
             marginLeft: SPACING.SM,
           }}
         >
-          <span
-            style={{
-              fontSize: FONT_SIZE.XS,
-              color: isActive ? colors.primary : colors.textMuted,
-              fontWeight: FONT_WEIGHT.MEDIUM,
-            }}
-          >
-            {formatNumber(p.photoCount)}
-          </span>
           <button
-            onClick={(e) => handleDelete(p.id, e)}
-            disabled={isDeleting}
+            onClick={(e) => handleUpdatePlacemark(p.id, e)}
+            disabled={isUpdating || isDeleting}
             style={{
               background: 'none',
               border: 'none',
-              cursor: 'pointer',
+              cursor: isUpdating || isDeleting ? 'not-allowed' : 'pointer',
               padding: '2px',
               display: 'flex',
               alignItems: 'center',
-              color: colors.textMuted,
+              color: '#16a34a',
+              opacity: hoveredRowId === p.id ? 1 : 0,
+              transition: 'opacity 0.15s ease',
+            }}
+            title={`Update "${p.name}" from current view`}
+          >
+            <Save size={13} />
+          </button>
+          <button
+            onClick={(e) => handleDelete(p.id, e)}
+            disabled={isDeleting || isUpdating}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: isDeleting || isUpdating ? 'not-allowed' : 'pointer',
+              padding: '2px',
+              display: 'flex',
+              alignItems: 'center',
+              color: '#dc2626',
               opacity: hoveredRowId === p.id ? 1 : 0,
               transition: 'opacity 0.15s ease',
             }}
@@ -324,6 +491,17 @@ export function PlacemarksPanel({
           >
             <Trash2 size={13} />
           </button>
+          <span
+            style={{
+              fontSize: FONT_SIZE.XS,
+              color: isActive ? colors.primary : colors.textMuted,
+              fontWeight: FONT_WEIGHT.MEDIUM,
+              minWidth: '2.75rem',
+              textAlign: 'right',
+            }}
+          >
+            {formatNumber(p.photoCount)}
+          </span>
         </div>
       </div>
     );

@@ -15,8 +15,9 @@ import { StorageSettings } from './Settings/StorageSettings';
 import { AboutSection } from './Settings/AboutSection';
 import { AppearanceSettings } from './Settings/AppearanceSettings';
 import { MapDisplaySettings } from './Settings/MapDisplaySettings';
+import { PlacemarksSettings } from './Settings/PlacemarksSettings';
 import { FONT_FAMILY } from '../constants/ui';
-import { Palette, Database, Map as MapIcon, Info, X } from 'lucide-react';
+import { Palette, Database, Map as MapIcon, Info, X, Bookmark } from 'lucide-react';
 import type { SpiderSettings } from './MapView';
 
 interface SettingsProps {
@@ -131,6 +132,7 @@ export function Settings({
   const sections = [
     { id: 'general', label: 'Appearance', icon: <Palette size={16} /> },
     { id: 'map', label: 'Map', icon: <MapIcon size={16} /> },
+    { id: 'placemarks', label: 'Placemarks', icon: <Bookmark size={16} /> },
     { id: 'library', label: 'Library', icon: <Database size={16} /> },
   ];
 
@@ -161,9 +163,21 @@ export function Settings({
     onSettingsChange({
       ...settings,
       maxFileSizeMB: DEFAULT_SETTINGS.maxFileSizeMB,
-      reverseGeocodeEnabled: DEFAULT_SETTINGS.reverseGeocodeEnabled,
     });
     toast.success('Library settings reset');
+  };
+
+  const resetPlacemarks = () => {
+    onSettingsChange({
+      ...settings,
+      reverseGeocodeEnabled: DEFAULT_SETTINGS.reverseGeocodeEnabled,
+      autoZoomDuringPlay: DEFAULT_SETTINGS.autoZoomDuringPlay,
+      timelineUpdateInterval: DEFAULT_SETTINGS.timelineUpdateInterval,
+      playSpeedSlowDays: DEFAULT_SETTINGS.playSpeedSlowDays,
+      playSpeedMediumDays: DEFAULT_SETTINGS.playSpeedMediumDays,
+      playSpeedFastDays: DEFAULT_SETTINGS.playSpeedFastDays,
+    });
+    toast.success('Placemarks settings reset');
   };
 
   const resetMap = () => {
@@ -177,10 +191,6 @@ export function Settings({
       mapPadding: DEFAULT_SETTINGS.mapPadding,
       mapTransitionDuration: DEFAULT_SETTINGS.mapTransitionDuration,
       showHeatmap: DEFAULT_SETTINGS.showHeatmap,
-      timelineUpdateInterval: DEFAULT_SETTINGS.timelineUpdateInterval,
-      playSpeedSlowDays: DEFAULT_SETTINGS.playSpeedSlowDays,
-      playSpeedMediumDays: DEFAULT_SETTINGS.playSpeedMediumDays,
-      playSpeedFastDays: DEFAULT_SETTINGS.playSpeedFastDays,
       tileMaxZoom: DEFAULT_SETTINGS.tileMaxZoom,
       spiderOverlapTolerance: DEFAULT_SETTINGS.spiderOverlapTolerance,
       spiderRadius: DEFAULT_SETTINGS.spiderRadius,
@@ -370,6 +380,15 @@ export function Settings({
               settings={settings}
               onSettingChange={updateSetting}
               onReset={resetMap}
+            />
+          )}
+
+          {activeSection === 'placemarks' && (
+            <PlacemarksSettings
+              theme={theme}
+              settings={settings}
+              onSettingChange={updateSetting}
+              onReset={resetPlacemarks}
             />
           )}
 

@@ -11,12 +11,26 @@ import { useThemeColors } from '../hooks/useThemeColors';
 interface PhotoPreviewModalProps {
   photo: Photo;
   onClose: () => void;
+  reverseGeocodeEnabled: boolean;
   theme?: Theme;
 }
 
-export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPreviewModalProps) {
+const locationLabelCache = new Map<string, string>();
+
+function formatCoordinates(lat: number, lng: number): string {
+  return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+}
+
+export function PhotoPreviewModal({
+  photo,
+  onClose,
+  reverseGeocodeEnabled,
+  theme = 'light',
+}: PhotoPreviewModalProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [locationLabel, setLocationLabel] = useState<string | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
   // Use ref to track URL for cleanup (prevents stale closure bug)
   const urlRef = useRef<string | null>(null);
 
@@ -54,6 +68,62 @@ export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPrev
       }
     };
   }, [photo]);
+
+  useEffect(() => {
+    const lat = photo.latitude;
+    const lng = photo.longitude;
+
+    if (lat == null || lng == null) {
+      setLocationLabel('No GPS data');
+      setLocationLoading(false);
+      return;
+    }
+
+    const coordinates = formatCoordinates(lat, lng);
+
+    if (!reverseGeocodeEnabled) {
+      setLocationLabel(coordinates);
+      setLocationLoading(false);
+      return;
+    }
+
+    const cacheKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+    const cached = locationLabelCache.get(cacheKey);
+    if (cached) {
+      setLocationLabel(`${cached} (${coordinates})`);
+      setLocationLoading(false);
+      return;
+    }
+
+    let canceled = false;
+    setLocationLoading(true);
+    setLocationLabel(coordinates);
+
+    window.api.system
+      .reverseGeocode(lat, lng)
+      .then((label) => {
+        if (canceled) return;
+        if (label && label.trim()) {
+          locationLabelCache.set(cacheKey, label);
+          setLocationLabel(`${label} (${coordinates})`);
+          return;
+        }
+        setLocationLabel(coordinates);
+      })
+      .catch((error) => {
+        if (!canceled) {
+          console.error('Failed to reverse geocode photo location:', error);
+          setLocationLabel(coordinates);
+        }
+      })
+      .finally(() => {
+        if (!canceled) setLocationLoading(false);
+      });
+
+    return () => {
+      canceled = true;
+    };
+  }, [photo.id, photo.latitude, photo.longitude, reverseGeocodeEnabled]);
 
   const filename = photo.path.split(/[\\/]/).pop();
 
@@ -155,8 +225,14 @@ export function PhotoPreviewModal({ photo, onClose, theme = 'light' }: PhotoPrev
           </p>
           <p style={{ margin: '0.25rem 0' }}>
             <strong style={{ color: colors.textPrimary }}>Location:</strong>{' '}
-            {photo.latitude?.toFixed(6)}, {photo.longitude?.toFixed(6)}
+            {locationLoading ? 'Resolving location...' : (locationLabel ?? 'No GPS data')}
           </p>
+          {(photo.cameraMake || photo.cameraModel) && (
+            <p style={{ margin: '0.25rem 0' }}>
+              <strong style={{ color: colors.textPrimary }}>Camera:</strong>{' '}
+              {[photo.cameraMake, photo.cameraModel].filter(Boolean).join(' ')}
+            </p>
+          )}
           {photo.timestamp && (
             <p style={{ margin: '0.25rem 0' }}>
               <strong style={{ color: colors.textPrimary }}>Date:</strong>{' '}

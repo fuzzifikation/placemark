@@ -62,6 +62,7 @@ const SCHEMA_SQL = `
     bounds_south REAL,
     bounds_east  REAL,
     bounds_west  REAL,
+    geo_label    TEXT,
     date_start   TEXT,
     date_end     TEXT,
     created_at   TEXT NOT NULL DEFAULT (datetime('now')),
@@ -90,6 +91,12 @@ export function initializeDatabase(options: DatabaseOptions): Database.Database 
   }
   try {
     db.exec('ALTER TABLE photos ADD COLUMN camera_model TEXT');
+  } catch {
+    /* already exists */
+  }
+
+  try {
+    db.exec('ALTER TABLE placemarks ADD COLUMN geo_label TEXT');
   } catch {
     /* already exists */
   }

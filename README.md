@@ -9,7 +9,11 @@ Rediscover your photo collection by visualizing _where_ and _when_ your photos w
 
 Placemark is a privacy-first, local-first application that allows users to explore and organize their photos by where and when they were taken.
 
-The core idea is to treat geographic location and time as explicit, user-controlled lenses on personal photo collections. Location is read directly from GPS coordinates already embedded in the photo file by the device that took the photo — Placemark never estimates, infers, or guesses location. No photos or derived data are uploaded to third-party servers.
+The core idea is to treat geographic location and time as explicit, user-controlled lenses on personal photo collections:
+
+- **Location:** Read directly from GPS coordinates already embedded in the photo file by the device that took the photo — Placemark never estimates, infers, or guesses location.
+- **Cloud Sources:** Optional integrations (OneDrive, etc.) are pass-through only — metadata flows directly from your cloud provider to your local database, never through Placemark servers.
+- **Zero Infrastructure:** No photos, metadata, or derived data are ever uploaded to Placemark-maintained servers or any third-party platform under Placemark's control.
 
 ### Primary Goals
 
@@ -22,10 +26,37 @@ The core idea is to treat geographic location and time as explicit, user-control
 
 ### Privacy Guarantees
 
-- **No Server Backend:** Placemark does not run a server and does not upload photos or metadata to Placemark-maintained infrastructure.
-- **Local-Only Storage:** All indexing and thumbnails are stored locally on your device.
-- **Your Data, Your Control:** Photos never leave your computer unless you explicitly use cloud storage sources like OneDrive.
-- **Map Tiles Only:** Map tiles are loaded from the internet (OpenStreetMap), but no photo data or location information is transmitted.
+Placemark implements a **zero-infrastructure, pass-through cloud model**:
+
+#### Data Stays Local
+
+- **No Placemark Servers:** Placemark does not operate any backend servers or cloud storage. There is no "Placemark account" or "Placemark cloud."
+- **No Third-Party Data Syncing:** All photo metadata, organization (placemarks, collections, selections), filtering state, and thumbnails are stored exclusively on your device in a local SQLite database.
+- **Explicit User Control:** The only way Placemark accesses external data is when **you explicitly** decide to add a cloud source like OneDrive.
+
+#### Cloud Sources Are Pass-Through Only
+
+- **Direct User-to-Provider Connection:** When you connect OneDrive, Placemark acts as a client to the Microsoft Graph API. Placemark reads file metadata (timestamps, EXIF) directly from your Microsoft account. **Placemark servers never see, store, or log this data.**
+- **One-Time Import Pattern:** Placemark scans your cloud storage once (you control when and what folder), downloads metadata locally, and stores it in your local database. No background syncing, no ongoing connection.
+- **Access Tokens Are Local-Only:** OAuth tokens never leave your device, but they are security-sensitive. Placemark must store them in **OS-backed secure credential storage** rather than plain-text settings or the local database.
+
+#### Non-Personal External APIs (User-Controlled)
+
+Placemark may optionally contact external services for non-personal, geospatial data:
+
+- **Map Tiles (OpenStreetMap):** Downloaded to display the map. Tiles contain geographic/cartographic data with no connection to your photos or identity.
+- **Reverse Geocoding (Nominatim):** Optional feature — when enabled, Placemark sends coordinates only (no photo metadata) to look up place names. Toggleable in Settings. Single-use, uncached requests.
+
+#### Full Offline Mode
+
+If you disable all external APIs, Placemark functions completely offline:
+
+- Local photos, local maps (if cached), local filters, local organization.
+- No internet connection required.
+
+#### Summary
+
+**Your privacy is preserved because:** You control all data flows. Placemark is a client tool, not a platform. Cloud sources belong to you (Microsoft, etc.), never Placemark.
 
 ---
 

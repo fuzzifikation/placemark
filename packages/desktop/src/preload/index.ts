@@ -51,11 +51,15 @@ contextBridge.exposeInMainWorld('api', {
     getAppVersion: () => ipcRenderer.invoke('system:getAppVersion'),
     getSystemLocale: () => ipcRenderer.invoke('system:getSystemLocale'),
     openExternal: (url: string) => ipcRenderer.invoke('system:openExternal', url),
+    reverseGeocode: (lat: number, lng: number) =>
+      ipcRenderer.invoke('system:reverseGeocode', lat, lng),
   },
   placemarks: {
     getAll: () => ipcRenderer.invoke('placemarks:getAll'),
     create: (input: unknown) => ipcRenderer.invoke('placemarks:create', input),
     update: (input: unknown) => ipcRenderer.invoke('placemarks:update', input),
     delete: (id: number) => ipcRenderer.invoke('placemarks:delete', id),
+    setGeoLabel: (id: number, label: string) =>
+      ipcRenderer.invoke('placemarks:setGeoLabel', id, label),
   },
 });

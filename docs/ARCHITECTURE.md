@@ -486,6 +486,78 @@ contextBridge.exposeInMainWorld('api', {
 - All file operations go through validated IPC handlers
 - Prevents arbitrary code execution
 
+### Cloud Data Flow & Privacy Model
+
+**Core Principle: Pass-Through, Zero-Infrastructure Model**
+
+When users connect cloud sources (e.g., OneDrive), Placemark acts only as a client to the cloud provider's API. No Placemark servers are involved.
+
+```
+┌─────────────┐
+│   User's    │
+│  Computer   │
+│             │──────────┐
+└─────────────┘          │
+                         │
+                 (OAuth Token)
+                 (Stored Locally)
+                         │
+                         ▼
+                ┌─────────────────┐
+                │  Placemark App  │
+                │ (Electron on    │
+                │  User's PC)     │
+                │                 │
+                │ • Graph API     │
+                │   Client        │
+                │ • Metadata      │
+                │   Scanner       │
+                │ • Local SQLite  │
+                │   Storage       │
+                └────────┬────────┘
+                         │
+                (Microsoft Graph API Calls)
+                (Metadata Only, No Personal Data)
+                         │
+                         ▼
+                ┌─────────────────┐
+                │  Microsoft  OneDrive
+                │  (User's Account)
+                │                 │
+                │ • Photos        │
+                │ • EXIF Data     │
+                │ • Timestamps    │
+                └─────────────────┘
+
+❌ NO Placemark Server
+❌ NO Third-Party Backend
+✅ Direct User → OneDrive via Graph API
+✅ Metadata stored locally in user's SQLite DB
+```
+
+**Specifics:**
+
+1. **User Initiates:** User clicks "Connect OneDrive" → browser OAuth popup
+2. **Sign-In Method:** Placemark uses the system browser and OAuth Authorization Code + PKCE, not an embedded webview
+3. **Token Storage:** Access and refresh tokens are stored locally in OS-backed secure credential storage, never in plain app settings or SQLite, and never transmitted to Placemark servers
+4. **One-Time Scan:** User selects folder/path, Placemark queries Microsoft Graph API for file metadata
+5. **Local Ingestion:** Metadata (timestamps, EXIF GPS, camera info) downloaded and stored in local SQLite
+6. **No Ongoing Connection:** After scan, Placemark does not continuously poll or sync
+
+**Token Security Standard:**
+
+- Use OS-backed secret storage on desktop platforms
+- Keep only non-sensitive connection metadata in settings
+- Delete local credentials on disconnect
+- Request minimum viable Microsoft scopes
+
+**External APIs (Non-Personal, User-Controlled):**
+
+- **Map Tiles (OpenStreetMap):** Geographic/cartographic data only, no connection to user photos or identity
+- **Reverse Geocoding (Nominatim):** User-only sends coordinates (no photo metadata), response is place name only, single-use uncached queries
+
+**Result:** All photo organization, filtering, and placemarks remain on the user's device. Placemark has zero knowledge of the user's photos or whereabouts.
+
 ### Input Validation
 
 **All user inputs are validated in main process:**

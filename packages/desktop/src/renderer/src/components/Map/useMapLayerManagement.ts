@@ -136,6 +136,8 @@ export function useMapLayerManagement({
             mimeType: photo.mimeType,
             scannedAt: photo.scannedAt,
             fileHash: photo.fileHash,
+            cameraMake: photo.cameraMake,
+            cameraModel: photo.cameraModel,
           },
         };
       }),
