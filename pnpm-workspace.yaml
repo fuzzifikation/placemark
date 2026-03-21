@@ -7,7 +7,10 @@ ignoredBuiltDependencies:
   - electron-winstaller
   - esbuild
 
+onlyBuiltDependencies:
+  - sharp
+
 overrides:
-  '@electron/rebuild': ^3.2.10
+  '@electron/rebuild': ^4.0.2
   esbuild: ^0.25.0
   tar: ^7.4.3
