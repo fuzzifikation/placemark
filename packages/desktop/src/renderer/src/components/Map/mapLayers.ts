@@ -62,7 +62,6 @@ export function addHeatmapLayer(map: maplibregl.Map) {
  */
 export function addClusterLayers(
   map: maplibregl.Map,
-  _showHeatmap: boolean = false,
   clusterOpacity: number = 0.85,
   unclusteredPointOpacity: number = 0.9
 ) {

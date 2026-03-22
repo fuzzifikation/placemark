@@ -53,8 +53,8 @@ export function PhotoPreviewModal({
           setThumbnailUrl(url);
         }
       })
-      .catch((error) => {
-        if (isMounted) console.error('Failed to load thumbnail:', error);
+      .catch(() => {
+        // Non-critical — no thumbnail displayed
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -110,11 +110,8 @@ export function PhotoPreviewModal({
         }
         setLocationLabel(coordinates);
       })
-      .catch((error) => {
-        if (!canceled) {
-          console.error('Failed to reverse geocode photo location:', error);
-          setLocationLabel(coordinates);
-        }
+      .catch(() => {
+        if (!canceled) setLocationLabel(coordinates);
       })
       .finally(() => {
         if (!canceled) setLocationLoading(false);

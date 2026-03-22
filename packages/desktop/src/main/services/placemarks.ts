@@ -3,30 +3,10 @@
  * CRUD operations for user-saved geo+time filter bookmarks
  */
 
-import { app } from 'electron';
-import * as path from 'path';
-import Database from 'better-sqlite3';
 import { Placemark, CreatePlacemarkInput, UpdatePlacemarkInput } from '@placemark/core';
-import { initializeDatabase, closeDatabase } from '../database/schema';
+import { getDb } from './storage';
 
 export type PlacemarkWithGeoLabel = Placemark & { geoLabel: string | null };
-
-let db: Database.Database | null = null;
-
-function getDb(): Database.Database {
-  if (!db) {
-    const dbPath = path.join(app.getPath('userData'), 'placemark.db');
-    db = initializeDatabase({ path: dbPath });
-  }
-  return db;
-}
-
-export function closePlacemarksStorage(): void {
-  if (db) {
-    closeDatabase(db);
-    db = null;
-  }
-}
 
 // ============================================================================
 // Row mapping

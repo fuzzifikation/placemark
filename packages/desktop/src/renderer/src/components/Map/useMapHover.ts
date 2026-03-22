@@ -119,9 +119,8 @@ export function useMapHover(): UseMapHoverReturn {
               setHoverState((prev) => ({ ...prev, loading: false }));
             }
           })
-          .catch((error: Error) => {
+          .catch(() => {
             if (activeHoverIdRef.current === photo.id) {
-              console.error('Failed to load hover thumbnail:', error);
               setHoverState((prev) => ({ ...prev, loading: false }));
             }
           });

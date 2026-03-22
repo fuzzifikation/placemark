@@ -28,8 +28,11 @@ export function useHistogram(minDate: number, maxDate: number): HistogramResult 
         setGpsHistogram(gps);
         setAllHistogram(all);
       })
-      .catch((err) => {
-        if (!cancelled) console.error('Failed to load histogram:', err);
+      .catch(() => {
+        if (!cancelled) {
+          setGpsHistogram([]);
+          setAllHistogram([]);
+        }
       });
     return () => {
       cancelled = true;

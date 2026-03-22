@@ -126,7 +126,7 @@ export class ThumbnailService {
       // Silently fail for corrupted files, log others
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (!errorMessage.includes('VipsJpeg') && !errorMessage.includes('Invalid SOS parameters')) {
-        console.error(`Failed to generate thumbnail for photo ${photoId}:`, error);
+        logger.error(`Failed to generate thumbnail for photo ${photoId}:`, error);
       }
       throw error;
     }
@@ -197,10 +197,8 @@ export class ThumbnailService {
     const sizeBytes = thumbnailData.length;
     const now = Date.now();
 
-    // Check if we need to evict
-    await this.evictIfNeeded(sizeBytes);
+    this.evictIfNeeded(sizeBytes);
 
-    // Insert thumbnail
     this.db
       .prepare(
         `INSERT OR REPLACE INTO thumbnails (photo_id, thumbnail_data, size_bytes, created_at, last_accessed_at)
@@ -208,58 +206,44 @@ export class ThumbnailService {
       )
       .run(photoId, thumbnailData, sizeBytes, now, now);
 
-    // Recalculate metadata after insert
     this.recalculateMetadata();
   }
 
-  /**
-   * Evict least recently used thumbnails if cache is full
-   */
-  private async evictIfNeeded(newThumbnailSize: number): Promise<void> {
+  private evictIfNeeded(newThumbnailSize: number): void {
     if (!THUMBNAIL_CONFIG.autoEvict) return;
-
     const maxSizeBytes = this.getMaxSizeBytes();
     const currentSizeBytes = this.getTotalSizeBytes();
+    if (currentSizeBytes + newThumbnailSize <= maxSizeBytes) return;
+    this.evictLRU(currentSizeBytes + newThumbnailSize - maxSizeBytes);
+  }
 
-    if (currentSizeBytes + newThumbnailSize <= maxSizeBytes) {
-      return; // No eviction needed
-    }
+  private evictToFitNewLimit(): void {
+    const maxSizeBytes = this.getMaxSizeBytes();
+    const currentSizeBytes = this.getTotalSizeBytes();
+    if (currentSizeBytes <= maxSizeBytes) return;
+    this.evictLRU(currentSizeBytes - maxSizeBytes);
+  }
 
-    // Calculate how much space we need to free
-    const spaceNeeded = currentSizeBytes + newThumbnailSize - maxSizeBytes;
-
-    // Get least recently used thumbnails
+  private evictLRU(bytesToFree: number): void {
     const thumbnailsToEvict = this.db
-      .prepare(
-        `SELECT photo_id, size_bytes 
-         FROM thumbnails 
-         ORDER BY last_accessed_at ASC`
-      )
+      .prepare('SELECT photo_id, size_bytes FROM thumbnails ORDER BY last_accessed_at ASC')
       .all() as Array<{ photo_id: number; size_bytes: number }>;
 
     let freedSpace = 0;
     const idsToDelete: number[] = [];
 
-    // Evict until we have enough space
     for (const thumbnail of thumbnailsToEvict) {
       idsToDelete.push(thumbnail.photo_id);
       freedSpace += thumbnail.size_bytes;
-
-      if (freedSpace >= spaceNeeded) {
-        break;
-      }
+      if (freedSpace >= bytesToFree) break;
     }
 
-    // Delete evicted thumbnails
     if (idsToDelete.length > 0) {
       const placeholders = idsToDelete.map(() => '?').join(',');
       this.db
         .prepare(`DELETE FROM thumbnails WHERE photo_id IN (${placeholders})`)
         .run(...idsToDelete);
-
-      // Recalculate metadata after eviction
       this.recalculateMetadata();
-
       logger.debug(`Evicted ${idsToDelete.length} thumbnails to free ${freedSpace} bytes`);
     }
   }
@@ -330,55 +314,7 @@ export class ThumbnailService {
       .prepare('UPDATE thumbnail_metadata SET value = ? WHERE key = ?')
       .run(sizeMB.toString(), 'max_size_mb');
     logger.info(`Thumbnail cache max size set to ${sizeMB}MB`);
-
-    // Evict if new size is smaller than current cache
-    await this.evictToFitNewLimit();
-  }
-
-  /**
-   * Evict thumbnails to fit new size limit
-   */
-  private async evictToFitNewLimit(): Promise<void> {
-    const maxSizeBytes = this.getMaxSizeBytes();
-    const currentSizeBytes = this.getTotalSizeBytes();
-
-    if (currentSizeBytes <= maxSizeBytes) {
-      return;
-    }
-
-    const spaceToFree = currentSizeBytes - maxSizeBytes;
-
-    const thumbnailsToEvict = this.db
-      .prepare(
-        `SELECT photo_id, size_bytes 
-         FROM thumbnails 
-         ORDER BY last_accessed_at ASC`
-      )
-      .all() as Array<{ photo_id: number; size_bytes: number }>;
-
-    let freedSpace = 0;
-    const idsToDelete: number[] = [];
-
-    for (const thumbnail of thumbnailsToEvict) {
-      idsToDelete.push(thumbnail.photo_id);
-      freedSpace += thumbnail.size_bytes;
-
-      if (freedSpace >= spaceToFree) {
-        break;
-      }
-    }
-
-    if (idsToDelete.length > 0) {
-      const placeholders = idsToDelete.map(() => '?').join(',');
-      this.db
-        .prepare(`DELETE FROM thumbnails WHERE photo_id IN (${placeholders})`)
-        .run(...idsToDelete);
-
-      // Recalculate metadata after eviction
-      this.recalculateMetadata();
-
-      logger.debug(`Evicted ${idsToDelete.length} thumbnails to fit new size limit`);
-    }
+    this.evictToFitNewLimit();
   }
 
   // Helper methods for metadata

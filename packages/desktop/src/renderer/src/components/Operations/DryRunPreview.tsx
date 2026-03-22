@@ -27,12 +27,11 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
 
   const folderGroups = groupByFolder(operations);
 
-  const handleShowInFolder = async (_folderPath: string, filePaths: string[]) => {
+  const handleShowInFolder = async (filePaths: string[]) => {
     try {
       await window.api.photos.showMultipleInFolder(filePaths);
-    } catch (error) {
-      console.error('Failed to show files in folder:', error);
-      // Could show a toast here, but for now just log
+    } catch {
+      // Non-critical UI action — silently degrade
     }
   };
 
@@ -117,12 +116,7 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
                   {ops.length} file{ops.length !== 1 ? 's' : ''}
                 </span>
                 <button
-                  onClick={() =>
-                    handleShowInFolder(
-                      folder,
-                      ops.map((op) => op.sourcePath)
-                    )
-                  }
+                  onClick={() => handleShowInFolder(ops.map((op) => op.sourcePath))}
                   style={{
                     padding: '0.25rem 0.5rem',
                     backgroundColor: colors.primary,

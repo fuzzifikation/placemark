@@ -9,13 +9,13 @@ import {
   getPhotoCountWithLocation,
   clearAllPhotos,
   getPhotoDateRange,
-  getPhotosWithLocationInDateRange,
   getPhotoHistogram,
   closeStorage,
   getPhotoById,
   getLibraryStats,
 } from '../services/storage';
 import { ThumbnailService } from '../services/thumbnails';
+import { logger } from '../services/logger';
 import { promises as fs, constants, statSync } from 'fs';
 import * as path from 'path';
 
@@ -69,14 +69,6 @@ export function registerPhotoHandlers(): void {
   ipcMain.handle('photos:getWithLocation', async () => {
     return getPhotosWithLocation();
   });
-
-  // Get photos with location in date range
-  ipcMain.handle(
-    'photos:getWithLocationInDateRange',
-    async (_event, startTimestamp: number | null, endTimestamp: number | null) => {
-      return getPhotosWithLocationInDateRange(startTimestamp, endTimestamp);
-    }
-  );
 
   // Get date range of photos
   ipcMain.handle('photos:getDateRange', async () => {
@@ -231,7 +223,7 @@ export function registerPhotoHandlers(): void {
 
       return await thumbnailService.generateThumbnail(photoId, photo.path);
     } catch (error) {
-      console.error('Failed to get thumbnail:', error);
+      logger.error('Failed to get thumbnail:', error);
       return null;
     }
   });

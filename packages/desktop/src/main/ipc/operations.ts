@@ -15,7 +15,13 @@ import {
 } from '@placemark/core';
 import * as path from 'path';
 import { getPhotosByIds } from '../services/storage';
-import { executeOperations, undoLastBatch, canUndo, requestCancel } from '../services/operations';
+import {
+  executeOperations,
+  undoLastBatch,
+  canUndo,
+  requestCancel,
+  CancelledError,
+} from '../services/operations';
 
 // Store the last dry run result for execution
 let lastDryRunResult: DryRunResult | null = null;
@@ -201,7 +207,7 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
       lastDryRunResult = null;
       lastOpType = null;
 
-      if (err?.type === 'cancelled' || err?.name === 'CancelledError') {
+      if (err instanceof CancelledError) {
         return { success: false, cancelled: true, message: err.message };
       }
       throw err;

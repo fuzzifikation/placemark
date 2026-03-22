@@ -12,7 +12,7 @@ import { logger } from './logger';
 
 let db: Database.Database | null = null;
 
-function getDb(): Database.Database {
+export function getDb(): Database.Database {
   if (!db) {
     const dbPath = path.join(app.getPath('userData'), 'placemark.db');
     logger.info(`Initializing database at: ${dbPath}`);
@@ -223,35 +223,6 @@ export function getPhotoHistogram(
     count: number;
   }[];
   return rows;
-}
-
-/**
- * Get photos with location data filtered by date range
- * @param startTimestamp Start of range (Unix milliseconds) or null for no lower bound
- * @param endTimestamp End of range (Unix milliseconds) or null for no upper bound
- */
-export function getPhotosWithLocationInDateRange(
-  startTimestamp: number | null,
-  endTimestamp: number | null
-): Photo[] {
-  let query = 'SELECT * FROM photos WHERE latitude IS NOT NULL AND longitude IS NOT NULL';
-  const params: number[] = [];
-
-  if (startTimestamp !== null) {
-    query += ' AND timestamp >= ?';
-    params.push(startTimestamp);
-  }
-  if (endTimestamp !== null) {
-    query += ' AND timestamp <= ?';
-    params.push(endTimestamp);
-  }
-
-  query += ' ORDER BY timestamp ASC';
-
-  const rows = getDb()
-    .prepare(query)
-    .all(...params);
-  return rows.map(rowToPhoto);
 }
 
 /**

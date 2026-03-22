@@ -1,5 +1,15 @@
 # Release Notes
 
+## v0.8.0 - Code Quality & Cleanup (2026-03-22)
+
+### 🛠️ Internal
+
+- **Dead parameter removed:** `_showHeatmap` parameter dropped from `addClusterLayers` — it was never read; both call sites updated.
+- **Null-coalescing correctness:** All `|| null` coercions in `photoFromProps` replaced with `?? null` — prevents empty strings (e.g. `cloudFolderPath: ""`) from being incorrectly discarded.
+- **Impossible type guard removed:** `|| photo.timestamp === undefined` check in `temporal.ts` — `Photo.timestamp` is typed `number | null`; `undefined` cannot occur.
+- **Renderer `console.error` sweep:** Removed all redundant `console.error` calls across renderer files (`OperationsPanel`, `useHistogram`, `useMapHover`, `StorageSettings`, `DryRunPreview`, `PhotoPreviewModal`, `useLibraryStats`). Errors that are user-visible via toast remain; non-critical failures now degrade silently.
+- **Unused function parameter removed:** `_folderPath` parameter dropped from `DryRunPreview.handleShowInFolder`.
+
 ## Unreleased - OneDrive Sketch Milestone (2026-03-22)
 
 ### ✨ Added

@@ -29,8 +29,7 @@ import { logger } from './logger';
 // Cancellation + single-operation guard
 // ============================================================================
 
-class CancelledError extends Error {
-  public readonly type = 'cancelled';
+export class CancelledError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'CancelledError';
@@ -227,7 +226,7 @@ export async function executeOperations(
       batchId,
     };
   } catch (error: any) {
-    const wasCancelled = error?.type === 'cancelled';
+    const wasCancelled = error instanceof CancelledError;
     const failureLabel = wasCancelled ? 'Operation cancelled' : 'Operation failed';
     logger.error(`${failureLabel}: ${error.message}. Rolling back...`);
 

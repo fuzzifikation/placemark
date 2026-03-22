@@ -62,8 +62,8 @@ export function StorageSettings({
     try {
       const stats = await window.api.thumbnails.getStats();
       setThumbnailStats(stats);
-    } catch (error) {
-      console.error('Failed to load thumbnail stats:', error);
+    } catch {
+      // Non-critical display stats — silently degrade
     }
   };
 
@@ -71,8 +71,8 @@ export function StorageSettings({
     try {
       const stats = await window.api.photos.getDatabaseStats();
       setDatabaseStats(stats);
-    } catch (error) {
-      console.error('Failed to load database stats:', error);
+    } catch {
+      // Non-critical display stats — silently degrade
     }
   };
 
@@ -86,7 +86,6 @@ export function StorageSettings({
       await loadDatabaseStats();
       toast.success('Thumbnail cache cleared successfully.');
     } catch (error) {
-      console.error('Failed to clear thumbnail cache:', error);
       toast.error('Failed to clear cache: ' + error);
     }
   };
@@ -95,7 +94,6 @@ export function StorageSettings({
     try {
       await window.api.system.openAppDataFolder();
     } catch (error) {
-      console.error('Failed to open app data folder:', error);
       toast.error('Failed to open app data folder: ' + error);
     }
   };

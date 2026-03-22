@@ -6,8 +6,6 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke('photos:scanFolder', includeSubdirectories, maxFileSizeMB),
     abortScan: () => ipcRenderer.invoke('photos:abortScan'),
     getWithLocation: () => ipcRenderer.invoke('photos:getWithLocation'),
-    getWithLocationInDateRange: (startTimestamp: number | null, endTimestamp: number | null) =>
-      ipcRenderer.invoke('photos:getWithLocationInDateRange', startTimestamp, endTimestamp),
     getDateRange: () => ipcRenderer.invoke('photos:getDateRange'),
     getCountWithLocation: () => ipcRenderer.invoke('photos:getCountWithLocation'),
     openInViewer: (photoId: number) => ipcRenderer.invoke('photos:openInViewer', photoId),

@@ -14,7 +14,7 @@ export interface DateRange {
  * Check if a photo is within a date range
  */
 export function isPhotoInDateRange(photo: Photo, range: DateRange): boolean {
-  if (photo.timestamp === null || photo.timestamp === undefined) {
+  if (photo.timestamp === null) {
     return false;
   }
 

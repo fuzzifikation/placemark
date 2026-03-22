@@ -31,8 +31,8 @@ export function useLibraryStats(isScanning?: boolean): LibraryStatsResult {
       setStats(lib);
       setDbStats(db);
       setThumbStats(thumb);
-    } catch (err) {
-      console.error('Failed to load library stats:', err);
+    } catch {
+      // Non-critical display stats — silently degrade
     } finally {
       setLoading(false);
     }

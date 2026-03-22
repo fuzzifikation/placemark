@@ -169,7 +169,7 @@ export function useMapLayerManagement({
       }
 
       // Add all cluster layers on top
-      addClusterLayers(mapRef.current, showHeatmap, clusterOpacity, unclusteredPointOpacity);
+      addClusterLayers(mapRef.current, clusterOpacity, unclusteredPointOpacity);
       appliedSourceSettings.current = {
         isClusteringActive,
         clusterRadius,
@@ -229,7 +229,7 @@ export function useMapLayerManagement({
         }
 
         // Re-add all cluster layers
-        addClusterLayers(mapRef.current, showHeatmap, clusterOpacity, unclusteredPointOpacity);
+        addClusterLayers(mapRef.current, clusterOpacity, unclusteredPointOpacity);
         appliedSourceSettings.current = {
           isClusteringActive,
           clusterRadius,

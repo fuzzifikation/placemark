@@ -56,10 +56,6 @@ export interface PhotosAPI {
   scanFolder: (includeSubdirectories: boolean, maxFileSizeMB: number) => Promise<ScanResult>;
   abortScan: () => Promise<void>;
   getWithLocation: () => Promise<Photo[]>;
-  getWithLocationInDateRange: (
-    startTimestamp: number | null,
-    endTimestamp: number | null
-  ) => Promise<Photo[]>;
   getDateRange: () => Promise<{ minDate: number | null; maxDate: number | null }>;
   getCountWithLocation: () => Promise<number>;
   openInViewer: (photoId: number) => Promise<void>;
