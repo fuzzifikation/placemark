@@ -26,8 +26,7 @@ contextBridge.exposeInMainWorld('api', {
     },
   },
   thumbnails: {
-    get: (photoId: number, photoPath: string) =>
-      ipcRenderer.invoke('thumbnails:get', photoId, photoPath),
+    get: (photoId: number) => ipcRenderer.invoke('thumbnails:get', photoId),
     getStats: () => ipcRenderer.invoke('thumbnails:getStats'),
     clearCache: () => ipcRenderer.invoke('thumbnails:clearCache'),
     setMaxSize: (sizeMB: number) => ipcRenderer.invoke('thumbnails:setMaxSize', sizeMB),
@@ -69,5 +68,12 @@ contextBridge.exposeInMainWorld('api', {
     listRootFolders: () => ipcRenderer.invoke('onedrive:listRootFolders'),
     getCameraRollFolder: () => ipcRenderer.invoke('onedrive:getCameraRollFolder'),
     listChildFolders: (itemId: string) => ipcRenderer.invoke('onedrive:listChildFolders', itemId),
+    importFolder: (itemId: string, includeSubdirectories: boolean) =>
+      ipcRenderer.invoke('onedrive:importFolder', itemId, includeSubdirectories),
+    onImportProgress: (callback: (progress: any) => void) => {
+      const listener = (_event: any, progress: any) => callback(progress);
+      ipcRenderer.on('onedrive:importProgress', listener);
+      return () => ipcRenderer.removeListener('onedrive:importProgress', listener);
+    },
   },
 });

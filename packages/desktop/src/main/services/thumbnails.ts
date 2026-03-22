@@ -6,6 +6,8 @@ import fs from 'fs/promises';
 import { app } from 'electron';
 import { logger } from './logger';
 import { isRawFile } from './formats';
+import type { OneDriveAuthService } from './onedriveAuth';
+import { ONEDRIVE_CONFIG } from '../config/onedrive';
 
 const THUMBNAIL_CONFIG = {
   size: 400, // Single size for all contexts
@@ -128,6 +130,45 @@ export class ThumbnailService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Fetch the Graph API "large" thumbnail for a OneDrive photo, resize to 400px,
+   * store in cache, and return the buffer.
+   * Returns null when not connected or if the item has no thumbnail.
+   */
+  async generateThumbnailFromOneDrive(
+    photoId: number,
+    cloudItemId: string,
+    authService: OneDriveAuthService
+  ): Promise<Buffer | null> {
+    const accessToken = await authService.getValidAccessToken();
+    if (!accessToken) return null;
+
+    const url = `${ONEDRIVE_CONFIG.graphBaseUrl}/me/drive/items/${encodeURIComponent(cloudItemId)}/thumbnails/0/large/content`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (response.status === 404) return null; // item has no thumbnail
+    if (!response.ok) {
+      logger.warn(`OneDrive thumbnail fetch failed (${response.status}) for item ${cloudItemId}`);
+      return null;
+    }
+
+    const rawBuffer = Buffer.from(await response.arrayBuffer());
+
+    const thumbnailBuffer = await sharp(rawBuffer, { failOn: 'none' })
+      .rotate()
+      .resize(THUMBNAIL_CONFIG.size, THUMBNAIL_CONFIG.size, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: THUMBNAIL_CONFIG.quality })
+      .toBuffer();
+
+    await this.storeThumbnail(photoId, thumbnailBuffer);
+    return thumbnailBuffer;
   }
 
   /**

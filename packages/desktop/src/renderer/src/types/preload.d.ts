@@ -78,7 +78,7 @@ export interface PhotosAPI {
 }
 
 export interface ThumbnailsAPI {
-  get: (photoId: number, photoPath: string) => Promise<Buffer | null>;
+  get: (photoId: number) => Promise<Buffer | null>;
   getStats: () => Promise<ThumbnailStats>;
   clearCache: () => Promise<void>;
   setMaxSize: (sizeMB: number) => Promise<void>;
@@ -134,6 +134,20 @@ export interface PlacemarksAPI {
   setGeoLabel: (id: number, label: string) => Promise<void>;
 }
 
+export interface OneDriveImportProgress {
+  scanned: number;
+  imported: number;
+  duplicates: number;
+  total: number;
+  currentFile: string;
+}
+
+export interface OneDriveImportResult {
+  scanned: number;
+  imported: number;
+  duplicates: number;
+}
+
 export interface OneDriveConnectionStatus {
   connected: boolean;
   accountEmail: string | null;
@@ -154,6 +168,8 @@ export interface OneDriveAPI {
   listRootFolders: () => Promise<OneDriveFolderItem[]>;
   getCameraRollFolder: () => Promise<OneDriveFolderItem>;
   listChildFolders: (itemId: string) => Promise<OneDriveFolderItem[]>;
+  importFolder: (itemId: string, includeSubdirectories: boolean) => Promise<OneDriveImportResult>;
+  onImportProgress: (callback: (progress: OneDriveImportProgress) => void) => () => void;
 }
 
 /**

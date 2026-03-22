@@ -1,6 +1,6 @@
 # OneDrive Integration Plan
 
-**Status:** Step 2 (folder browse UI slice) complete in sketch mode — proceed to Step 3 candidate-count preview before import  
+**Status:** Step 3 (DB schema + metadata import) complete — proceed to Step 4: show OneDrive photos on the map  
 **Last Updated:** March 22, 2026
 
 ---
@@ -461,10 +461,15 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 
 **Build:**
 
-- [ ] Add DB schema fields: `source_type`, `cloud_item_id`, `cloud_folder_path`
-- [ ] Insert OneDrive photos with minimal required metadata only
-- [ ] Implement deduplication against the existing DB using `filename + filesize`
-- [ ] Add import result summary counts (`scanned`, `imported`, `duplicates`)
+- [x] Add DB schema fields: `cloud_item_id`, `cloud_folder_path`, `cloud_sha256` (directly in `SCHEMA_SQL` — no migrations, delete and rebuild DB)
+- [x] Extend `Photo` model and `PhotoCreateInput` with cloud fields
+- [x] Update `createPhoto` INSERT/UPSERT to persist cloud fields
+- [x] Implement deduplication: `isDuplicateOneDrivePhoto()` — sha256 primary, item-ID re-import guard
+- [x] New service `onedriveImport.ts` — paginated Graph fetch, image filter, dedup, insert
+- [x] New IPC handler `onedrive:importFolder` with progress events (`onedrive:importProgress`)
+- [x] Preload bridge and type definitions updated for import
+
+**Known limitation:** Cross-source dedup (local file ↔ OneDrive same content) is not implemented — local photos have no hash. OneDrive-to-OneDrive re-import dedup works via sha256. Deferred until hashing local files is prioritised.
 
 **Test / Exit Criteria:**
 
@@ -472,6 +477,32 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 - [ ] Duplicate OneDrive/local files are skipped according to the current rule
 - [ ] Import summary matches actual DB changes
 - [ ] Re-running the same import does not create duplicate rows
+
+### Step 3.5: Wire Import Into the UI
+
+**Design decisions:**
+
+- No confirmation/preview step — import starts immediately on folder select
+- Progress reuses the existing `ScanOverlay` scanning view unchanged
+  - OneDrive progress maps onto `ScanProgress`: `scanned→total`, `imported+duplicates→processed`, `currentFile→currentFile`
+- `includeSubdirectories` setting (existing toggle in `ScanOverlay`) is respected — backend recurses into subfolders when true
+- On cancel/abort: keep whatever was already imported (same as local scan abort)
+- Map auto-refreshes when import completes (same `onComplete` callback pattern as local scan)
+- Reuse `useFolderScan` hook — add `importOneDriveFolder(folderId, onComplete)` method driving the same `scanning`/`scanProgress` state
+
+**Build:**
+
+- [ ] Add `includeSubdirectories` param to `onedrive:importFolder` IPC handler and `onedriveImport.ts` service (recurse via `listChildFolders`)
+- [ ] Add `importOneDriveFolder` method to `useFolderScan` hook
+- [ ] Replace toast stub in `App.tsx` `handleSelectOneDriveFolder` with `folderScan.importOneDriveFolder(folder.id, photoData.loadPhotos)`
+
+**Test / Exit Criteria:**
+
+- [ ] Selecting a OneDrive folder triggers import immediately
+- [ ] Progress bar shows scanned/total counts updating in real time
+- [ ] Abort stops the import, keeping photos already inserted
+- [ ] Map shows imported photos after completion
+- [ ] Re-importing the same folder skips duplicates and completes cleanly
 
 ### Step 4: Show OneDrive Photos on the Map
 

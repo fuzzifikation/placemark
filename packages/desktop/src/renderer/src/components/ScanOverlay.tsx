@@ -112,37 +112,16 @@ export function ScanOverlay({
           </button>
         )}
 
-        {/* Header: logo + title */}
-        <div
+        <h2
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: SPACING.LG,
-            marginBottom: SPACING.XL,
+            margin: `0 0 ${SPACING.XL}`,
+            fontSize: FONT_SIZE.LG,
+            fontWeight: FONT_WEIGHT.MEDIUM,
+            color: colors.textPrimary,
           }}
         >
-          <img
-            src="./icon.png"
-            alt="Placemark"
-            style={{ width: 48, height: 48, borderRadius: '8px', flexShrink: 0 }}
-          />
-          <div>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: FONT_SIZE.XL,
-                fontWeight: FONT_WEIGHT.BOLD,
-                color: colors.textPrimary,
-                letterSpacing: '-0.025em',
-              }}
-            >
-              Placemark
-            </h2>
-            <p style={{ margin: 0, fontSize: FONT_SIZE.SM, color: colors.textSecondary }}>
-              Privacy-first, local-first photo organizer
-            </p>
-          </div>
-        </div>
+          {scanning ? 'Importing…' : 'Add Photos'}
+        </h2>
 
         {!scanning && (
           <div

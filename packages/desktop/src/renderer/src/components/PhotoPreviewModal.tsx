@@ -42,7 +42,7 @@ export function PhotoPreviewModal({
     let isMounted = true;
 
     window.api.thumbnails
-      .get(photo.id, photo.path)
+      .get(photo.id)
       .then((thumbnailBuffer) => {
         if (!isMounted) return;
         if (thumbnailBuffer) {

@@ -15,5 +15,8 @@ export function photoFromProps(props: Record<string, unknown>): Photo {
     fileHash: (props.fileHash as string) || null,
     cameraMake: (props.cameraMake as string) || null,
     cameraModel: (props.cameraModel as string) || null,
+    cloudItemId: (props.cloudItemId as string) || null,
+    cloudFolderPath: (props.cloudFolderPath as string) || null,
+    cloudSha256: (props.cloudSha256 as string) || null,
   };
 }

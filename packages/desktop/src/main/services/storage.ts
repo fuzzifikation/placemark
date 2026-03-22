@@ -46,6 +46,9 @@ function rowToPhoto(row: any): Photo {
     mimeType: row.mime_type,
     cameraMake: row.camera_make ?? null,
     cameraModel: row.camera_model ?? null,
+    cloudItemId: row.cloud_item_id ?? null,
+    cloudFolderPath: row.cloud_folder_path ?? null,
+    cloudSha256: row.cloud_sha256 ?? null,
   };
 }
 
@@ -57,8 +60,12 @@ export function createPhoto(input: PhotoCreateInput): Photo {
   const result = db
     .prepare(
       `
-    INSERT INTO photos (source, path, latitude, longitude, timestamp, file_hash, scanned_at, file_size, mime_type, camera_make, camera_model)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO photos (
+      source, path, latitude, longitude, timestamp, file_hash, scanned_at,
+      file_size, mime_type, camera_make, camera_model,
+      cloud_item_id, cloud_folder_path, cloud_sha256
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(source, path) DO UPDATE SET
       latitude = excluded.latitude,
       longitude = excluded.longitude,
@@ -67,6 +74,9 @@ export function createPhoto(input: PhotoCreateInput): Photo {
       mime_type = excluded.mime_type,
       camera_make = excluded.camera_make,
       camera_model = excluded.camera_model,
+      cloud_item_id = excluded.cloud_item_id,
+      cloud_folder_path = excluded.cloud_folder_path,
+      cloud_sha256 = excluded.cloud_sha256,
       scanned_at = excluded.scanned_at
     RETURNING *
   `
@@ -82,10 +92,30 @@ export function createPhoto(input: PhotoCreateInput): Photo {
       input.fileSize,
       input.mimeType,
       input.cameraMake ?? null,
-      input.cameraModel ?? null
+      input.cameraModel ?? null,
+      input.cloudItemId ?? null,
+      input.cloudFolderPath ?? null,
+      input.cloudSha256 ?? null
     );
 
   return rowToPhoto(result);
+}
+
+/**
+ * Check whether an OneDrive photo already exists in the database.
+ * Checks sha256 hash first (cross-source dedup), then item ID (re-import guard).
+ * Returns true if the photo should be skipped.
+ */
+export function isDuplicateOneDrivePhoto(cloudSha256: string | null, cloudItemId: string): boolean {
+  const db = getDb();
+  if (cloudSha256) {
+    const row = db.prepare('SELECT 1 FROM photos WHERE cloud_sha256 = ?').get(cloudSha256);
+    if (row) return true;
+  }
+  const row = db
+    .prepare("SELECT 1 FROM photos WHERE source = 'onedrive' AND cloud_item_id = ?")
+    .get(cloudItemId);
+  return !!row;
 }
 
 /**

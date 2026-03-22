@@ -394,7 +394,7 @@ See [collections_plan.md](collections_plan.md) for the full UX design of Placema
 **Tasks:**
 
 1. Virtual scrolling for photo grid (handle 100k+ photos)
-2. Multi-threaded import: use worker threads for EXIF extraction and thumbnail generation
+2. Concurrent import: `runWithConcurrency` pool for EXIF reads (local) and OneDrive subfolder walks — see SUGGESTIONS.md for full design spec
 3. Incremental folder scanning (only new/modified files since last scan)
 4. Memory profiling — stay under 500MB with large datasets
 5. Error boundary with user-friendly crash screen
@@ -796,7 +796,7 @@ _All phases below are post-Store-launch. Priority order may shift based on user 
 3. [x] Implement `packages/desktop/src/main/services/onedriveAuth.ts`
 4. [x] Implement `packages/desktop/src/main/services/onedriveGraph.ts` folder-browse slice
 5. [x] Add minimal OneDrive browser to Add Source overlay (connect, root, camera roll, subfolder traversal)
-6. [ ] Add candidate count preview for selected OneDrive folder
+6. [ ] Add candidate count preview for selected OneDrive folder (pre-import; `folder.childCount` is used during import for live progress totals, but not yet surfaced in the folder browser UI)
 7. [ ] Import photo metadata via Graph pagination (no full file download)
 8. [ ] Store with `source_type='onedrive'` and OneDrive item identifiers
 9. [ ] Harden network and token-expiry error paths for scan/import

@@ -48,6 +48,7 @@ function sha256Base64Url(input: string): string {
 
 export class OneDriveAuthService {
   private readonly tokenFilePath: string;
+  private memoryCache: StoredTokens | null = null;
 
   constructor() {
     this.tokenFilePath = path.join(app.getPath('userData'), 'onedrive-tokens.enc');
@@ -88,6 +89,7 @@ export class OneDriveAuthService {
   }
 
   async logout(): Promise<void> {
+    this.memoryCache = null;
     try {
       await fs.unlink(this.tokenFilePath);
     } catch (error) {
@@ -336,6 +338,7 @@ export class OneDriveAuthService {
   }
 
   private async storeTokens(tokens: StoredTokens): Promise<void> {
+    this.memoryCache = tokens; // keep cache in sync before disk write
     if (!safeStorage.isEncryptionAvailable()) {
       throw new Error('OS secure storage is not available on this machine');
     }
@@ -346,6 +349,12 @@ export class OneDriveAuthService {
   }
 
   private async loadTokens(): Promise<StoredTokens | null> {
+    // Return from memory cache when the token is still sufficiently valid.
+    // This avoids a disk read + DPAPI decrypt on every Graph API call.
+    if (this.memoryCache && this.memoryCache.expiresAt - Date.now() > TOKEN_REFRESH_THRESHOLD_MS) {
+      return this.memoryCache;
+    }
+
     try {
       const encoded = await fs.readFile(this.tokenFilePath, 'utf-8');
       if (!encoded) return null;
@@ -356,7 +365,9 @@ export class OneDriveAuthService {
 
       const encrypted = Buffer.from(encoded, 'base64');
       const decryptedJson = safeStorage.decryptString(encrypted);
-      return JSON.parse(decryptedJson) as StoredTokens;
+      const tokens = JSON.parse(decryptedJson) as StoredTokens;
+      this.memoryCache = tokens; // populate cache so subsequent calls skip disk
+      return tokens;
     } catch (error) {
       const e = error as NodeJS.ErrnoException;
       if (e.code === 'ENOENT') {

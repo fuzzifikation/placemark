@@ -103,7 +103,7 @@ export function useMapHover(): UseMapHoverReturn {
       // Load thumbnail after debounce delay
       hoverTimeoutRef.current = setTimeout(() => {
         window.api.thumbnails
-          .get(photo.id, photo.path)
+          .get(photo.id)
           .then((thumbnailBuffer: Buffer | null) => {
             // Race condition check
             if (activeHoverIdRef.current !== photo.id) return;

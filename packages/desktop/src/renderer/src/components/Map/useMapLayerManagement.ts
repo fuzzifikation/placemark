@@ -138,6 +138,9 @@ export function useMapLayerManagement({
             fileHash: photo.fileHash,
             cameraMake: photo.cameraMake,
             cameraModel: photo.cameraModel,
+            cloudItemId: photo.cloudItemId,
+            cloudFolderPath: photo.cloudFolderPath,
+            cloudSha256: photo.cloudSha256,
           },
         };
       }),

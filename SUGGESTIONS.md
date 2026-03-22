@@ -50,6 +50,16 @@
 
 ---
 
+- **Show duplicate counts in the Stats panel.** After an OneDrive (or future cloud) import, the stats panel has no visibility into how many photos were skipped as duplicates. Add a "Duplicates skipped" counter to the last-import summary or as a persistent stat in the library health section. Could show: total photos in DB, photos added in last import, duplicates skipped in last import. This gives the user confidence that the dedup logic is working and lets them spot unexpected duplicates.
+
+- **Privacy & Cloud Accounts section in Settings.** Add a dedicated "Privacy" tab (or section within Settings) that surfaces all connected cloud accounts in one place. For each connection:
+  - Show the signed-in account name / email address (already available from `getConnectionStatus` response).
+  - A "Sign out" button that revokes the local token via the existing `onedrive:logout` IPC handler.
+  - A "Delete all stored keys" button (destructive, with confirm) that wipes all tokens from Electron `safeStorage` and clears any persisted account state.
+  - A clear note: _"Signing out removes your access tokens from this device only. No data is sent to Placemark servers."_
+  - When no cloud account is connected, the section shows "No cloud accounts connected" with a button to add one (opens the OneDrive connect flow).
+  - Future: extend to other cloud providers as they are added.
+
 ### Medium work (half day – 1 day each)
 
 - **Duplicate detection: strengthen the current heuristic before considering hashing.** The current `filename + filesize` rule is cheap, but it can incorrectly merge distinct photos once local and OneDrive libraries mix at scale. Investigate a safer duplicate-candidate approach that adds more lightweight metadata, such as **taken date/time**, and possibly camera info or source path context, before auto-skipping an import. Keep hashing as a last resort only — full-content hashes are more correct, but they significantly slow file reads and database ingest, which cuts against Placemark's large-library performance goals.
@@ -70,6 +80,73 @@
 ---
 
 ### Larger work (1–3 days)
+
+- **OneDrive photos: "Open in Viewer" and "Show in Folder" actions.**
+  Both buttons in `PhotoPreviewModal` call `fs.access(photo.path, R_OK)` → `shell.openPath` / `shell.showItemInFolder`. These will silently fail for OneDrive photos because `photo.path` is a cloud identifier, not a local file path. The fix is source-aware branching in both the UI and the IPC handlers.
+
+  **What to store during import (`onedriveImport.ts`):**
+  The Graph API `DriveItem` already carries the fields we need. Store two extra columns during import:
+  - `cloud_web_url TEXT` — the item's `webUrl` (direct HTTPS link to the file's OneDrive web viewer). Available on every `DriveItem`, costs nothing extra.
+  - `cloud_folder_web_url TEXT` — `parentReference.path` gives the folder path but not a clickable URL; instead store the `webUrl` of the folder fetched once via `GET /me/drive/items/{folderId}?$select=webUrl`. Alternatively derive it from the item's own `webUrl` (trim the filename segment). The second approach avoids an extra API call.
+
+  Add both columns to the `photos` schema (instruct user to delete and rebuild DB — alpha).
+
+  **"Open in Viewer" on OneDrive:**
+  Option A (recommended) — **on-demand download to temp, then `shell.openPath`.**
+  - IPC handler checks `photo.source === 'onedrive'`
+  - Calls `GET /me/drive/items/{cloudItemId}/content` (Graph API redirect to CDN URL)
+  - Streams response to `os.tmpdir()/placemark-preview/{photoId}.{ext}`
+  - Opens the local temp file with `shell.openPath()`
+  - Clean up temp file on app exit (or after a configurable TTL, e.g. 30 min)
+  - Show a short loading state in the modal while the download runs (spinner, "Downloading…")
+
+  Option B — open `cloud_web_url` in the browser via `shell.openExternal()`. Zero implementation effort, but the system image viewer never opens — it lands in a browser tab showing OneDrive's built-in viewer. Not consistent with local photo experience.
+
+  Option A is the right call: the user gets their configured image viewer, the experience is identical to local photos.
+
+  **"Show in Folder" on OneDrive:**
+  Rename the button label to **"Open in OneDrive"** when `photo.source === 'onedrive'` and call `shell.openExternal(photo.cloudFolderWebUrl)`. This opens the OneDrive folder in the browser, which is the correct analogy — you can't open a Finder/Explorer window pointing at a cloud path. Internet connection required (make this clear: grey out the button with tooltip "Requires internet" if offline detection is available).
+
+  **UI changes (`PhotoPreviewModal.tsx`):**
+  - Both buttons already receive the full `Photo` object — no prop change needed
+  - Conditionally swap labels: `photo.source === 'onedrive' ? 'Open in OneDrive' : 'Show in Folder'`
+  - "Open in Viewer": show spinner while download is in progress (small loading state beside the button)
+  - No need to hide either button for OneDrive photos — both are meaningful actions
+
+  **IPC changes (`photos.ts`):**
+  - `photos:openInViewer` → branch on `photo.source`; local path: existing `shell.openPath`; OneDrive: download-then-open flow
+  - `photos:showInFolder` → branch on `photo.source`; local path: existing `shell.showItemInFolder`; OneDrive: `shell.openExternal(photo.cloudFolderWebUrl)`
+
+  **Scope note:** temp-file cleanup and a reuse cache (avoid re-downloading the same photo) are nice-to-haves but not blockers. Ship the basic download-to-temp flow first.
+
+- **Concurrent import: parallel EXIF reads (local) and parallel subfolder walks (OneDrive).**
+  Both import paths are currently sequential. The shared fix is a `runWithConcurrency(items, limit, asyncFn)` utility — a simple pool that keeps N async tasks in flight at a time, pulling the next item when a slot frees. One implementation, used in both places.
+
+  **Local scan (`filesystem.ts`):**
+  The full file list is known upfront after `findImageFiles`. The sequential `for...of` loop over `processImageFile` becomes a `runWithConcurrency` call. Since `exifr` reads only the EXIF segment (a few KB at the start of the file — not the full image), memory pressure is negligible and concurrency of 8 is safe even on HDDs.
+
+  Abort handling: check `abortRequested` at the start of each slot's task function, same as the current loop.
+
+  **OneDrive import (`onedriveImport.ts`):**
+  Replace the sequential `for...of subfolderIds` recursion in `importFolder` with a `runWithConcurrency` call over discovered subfolder IDs. Each slot independently fetches the subfolder's `childCount`, pages through its items, and recurses into its own sub-subfolders. The shared `counts` and `totals` mutable objects are safe because `better-sqlite3` calls (`isDuplicateOneDrivePhoto`, `createPhoto`) are synchronous — they never interleave between JS event loop ticks.
+
+  **Concurrency limit:** a single named constant `IMPORT_CONCURRENCY = 8` in a shared config or at the top of each service file. Same value for both — both workloads are small async metadata reads with no meaningful memory cost per slot.
+
+  **`runWithConcurrency` shape:**
+
+  ```ts
+  async function runWithConcurrency<T>(
+    items: T[],
+    limit: number,
+    fn: (item: T) => Promise<void>
+  ): Promise<void>;
+  ```
+
+  No external library needed — implementable in ~15 lines using a semaphore pattern (a counter + a queue of pending resolvers, or simply chunking with `Promise.all` on batches of `limit`). The chunking approach is slightly simpler but less optimal (a slow item stalls its whole batch); a proper pool is cleaner and only marginally more code.
+
+  **Location:** add the utility to `packages/desktop/src/main/services/filesystem.ts` (alongside the scan code) or a new `packages/desktop/src/main/utils/concurrency.ts` if reuse across more files seems likely.
+
+  **Not needed yet:** 429 / `Retry-After` handling for OneDrive rate limiting. At concurrency 8, well under Microsoft's 10k requests/10min throttle for typical personal libraries. Add if users hit throttle errors in practice.
 
 - **Metadata repair tool — detect and fix outlier dates and GPS.** Scan the database for photos with clearly improbable metadata and surface them for the user to review and repair.
   - **Date outliers:** flag timestamps outside a plausible range (e.g. before 1990 or after the current year + 1). Sort photos chronologically; any photo whose date is more than N years from its nearest neighbours is a candidate. Show a list: thumbnail, filename, bad date, suggested replacement (median of the N photos immediately before/after it in the same import batch or folder).

@@ -56,6 +56,36 @@ export function useFolderScan() {
     await window.api.photos.abortScan();
   };
 
+  const importOneDriveFolder = async (folderId: string, onComplete?: () => Promise<void>) => {
+    setScanning(true);
+    setScanProgress(null);
+
+    const startTime = Date.now();
+
+    const removeListener = window.api.onedrive.onImportProgress((progress) => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      const progressRatio = progress.total > 0 ? progress.scanned / progress.total : 0;
+      const eta = progressRatio > 0 ? elapsed / progressRatio - elapsed : 0;
+
+      setScanProgress({
+        currentFile: progress.currentFile,
+        processed: progress.imported + progress.duplicates,
+        total: progress.total,
+        startTime,
+        eta: Math.max(0, Math.round(eta)),
+      });
+    });
+
+    try {
+      await window.api.onedrive.importFolder(folderId, includeSubdirectories);
+      if (onComplete) await onComplete();
+    } finally {
+      removeListener();
+      setScanProgress(null);
+      setScanning(false);
+    }
+  };
+
   return {
     scanning,
     scanProgress,
@@ -63,5 +93,6 @@ export function useFolderScan() {
     setIncludeSubdirectories,
     scanFolder,
     abortScan,
+    importOneDriveFolder,
   };
 }

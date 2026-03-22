@@ -1,9 +1,12 @@
 import { ipcMain } from 'electron';
 import { OneDriveAuthService } from '../services/onedriveAuth';
 import { OneDriveGraphService } from '../services/onedriveGraph';
+import { OneDriveImportService } from '../services/onedriveImport';
 
 const authService = new OneDriveAuthService();
+export { authService as oneDriveAuthService };
 const graphService = new OneDriveGraphService(authService);
+const importService = new OneDriveImportService(authService);
 
 export function registerOneDriveHandlers(): void {
   ipcMain.handle('onedrive:login', async () => {
@@ -34,4 +37,21 @@ export function registerOneDriveHandlers(): void {
 
     return graphService.listChildFolders(itemId);
   });
+
+  ipcMain.handle(
+    'onedrive:importFolder',
+    async (event, itemId: string, includeSubdirectories: boolean) => {
+      if (typeof itemId !== 'string' || !itemId.trim()) {
+        throw new Error('Cannot import from OneDrive: invalid folder ID');
+      }
+
+      return importService.importFolder(
+        itemId.trim(),
+        includeSubdirectories === true,
+        (progress) => {
+          event.sender.send('onedrive:importProgress', progress);
+        }
+      );
+    }
+  );
 }

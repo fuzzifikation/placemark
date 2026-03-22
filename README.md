@@ -100,8 +100,10 @@ When you open Placemark, you are greeted with a clean map interface. The data st
 
 1. Click the **"Add Source"** button (or the `+` icon) in the top-left sidebar.
 2. Choose your source type:
-  - **Local Folder:** Select a folder on your computer (e.g., your "Pictures" folder).
-  - **OneDrive (Sketch Phase):** Connect your Microsoft account, browse folders (including Camera Roll), and choose a folder. Current sketch mode validates connect/browse/select behavior before full import is enabled.
+
+- **Local Folder:** Select a folder on your computer (e.g., your "Pictures" folder).
+- **OneDrive (Sketch Phase):** Connect your Microsoft account, browse folders (including Camera Roll), and choose a folder. Current sketch mode validates connect/browse/select behavior before full import is enabled.
+
 3. For local folder scans, Placemark reads the **GPS coordinates already embedded in each photo's EXIF metadata** — the location your phone or camera recorded automatically at the moment the photo was taken.
    - **Note:** Only photos that already contain GPS coordinates in their EXIF metadata will appear on the map. Placemark does not estimate or infer location from image content. Photos without embedded GPS coordinates are counted but skipped for map display.
 

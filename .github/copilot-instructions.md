@@ -4,6 +4,13 @@ Privacy-first, local-first photo organizer. Read [README.md](../README.md) for s
 
 **Guiding priorities:** clarity > performance · safety > convenience · explicit > automatic. Placemark should feel trustworthy, predictable, and calm.
 
+## Interaction Rules
+
+- **Always use the `vscode_askQuestions` tool** when clarifying requirements before coding. Never ask multiple questions in plain text — use the tool and ask one question at a time.
+- **Step-by-step approach:** Do not bundle multiple implementation steps together. Complete one step, then wait for confirmation before proceeding to the next.
+- **No migrations:** We are in alpha/pre-v1.0, only one developer. Never add migration code — put all schema/state directly in the canonical definition and instruct to delete and rebuild.
+- **Use Context7 MCP for documentation:** When looking up library APIs, use the `mcp_io_github_ups_resolve-library-id` and `mcp_io_github_ups_get-library-docs` tools for up-to-date documentation. If the MCP server is not available, tell the user: "Please start the Context7 MCP server — run `npx @upstash/context7-mcp` or start it via your MCP configuration."
+
 ## Technology Stack
 
 - **Desktop:** Electron + TypeScript + React + Vite

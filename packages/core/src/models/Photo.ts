@@ -18,6 +18,10 @@ export interface Photo {
   mimeType: string;
   cameraMake: string | null;
   cameraModel: string | null;
+  // Cloud source fields (null for local photos)
+  cloudItemId: string | null;
+  cloudFolderPath: string | null;
+  cloudSha256: string | null;
 }
 
 export interface PhotoCreateInput {
@@ -31,4 +35,8 @@ export interface PhotoCreateInput {
   mimeType: string;
   cameraMake?: string;
   cameraModel?: string;
+  // Cloud source fields
+  cloudItemId?: string;
+  cloudFolderPath?: string;
+  cloudSha256?: string;
 }

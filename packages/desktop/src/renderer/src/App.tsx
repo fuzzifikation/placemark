@@ -166,8 +166,10 @@ function App() {
     // useEffect will auto-show scan overlay since photos.length becomes 0
   };
 
-  const handleSelectOneDriveFolder = (folder: OneDriveFolderItem) => {
-    toast.info(`Selected OneDrive folder: ${folder.name}. Import is not wired yet.`);
+  const handleSelectOneDriveFolder = async (folder: OneDriveFolderItem) => {
+    // Keep overlay mounted so it can show the scanning progress UI.
+    // Close it after import completes (or fails).
+    await folderScan.importOneDriveFolder(folder.id, photoData.loadPhotos);
     setShowScanOverlay(false);
   };
 
@@ -352,39 +354,37 @@ function App() {
         />
       </div>
 
-      {/* Floating Header - hidden when scan overlay is active */}
-      {!showScanOverlay && hasPhotos && (
-        <div
-          style={{
-            position: 'absolute',
-            top: LAYOUT.PANEL_INSET,
-            left: LAYOUT.PANEL_INSET,
-            zIndex: Z_INDEX.HEADER,
-          }}
-        >
-          <FloatingHeader
-            photoCount={photoData.mapPhotos.length}
-            selectionCount={photoData.selection.size}
-            selectionMode={selectionMode}
-            dateRangeAvailable={!!photoData.dateRange}
-            showTimeline={showTimeline}
-            showPlacemarks={showPlacemarks}
-            scanning={folderScan.scanning}
-            colors={colors}
-            glassBlur={settings.glassBlur}
-            glassSurfaceOpacity={settings.glassSurfaceOpacity}
-            onSelectionModeToggle={handleSelectionModeToggle}
-            onOperationsOpen={() => setShowOperations(true)}
-            onSettingsOpen={() => setShowSettings(true)}
-            onStatsOpen={() => setShowStats(true)}
-            onTimelineToggle={handleTimelineToggle}
-            onPlacemarksToggle={togglePlacemarks}
-            onScanFolder={() => setShowScanOverlay(true)}
-            onClearLibrary={handleClearLibrary}
-            onHelpOpen={() => setShowHelp(true)}
-          />
-        </div>
-      )}
+      {/* Floating Header - always visible once app is initialized */}
+      <div
+        style={{
+          position: 'absolute',
+          top: LAYOUT.PANEL_INSET,
+          left: LAYOUT.PANEL_INSET,
+          zIndex: Z_INDEX.HEADER,
+        }}
+      >
+        <FloatingHeader
+          photoCount={photoData.mapPhotos.length}
+          selectionCount={photoData.selection.size}
+          selectionMode={selectionMode}
+          dateRangeAvailable={!!photoData.dateRange}
+          showTimeline={showTimeline}
+          showPlacemarks={showPlacemarks}
+          scanning={folderScan.scanning}
+          colors={colors}
+          glassBlur={settings.glassBlur}
+          glassSurfaceOpacity={settings.glassSurfaceOpacity}
+          onSelectionModeToggle={handleSelectionModeToggle}
+          onOperationsOpen={() => setShowOperations(true)}
+          onSettingsOpen={() => setShowSettings(true)}
+          onStatsOpen={() => setShowStats(true)}
+          onTimelineToggle={handleTimelineToggle}
+          onPlacemarksToggle={togglePlacemarks}
+          onScanFolder={() => setShowScanOverlay(true)}
+          onClearLibrary={handleClearLibrary}
+          onHelpOpen={() => setShowHelp(true)}
+        />
+      </div>
 
       {/* Scan Overlay - blocks map/header during scan or when library is empty */}
       {showScanOverlay && (

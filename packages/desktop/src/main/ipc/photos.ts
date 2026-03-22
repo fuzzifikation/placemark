@@ -209,10 +209,27 @@ export function registerPhotoHandlers(): void {
   );
 
   // Get thumbnail for photo
-  ipcMain.handle('thumbnails:get', async (_event, photoId: number, photoPath: string) => {
+  // The handler resolves the photo from the DB so the renderer never needs to pass a path.
+  ipcMain.handle('thumbnails:get', async (_event, photoId: number) => {
     try {
-      const thumbnail = await thumbnailService.generateThumbnail(photoId, photoPath);
-      return thumbnail;
+      // Fast path: return from cache without touching the photos DB
+      const cached = thumbnailService.getThumbnail(photoId);
+      if (cached) return cached;
+
+      const photo = getPhotoById(photoId);
+      if (!photo) return null;
+
+      if (photo.source === 'onedrive') {
+        // Lazy-import to avoid circular module init (photos ↔ onedrive)
+        const { oneDriveAuthService } = await import('./onedrive');
+        return await thumbnailService.generateThumbnailFromOneDrive(
+          photoId,
+          photo.cloudItemId!,
+          oneDriveAuthService
+        );
+      }
+
+      return await thumbnailService.generateThumbnail(photoId, photo.path);
     } catch (error) {
       console.error('Failed to get thumbnail:', error);
       return null;
