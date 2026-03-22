@@ -66,5 +66,8 @@ contextBridge.exposeInMainWorld('api', {
     login: () => ipcRenderer.invoke('onedrive:login'),
     logout: () => ipcRenderer.invoke('onedrive:logout'),
     getConnectionStatus: () => ipcRenderer.invoke('onedrive:getConnectionStatus'),
+    listRootFolders: () => ipcRenderer.invoke('onedrive:listRootFolders'),
+    getCameraRollFolder: () => ipcRenderer.invoke('onedrive:getCameraRollFolder'),
+    listChildFolders: (itemId: string) => ipcRenderer.invoke('onedrive:listChildFolders', itemId),
   },
 });

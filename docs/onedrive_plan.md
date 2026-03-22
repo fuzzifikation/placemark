@@ -416,17 +416,33 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 
 **Build:**
 
-- [ ] Implement a minimal Microsoft Graph client for folder listing
-- [ ] Expose a main-process IPC method to list OneDrive folders by parent item ID
-- [ ] Start with two entry points: root and `special/cameraroll`
-- [ ] Return only the fields needed for browsing: `id`, `name`, `folder.childCount`, `parentReference.path`
-- [ ] Filter to folders only; do not import files yet
-- [ ] Keep this step renderer-agnostic at first so the Graph contract is proven before building UI
+- [x] Implement a minimal Microsoft Graph client for folder listing
+- [x] Expose a main-process IPC method to list OneDrive folders by parent item ID
+- [x] Start with two entry points: root and `special/cameraroll`
+- [x] Return only the fields needed for browsing: `id`, `name`, `folder.childCount`, `parentReference.path`
+- [x] Filter to folders only; do not import files yet
+- [x] Keep this step renderer-agnostic at first so the Graph contract is proven before building UI
+
+**Implemented contract:**
+
+- Main-process Graph service: `packages/desktop/src/main/services/onedriveGraph.ts`
+- IPC methods:
+  - `window.api.onedrive.listRootFolders()`
+  - `window.api.onedrive.getCameraRollFolder()`
+  - `window.api.onedrive.listChildFolders(itemId)`
+- Returned folder shape:
+  - `id`
+  - `name`
+  - `childCount`
+  - `path`
+- Camera roll is treated as a special-folder lookup returning a single folder node via `getCameraRollFolder()`
+- Traverse from that node using the same generic `listChildFolders(itemId)` method used everywhere else
 
 **Test / Exit Criteria:**
 
 - [ ] Renderer or DevTools can request the root folder listing successfully through IPC
-- [ ] Renderer or DevTools can request the `special/cameraroll` folder successfully through IPC
+- [ ] Renderer or DevTools can request the `special/cameraroll` folder metadata successfully through IPC
+- [ ] Renderer or DevTools can enumerate the camera roll tree through `getCameraRollFolder()` + `listChildFolders(itemId)`
 - [ ] Returned folder data is stable enough to drive a later picker UI
 - [ ] No photo records are written to the DB yet
 

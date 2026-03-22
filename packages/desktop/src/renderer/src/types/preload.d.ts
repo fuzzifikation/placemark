@@ -140,10 +140,20 @@ export interface OneDriveConnectionStatus {
   expiresAt: number | null;
 }
 
+export interface OneDriveFolderItem {
+  id: string;
+  name: string;
+  childCount: number;
+  path: string | null;
+}
+
 export interface OneDriveAPI {
   login: () => Promise<OneDriveConnectionStatus>;
   logout: () => Promise<{ ok: boolean }>;
   getConnectionStatus: () => Promise<OneDriveConnectionStatus>;
+  listRootFolders: () => Promise<OneDriveFolderItem[]>;
+  getCameraRollFolder: () => Promise<OneDriveFolderItem>;
+  listChildFolders: (itemId: string) => Promise<OneDriveFolderItem[]>;
 }
 
 /**

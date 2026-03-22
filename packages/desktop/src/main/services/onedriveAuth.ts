@@ -36,6 +36,7 @@ export interface OneDriveConnectionStatus {
 
 const CALLBACK_PATH = '/oauth/callback';
 const CALLBACK_PORT = 3001;
+const TOKEN_REFRESH_THRESHOLD_MS = 2 * 60 * 1000;
 
 function base64UrlEncode(input: Buffer): string {
   return input.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
@@ -116,11 +117,13 @@ export class OneDriveAuthService {
     };
   }
 
-  async getAccessToken(): Promise<string | null> {
+  async getValidAccessToken(): Promise<string | null> {
     const stored = await this.loadTokens();
     if (!stored) return null;
+
     const validToken = await this.ensureValidAccessToken(stored);
     if (!validToken) return null;
+
     return validToken.accessToken;
   }
 
@@ -181,6 +184,23 @@ export class OneDriveAuthService {
             cleanup(server, timeoutHandle);
             reject(error);
           }
+        }
+      });
+
+      server.on('error', (error) => {
+        if (!settled) {
+          settled = true;
+          cleanup(server, timeoutHandle);
+          const e = error as NodeJS.ErrnoException;
+          if (e.code === 'EADDRINUSE') {
+            reject(
+              new Error(
+                `Microsoft sign-in failed: localhost callback port ${CALLBACK_PORT} is already in use`
+              )
+            );
+            return;
+          }
+          reject(error);
         }
       });
 
@@ -288,9 +308,8 @@ export class OneDriveAuthService {
   }
 
   private async ensureValidAccessToken(stored: StoredTokens): Promise<StoredTokens | null> {
-    // Refresh 2 minutes before nominal expiry to avoid race conditions.
-    const refreshThreshold = 2 * 60 * 1000;
-    if (stored.expiresAt - Date.now() > refreshThreshold) {
+    // Refresh shortly before expiry to avoid race conditions during Graph calls.
+    if (stored.expiresAt - Date.now() > TOKEN_REFRESH_THRESHOLD_MS) {
       return stored;
     }
 
