@@ -57,7 +57,6 @@ function App() {
   const {
     showTimeline,
     setShowTimeline,
-    isTimelinePlaying,
     setIsTimelinePlaying,
     showSettings,
     setShowSettings,

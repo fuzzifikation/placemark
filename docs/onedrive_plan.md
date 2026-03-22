@@ -1,7 +1,7 @@
 # OneDrive Integration Plan
 
-**Status:** Design Phase (Pending Step 0 feasibility validation)  
-**Last Updated:** March 21, 2026
+**Status:** Step 0 Complete — proceed to Step 0.5 (Azure registration)  
+**Last Updated:** March 22, 2026
 
 ---
 
@@ -146,22 +146,40 @@ ALTER TABLE photos ADD COLUMN cloud_item_id TEXT;
 ALTER TABLE photos ADD COLUMN cloud_folder_path TEXT;
 -- OneDrive folder path where photo is stored (informational)
 -- NULL for local photos
+
+ALTER TABLE photos ADD COLUMN cloud_sha256 TEXT;
+-- sha256Hash from OneDrive file.hashes — used as primary dedupe key
+-- NULL for local photos (local dedupe uses file path)
 ```
 
 Do not persist transient thumbnail URLs as durable database fields. Use the stable `cloud_item_id` and fetch thumbnail metadata on demand, with an in-memory or short-lived cache if needed.
 
+### Thumbnail Cache Compatibility (Step 0 Confirmed)
+
+- Graph returns three thumbnail sizes: `small` (96px), `medium` (176px), `large` (800px)
+- Existing local thumbnail cache schema stores one BLOB per `photo_id` (single canonical thumbnail), which is size-agnostic but not multi-variant
+- Compatibility decision: cache one canonical OneDrive thumbnail per photo in persistent cache using `medium` (176px)
+- Request `small` (96px) and `large` (800px) on demand and keep those URLs/results session-scoped only
+- No thumbnail database schema migration is required for Step 0.5/Step 1
+
 ### Deduplication Strategy
 
-**Rule:** Photos are considered identical if `filename + filesize` match, regardless of source.
+**Rule:** Photos are considered identical if `sha256Hash` matches an existing record. Fall back to `filename + filesize` if hash is unavailable.
+
+**Step 0 confirmed:** `file.hashes.sha256Hash`, `sha1Hash`, and `quickXorHash` are all returned by Graph API on real files. `sha256Hash` is the strongest signal and should be the primary dedupe key.
 
 **Implementation:**
 
-1. **Before inserting** each OneDrive photo, query:
+1. **Before inserting** each OneDrive photo, check by hash first:
+   ```sql
+   SELECT id FROM photos WHERE cloud_sha256 = ?
+   ```
+2. **If hash missing**, fall back to:
    ```sql
    SELECT id FROM photos WHERE filename = ? AND fileSize = ?
    ```
-2. **If exists:** Skip insertion, log as duplicate
-3. **If not exists:** Insert new photo record with `source_type = 'onedrive'`
+3. **If exists:** Skip insertion, log as duplicate
+4. **If not exists:** Insert new photo record with `source_type = 'onedrive'`
 
 **Result tracking:**
 
@@ -174,17 +192,18 @@ Do not persist transient thumbnail URLs as durable database fields. Use the stab
 
 ### Per-Photo Metadata
 
-| Field                       | Source                                              | Mandatory | Notes                                                         |
-| --------------------------- | --------------------------------------------------- | --------- | ------------------------------------------------------------- |
-| `filename`                  | OneDrive `name`                                     | ✅        | e.g., IMG_1234.jpg                                            |
-| `fileSize`                  | OneDrive `size`                                     | ✅        | In bytes                                                      |
-| `mimeType`                  | OneDrive `file.mimeType`                            | ✅        | image/jpeg, image/heic, etc.                                  |
-| `timestamp`                 | OneDrive `photo.takenDateTime` or `createdDateTime` | ✅        | ISO 8601, fallback to created                                 |
-| `latitude`, `longitude`     | OneDrive `location.latitude`, `location.longitude`  | ❌        | Only if Graph exposes location metadata for that file         |
-| `cameraMake`, `cameraModel` | OneDrive `photo.cameraMake`, `photo.cameraModel`    | ❌        | Validate in Step 0; may be limited depending on OneDrive type |
-| `cloud_item_id`             | OneDrive `id`                                       | ✅        | Unique identifier                                             |
-| `cloud_folder_path`         | Derived from folder hierarchy                       | ✅        | e.g., /Pictures/2024/Paris                                    |
-| `source_type`               | Hardcoded                                           | ✅        | 'onedrive'                                                    |
+| Field                       | Source                                              | Mandatory | Notes                                                                                                 |
+| --------------------------- | --------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------- |
+| `filename`                  | OneDrive `name`                                     | ✅        | e.g., IMG_1234.jpg                                                                                    |
+| `fileSize`                  | OneDrive `size`                                     | ✅        | In bytes                                                                                              |
+| `mimeType`                  | OneDrive `file.mimeType`                            | ✅        | image/jpeg, image/heic, video/mp4, etc. — filter client-side to images only                           |
+| `timestamp`                 | OneDrive `photo.takenDateTime` or `createdDateTime` | ✅        | ISO 8601, fallback to created. **Confirmed present on all items including video.**                    |
+| `latitude`, `longitude`     | OneDrive `location.latitude`, `location.longitude`  | ❌        | **Confirmed working in Step 0.** Present on photos and videos when GPS was recorded.                  |
+| `cameraMake`, `cameraModel` | OneDrive `photo.cameraMake`, `photo.cameraModel`    | ❌        | **Confirmed present on JPEGs.** Not present on videos (only `takenDateTime` returned for video).      |
+| `cloud_item_id`             | OneDrive `id`                                       | ✅        | Unique identifier                                                                                     |
+| `cloud_folder_path`         | Derived from folder hierarchy                       | ✅        | e.g., /Bilder/Eigene Aufnahmen                                                                        |
+| `source_type`               | Hardcoded                                           | ✅        | 'onedrive'                                                                                            |
+| `cloud_sha256`              | OneDrive `file.hashes.sha256Hash`                   | ❌        | **Confirmed present in Step 0.** Use as primary dedupe key. sha1Hash and quickXorHash also available. |
 
 Thumbnail URLs are fetched on demand and cached temporarily; they are not part of the durable metadata contract.
 
@@ -286,73 +305,129 @@ Only connection metadata belongs in settings. Raw OAuth tokens must never be exp
 
 Build this feature in small increments. Each step must be completed, manually verified, and kept working before the next step begins.
 
-### Step 0: Prove Basic Feasibility Before Azure Setup
+### Step 0: Prove Basic Feasibility Before Azure Setup ✅ COMPLETE
 
-**Build:**
+**Validated against real OneDrive data (March 22, 2026):**
 
-- [ ] Use Microsoft Graph Explorer or equivalent tooling against a personal OneDrive test folder
-- [ ] Confirm the minimum Microsoft Graph scopes likely required for read-only photo metadata and thumbnails
-- [ ] Test real Graph responses against a personal OneDrive test folder
-- [ ] Record what Graph actually returns for real files, not just what the docs suggest
-- [ ] Verify whether GPS is exposed through `location` for the files we care about
-- [ ] Verify whether camera make/model are available on the target OneDrive account types we intend to support
-- [ ] Verify thumbnail retrieval strategy without assuming durable stored URLs
+- [x] Used Microsoft Graph Explorer with `special/cameraroll` — works, locale-independent
+- [x] Confirmed `Files.Read` scope is sufficient
+- [x] Confirmed `location.latitude/longitude` is returned on photos and videos that have GPS
+- [x] Confirmed `photo.takenDateTime`, `cameraMake`, `cameraModel` on JPEGs
+- [x] Confirmed `photo.takenDateTime` only (no camera fields) on video items
+- [x] Confirmed `file.hashes.sha256Hash`, `sha1Hash`, `quickXorHash` all returned
+- [x] Confirmed `file.mimeType` — videos (`video/mp4`) appear in camera roll; must filter client-side
+- [x] Confirmed `@odata.nextLink` pagination works
+- [x] Confirmed folder names are locale-dependent ("Bilder" not "Pictures") — folder picker is mandatory
+- [x] Confirmed thumbnails endpoint works — three sizes returned: `small` (96px), `medium` (176px), `large` (800px)
+- [x] Confirmed thumbnail URLs contain `tempauth` JWT token with expiry — treat as session-scoped, never store as durable DB fields
+
+**Findings that updated the plan:**
+
+- `sha256Hash` confirmed available → promoted to primary dedupe key
+- Videos appear alongside photos in camera roll → MIME-type client filter is essential
+- GPS present on video too when recorded
+- `special/cameraroll` is the recommended starting point; user must be able to navigate to any folder
+- Thumbnails: three sizes (`small`/`medium`/`large`); URLs carry `tempauth` JWT — treat as session-scoped. Use `small` for map markers/list, `medium` (176px) for the preview modal.
 
 **Test / Exit Criteria:**
 
-- [ ] Can authenticate manually with Microsoft tooling without writing Placemark auth code yet
-- [ ] Can list image files from a known OneDrive folder
-- [ ] Can confirm Graph returns the fields we need in practice: filename, size, mime type, timestamp, GPS if present, camera metadata if present, thumbnail availability
-- [ ] Can document any gaps between Graph docs and real-world responses before writing app code
-- [ ] Can decide that OneDrive integration is worth continuing before doing Azure registration work
+- [x] Can authenticate manually with Microsoft tooling without writing Placemark auth code yet
+- [x] Can list image files from a known OneDrive folder
+- [x] Can confirm Graph returns: filename, size, mime type, timestamp, GPS, camera metadata, hashes
+- [x] Can document gaps between docs and real-world responses
+- [x] Thumbnail endpoint confirmed working — three sizes, tempauth URLs
+- [x] OneDrive integration is worth continuing — proceed to Step 0.5
 
-### Step 0.5: Prepare Real App Authentication
+### Step 0.5: Prepare Real App Authentication ✅ COMPLETE
 
 Only begin this step after Step 0 confirms the metadata and thumbnail plan is viable.
 
+**Tenant strategy (resolved March 22, 2026):**
+
+- M365 Developer Program was not usable for this development path due to tenant eligibility friction
+- Development app registration now lives in the user's Azure student subscription tenant
+- The app registration supports **Any Entra ID tenant + personal Microsoft accounts**
+- At publication time, the startup/publishing company can create a production app registration in their own tenant and replace only the Client ID constant
+- Store submission (Microsoft Partner Center, MSIX packaging, signing) remains independent from this development track
+- App is currently unsigned — code signing is a pre-publication step, not required for local development
+
+**Actual dev registration chosen:**
+
+- Client ID: `d6471ed5-2e1f-472f-95f0-e672258b4522`
+- Authority: `https://login.microsoftonline.com/common`
+- Redirect URI: `http://localhost:3001/oauth/callback`
+- Scopes: `Files.Read`, `offline_access`, `User.Read`
+- Public client flow: enabled
+
 **Build:**
 
-- [ ] Register the Placemark app in Azure
-- [ ] Validate the callback approach to use in Electron (`localhost` loopback vs custom protocol)
-- [ ] Confirm the final Microsoft Graph scopes required by the real auth flow
+- [x] Provision a real Azure tenant usable for development
+- [x] Register "Placemark" app in Azure
+  - Account type: **Accounts in any organizational directory (multitenant) and personal Microsoft accounts**
+  - Permissions: `Files.Read`, `offline_access`, `User.Read` (delegated)
+  - Redirect URI: `http://localhost:3001/oauth/callback`
+- [x] Validate the callback approach in Electron
+- [x] Confirm the final Microsoft Graph scopes required by the real auth flow
 
 **Test / Exit Criteria:**
 
-- [ ] Placemark has a valid app registration ready for local development
-- [ ] The callback strategy is chosen based on actual Electron constraints, not guesswork
-- [ ] Scope selection remains read-only and minimal
+- [x] Placemark has a valid app registration (Client ID) ready for local development
+- [x] The callback strategy is chosen based on actual Electron constraints, not guesswork
+- [x] Scope selection remains read-only and minimal
+- [x] Client ID is stored as a named constant in code (never hardcoded inline, never secret)
 
-### Step 1: Build Authentication Only
+### Step 1: Build Authentication Only ✅ COMPLETE
 
-**Build:**
+**What was implemented:**
 
-- [ ] Add main-process OAuth handler
-- [ ] Implement Authorization Code + PKCE using the system browser
-- [ ] Add preload IPC for `window.api.onedrive.login()`, `logout()`, `getConnectionStatus()`
-- [ ] Store tokens in OS-backed secure credential storage
-- [ ] Store only non-sensitive connection metadata in settings
+- Main-process OAuth service in `packages/desktop/src/main/services/onedriveAuth.ts`
+- Authorization Code + PKCE using the system browser
+- Loopback callback server on fixed localhost redirect `http://localhost:3001/oauth/callback`
+- IPC handlers for `login`, `logout`, `getConnectionStatus`, plus a main-process-only access-token helper for future Graph calls
+- Preload bridge for `window.api.onedrive.login()`, `logout()`, `getConnectionStatus()`
+- Token persistence in local encrypted storage via Electron `safeStorage` when available, with fail-closed behavior if stored credentials become invalid
+- Non-sensitive connection status exposed to renderer as `connected`, `accountEmail`, `expiresAt`
 
-**Test / Exit Criteria:**
+**Verified manually (March 22, 2026):**
 
-- [ ] User can click a test action and complete Microsoft sign-in
-- [ ] Placemark receives valid tokens
-- [ ] App restart preserves the connected state without exposing tokens in plain settings or SQLite
-- [ ] Disconnect deletes stored credentials immediately
-- [ ] Revoked/invalid tokens fail closed and return the UI to a reconnect state
+- [x] User can trigger Microsoft sign-in and complete auth successfully
+- [x] Placemark receives valid tokens
+- [x] Connected state can be queried from renderer without exposing tokens in plain settings or SQLite
+- [x] Disconnect deletes stored credentials immediately
+- [x] Revoked/invalid tokens fail closed and return the UI to a reconnect state
+
+**Notes:**
+
+- Microsoft access tokens are short-lived (typically about 1 hour)
+- `offline_access` is used only to renew the session without repeated sign-in prompts; it does not broaden OneDrive file permissions beyond `Files.Read`
 
 ### Step 2: Browse OneDrive Without Importing
+
+**Next single step:**
+
+- Implement a minimal main-process Microsoft Graph client for folder listing only
+
+**Why this is the right next step:**
+
+- Step 1 auth is now working end-to-end
+- Folder listing is the smallest useful vertical slice of Step 2
+- It exercises token reuse and Graph access without touching DB schema or import logic yet
+- It preserves the existing rule that users explicitly choose what Placemark can access
 
 **Build:**
 
 - [ ] Implement a minimal Microsoft Graph client for folder listing
-- [ ] Add OneDrive as an option under the existing `Add Source` flow
-- [ ] Add a basic folder picker or folder selection flow for OneDrive
+- [ ] Expose a main-process IPC method to list OneDrive folders by parent item ID
+- [ ] Start with two entry points: root and `special/cameraroll`
+- [ ] Return only the fields needed for browsing: `id`, `name`, `folder.childCount`, `parentReference.path`
+- [ ] Filter to folders only; do not import files yet
+- [ ] Keep this step renderer-agnostic at first so the Graph contract is proven before building UI
 
 **Test / Exit Criteria:**
 
-- [ ] User can connect and browse their OneDrive folder structure
-- [ ] User can choose a test folder or the default Pictures location
-- [ ] App shows a reliable candidate photo count before import
+- [ ] Renderer or DevTools can request the root folder listing successfully through IPC
+- [ ] Renderer or DevTools can request the `special/cameraroll` folder successfully through IPC
+- [ ] Returned folder data is stable enough to drive a later picker UI
 - [ ] No photo records are written to the DB yet
 
 ### Step 3: Import Minimal Metadata Into the Database
@@ -405,6 +480,8 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 **Build:**
 
 - [ ] Fetch thumbnail metadata on demand from `cloud_item_id`
+- [ ] Apply fixed size mapping: `small` (96px) for compact/list contexts, `medium` (176px) for preview modal default, `large` (800px) only for expanded/zoomed view
+- [ ] Persist only canonical `medium` thumbnail bytes in the thumbnail cache (single entry per photo)
 - [ ] Load and display OneDrive thumbnails in the preview modal using the on-demand thumbnail fetch
 - [ ] Show remote metadata in the same preview UI used for local files
 - [ ] Handle missing/expired thumbnail URLs gracefully
@@ -413,6 +490,8 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 
 - [ ] Clicking a OneDrive photo opens the existing preview modal
 - [ ] Thumbnail loads from Microsoft-hosted thumbnail data without full file download
+- [ ] Cached `medium` thumbnail renders in preview without requiring a fresh network call on repeat open
+- [ ] `small` and `large` paths work on demand without changing persistent cache schema
 - [ ] Timestamp, GPS, camera info, and source context display correctly
 - [ ] Expired thumbnail URLs degrade gracefully and recover on refresh/reimport
 
@@ -457,7 +536,7 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 - [ ] OneDrive folder picker component — use Graph API or Microsoft picker SDK?
 - [ ] Which callback approach is best in practice for Electron + Microsoft identity: loopback localhost or custom protocol?
 - [ ] Thumbnail URL lifetime — how long do they stay valid? Need refresh strategy?
-- [ ] Which thumbnail cache strategy is best: per-session in-memory cache only, or short-lived persisted cache with expiry?
+- [ ] Post-v1 decision: should we evolve from single-canonical thumbnail cache to multi-variant persistent cache (`small`/`medium`/`large`)?
 - [ ] Rate limiting — how many Graph API calls per scan session? Pagination strategy?
 - [ ] Which OS credential-storage wrapper/library is the most robust choice for Windows-first distribution?
 - [ ] Can uninstall cleanup remove OS-stored credentials reliably on each supported platform, or should this be documented as manual cleanup only?

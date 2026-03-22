@@ -62,4 +62,9 @@ contextBridge.exposeInMainWorld('api', {
     setGeoLabel: (id: number, label: string) =>
       ipcRenderer.invoke('placemarks:setGeoLabel', id, label),
   },
+  onedrive: {
+    login: () => ipcRenderer.invoke('onedrive:login'),
+    logout: () => ipcRenderer.invoke('onedrive:logout'),
+    getConnectionStatus: () => ipcRenderer.invoke('onedrive:getConnectionStatus'),
+  },
 });

@@ -134,6 +134,18 @@ export interface PlacemarksAPI {
   setGeoLabel: (id: number, label: string) => Promise<void>;
 }
 
+export interface OneDriveConnectionStatus {
+  connected: boolean;
+  accountEmail: string | null;
+  expiresAt: number | null;
+}
+
+export interface OneDriveAPI {
+  login: () => Promise<OneDriveConnectionStatus>;
+  logout: () => Promise<{ ok: boolean }>;
+  getConnectionStatus: () => Promise<OneDriveConnectionStatus>;
+}
+
 /**
  * Complete Placemark API exposed to renderer
  */
@@ -143,6 +155,7 @@ export interface PlacemarkAPI {
   ops: OperationsAPI;
   system: SystemAPI;
   placemarks: PlacemarksAPI;
+  onedrive: OneDriveAPI;
 }
 
 /**
