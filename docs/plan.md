@@ -4,11 +4,12 @@ Step-by-step roadmap for building Placemark. See [ARCHITECTURE.md](ARCHITECTURE.
 
 Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
 
-**Current Status:** ✅ Phase 0–6.1 Complete | ⚙️ Phase 6.2 Export + Phase 7 Stats & Filters in progress | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
+**Current Status:** ✅ Phase 0–6.1 Complete | ⚙️ Phase 6.2 Export + Phase 7 Stats & Filters in progress | 🧪 OneDrive Phase 15 sketch (auth + folder browse slice complete) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
 
 **Recent Work:**
 
 - **v0.7.5 — Camera data & Library Stats (Mar 2026):** EXIF `Make`/`Model` extracted and stored during scan; brand names normalised to title case. Camera breakdown bar chart added to Library Stats panel. `camera_make`/`camera_model` columns auto-migrated in existing databases.
+- **OneDrive sketch progress (Mar 2026, pre-release):** Azure app registration validated, OAuth + PKCE login implemented, secure local token storage wired, and minimal folder browsing integrated into Add Source overlay (connect, root, camera roll, subfolder traversal, select-only).
 - **v0.7.4 — Timeline histogram & Spider improvements (Mar 2026):** Two-layer histogram behind the timeline scrubber (GPS vs non-GPS bars). Multi-ring spider layout for dense clusters. Help modal (keyboard shortcuts). Settings polish and locale-aware formatting.
 - **Phase 6.1 Complete — Placemarks:** Full placemarks system with `placemarks` table, PlacemarksPanel sidebar, Smart Placemarks ("This Year", "Last 3 Months"), reverse geocoding labels via Nominatim, create/rename/delete.
 - **Phase 5 Complete (v0.5.0):** Full file operations execution with atomic batch semantics, undo support, and database sync. Copy/move operations fully functional with conflict detection, rollback on failure, and OS trash integration for undo.
@@ -790,24 +791,24 @@ _All phases below are post-Store-launch. Priority order may shift based on user 
 
 **Tasks:**
 
-1. Register app in Azure AD Portal
-2. Implement OAuth flow with localhost redirect
-3. Implement `packages/desktop/src/main/services/oauth.ts`
-4. Implement `packages/desktop/src/main/services/onedrive.ts`
-5. Paginate through OneDrive photos (Graph API)
-6. Download EXIF metadata (no full file download)
-7. Store with source='onedrive', path=OneDrive item ID
-8. Add "Connect OneDrive" button in settings
-9. Refresh token handling
+1. [x] Register app in Azure portal (multitenant + personal Microsoft accounts)
+2. [x] Implement OAuth flow with localhost redirect (`http://localhost:3001/oauth/callback`)
+3. [x] Implement `packages/desktop/src/main/services/onedriveAuth.ts`
+4. [x] Implement `packages/desktop/src/main/services/onedriveGraph.ts` folder-browse slice
+5. [x] Add minimal OneDrive browser to Add Source overlay (connect, root, camera roll, subfolder traversal)
+6. [ ] Add candidate count preview for selected OneDrive folder
+7. [ ] Import photo metadata via Graph pagination (no full file download)
+8. [ ] Store with `source_type='onedrive'` and OneDrive item identifiers
+9. [ ] Harden network and token-expiry error paths for scan/import
 
 **Testing:**
 
-- [ ] OAuth flow completes successfully
-- [ ] Can list OneDrive photos
-- [ ] EXIF data extracted without downloading full files
-- [ ] Tokens stored securely (safeStorage API)
-- [ ] Token refresh works automatically
-- [ ] Handles OneDrive API rate limits
+- [x] OAuth flow completes successfully
+- [x] Can browse OneDrive folders from renderer via IPC
+- [ ] Can list OneDrive photos (file metadata scan stage)
+- [x] Tokens stored securely (safeStorage API)
+- [x] Token refresh works automatically for auth/browse operations
+- [ ] Handles OneDrive API rate limits during large imports
 
 **Estimated Effort:** 4–5 days
 

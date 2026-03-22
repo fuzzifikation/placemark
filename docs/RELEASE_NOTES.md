@@ -1,5 +1,24 @@
 # Release Notes
 
+## Unreleased - OneDrive Sketch Milestone (2026-03-22)
+
+### ✨ Added
+
+- **OneDrive OAuth login (desktop):** System-browser Microsoft login using Authorization Code + PKCE with fixed loopback callback `http://localhost:3001/oauth/callback`.
+- **Secure credential handling:** OneDrive credentials are persisted locally with Electron secure storage behavior and removed immediately on disconnect.
+- **Main-process OneDrive browse service:** Minimal Graph folder browsing API for root folders, Camera Roll lookup, and child-folder traversal.
+- **Add Source integration:** Scan overlay now supports a sketch-mode OneDrive path with connect, browse, and folder select flow.
+
+### 🔒 Security
+
+- **Token exposure reduced:** Raw access tokens are no longer exposed through renderer-facing IPC.
+- **Fail-closed auth behavior:** Invalid or revoked credentials transition cleanly to reconnect state.
+
+### 📝 Notes
+
+- This milestone is intentionally sketch-phase UX. It validates auth and folder selection behavior only.
+- Folder selection currently stops before metadata import and does not write photo records yet.
+
 ## v0.7.5 - Camera Data & Library Stats (2026-03-20)
 
 ### ✨ Improvements

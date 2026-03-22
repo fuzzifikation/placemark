@@ -1,6 +1,6 @@
 # OneDrive Integration Plan
 
-**Status:** Step 0 Complete — proceed to Step 0.5 (Azure registration)  
+**Status:** Step 2 (folder browse UI slice) complete in sketch mode — proceed to Step 3 candidate-count preview before import  
 **Last Updated:** March 22, 2026
 
 ---
@@ -80,7 +80,7 @@ User's Microsoft Account (OneDrive)
 
 - Register "Placemark" as a multi-tenant app in Azure
 - Store Client ID in code (public)
-- Redirect URI: `http://localhost:{ephemeral-port}/oauth/callback` or a custom app protocol, whichever proves most robust for Electron + Microsoft identity
+- Redirect URI: `http://localhost:3001/oauth/callback` (fixed loopback callback)
 - Permissions: start from least-privileged delegated scopes such as `Files.Read` and `offline_access`; add broader scopes only if testing proves they are necessary
 - The callback approach must be validated before implementation is considered locked
 
@@ -438,13 +438,24 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 - Camera roll is treated as a special-folder lookup returning a single folder node via `getCameraRollFolder()`
 - Traverse from that node using the same generic `listChildFolders(itemId)` method used everywhere else
 
+**UI slice added:**
+
+- Existing scan overlay now offers two explicit sources: local folder and OneDrive
+- OneDrive mode supports:
+  - connect if not already authenticated
+  - browse root folders
+  - jump to Camera Roll
+  - traverse subfolders recursively via `listChildFolders(itemId)`
+  - select a folder without importing yet
+- Selection currently stops at a user-visible confirmation toast; no DB writes or import actions occur in this step
+
 **Test / Exit Criteria:**
 
-- [ ] Renderer or DevTools can request the root folder listing successfully through IPC
-- [ ] Renderer or DevTools can request the `special/cameraroll` folder metadata successfully through IPC
-- [ ] Renderer or DevTools can enumerate the camera roll tree through `getCameraRollFolder()` + `listChildFolders(itemId)`
-- [ ] Returned folder data is stable enough to drive a later picker UI
-- [ ] No photo records are written to the DB yet
+- [x] Renderer or DevTools can request the root folder listing successfully through IPC
+- [x] Renderer or DevTools can request the `special/cameraroll` folder metadata successfully through IPC
+- [x] Renderer or DevTools can enumerate the camera roll tree through `getCameraRollFolder()` + `listChildFolders(itemId)`
+- [x] Returned folder data is stable enough to drive a later picker UI
+- [x] No photo records are written to the DB yet
 
 ### Step 3: Import Minimal Metadata Into the Database
 
@@ -548,13 +559,13 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 
 ### Questions to Answer Before Code
 
-- [ ] Exact Azure app registration details (client ID, etc.) — requires setup
-- [ ] OneDrive folder picker component — use Graph API or Microsoft picker SDK?
-- [ ] Which callback approach is best in practice for Electron + Microsoft identity: loopback localhost or custom protocol?
+- [x] Exact Azure app registration details (client ID, etc.) — resolved for development
+- [x] OneDrive folder picker component — Graph API folder listing chosen for Step 2
+- [x] Which callback approach is best in practice for Electron + Microsoft identity: loopback localhost or custom protocol?
 - [ ] Thumbnail URL lifetime — how long do they stay valid? Need refresh strategy?
 - [ ] Post-v1 decision: should we evolve from single-canonical thumbnail cache to multi-variant persistent cache (`small`/`medium`/`large`)?
 - [ ] Rate limiting — how many Graph API calls per scan session? Pagination strategy?
-- [ ] Which OS credential-storage wrapper/library is the most robust choice for Windows-first distribution?
+- [x] Which OS credential-storage wrapper/library is the most robust choice for Windows-first distribution? (Electron `safeStorage` selected for current desktop scope)
 - [ ] Can uninstall cleanup remove OS-stored credentials reliably on each supported platform, or should this be documented as manual cleanup only?
 
 ### Out of Scope (Phase 2+)

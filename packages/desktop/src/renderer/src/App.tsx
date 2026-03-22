@@ -10,6 +10,7 @@ import { HelpModal } from './components/HelpModal';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { ScanOverlay } from './components/ScanOverlay';
 import type { Photo } from '@placemark/core';
+import type { OneDriveFolderItem } from './types/preload';
 import { usePhotoData } from './hooks/usePhotoData';
 import { useTheme } from './hooks/useTheme';
 import { useFolderScan } from './hooks/useFolderScan';
@@ -163,6 +164,11 @@ function App() {
     await window.api.thumbnails.clearCache();
     await photoData.loadPhotos();
     // useEffect will auto-show scan overlay since photos.length becomes 0
+  };
+
+  const handleSelectOneDriveFolder = (folder: OneDriveFolderItem) => {
+    toast.info(`Selected OneDrive folder: ${folder.name}. Import is not wired yet.`);
+    setShowScanOverlay(false);
   };
 
   const handleViewChange = useCallback(
@@ -389,6 +395,7 @@ function App() {
           includeSubdirectories={folderScan.includeSubdirectories}
           onIncludeSubdirectoriesChange={folderScan.setIncludeSubdirectories}
           onScan={handleScanFolder}
+          onOneDriveSelect={handleSelectOneDriveFolder}
           onAbort={folderScan.abortScan}
           onClose={() => setShowScanOverlay(false)}
           colors={colors}
