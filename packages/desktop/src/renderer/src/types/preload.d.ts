@@ -179,6 +179,18 @@ export interface OneDriveAPI {
   onImportProgress: (callback: (progress: OneDriveImportProgress) => void) => () => void;
 }
 
+export type ExportFormat = 'csv' | 'geojson' | 'gpx';
+
+export interface ExportSaveResult {
+  saved: boolean;
+  filePath: string | null;
+  count: number;
+}
+
+export interface ExportAPI {
+  saveFile: (photoIds: number[], format: ExportFormat) => Promise<ExportSaveResult>;
+}
+
 /**
  * Complete Placemark API exposed to renderer
  */
@@ -189,6 +201,7 @@ export interface PlacemarkAPI {
   system: SystemAPI;
   placemarks: PlacemarksAPI;
   onedrive: OneDriveAPI;
+  export: ExportAPI;
 }
 
 /**

@@ -216,7 +216,14 @@ export function PhotoPreviewModal({
           >
             {photo.mimeType.startsWith('image/x-') ? (
               <>
-                <p style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: colors.textPrimary }}>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: '1.125rem',
+                    fontWeight: 600,
+                    color: colors.textPrimary,
+                  }}
+                >
                   RAW File
                 </p>
                 <p style={{ margin: 0, fontSize: '0.8125rem', color: colors.textMuted }}>

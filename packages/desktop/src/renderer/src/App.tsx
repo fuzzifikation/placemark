@@ -9,6 +9,7 @@ import { FloatingHeader } from './components/FloatingHeader';
 import { HelpModal } from './components/HelpModal';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { ScanOverlay } from './components/ScanOverlay';
+import { ExportSheet } from './components/ExportSheet';
 import type { Photo } from '@placemark/core';
 import type { OneDriveFolderItem } from './types/preload';
 import { usePhotoData } from './hooks/usePhotoData';
@@ -119,6 +120,22 @@ function App() {
     }
     return photoData.mapPhotos;
   }, [photoData.selection, photoData.allPhotos, photoData.mapPhotos]);
+
+  const [showExport, setShowExport] = useState(false);
+
+  const exportPhotoIds = useMemo(() => {
+    if (photoData.selection.size > 0) {
+      return [...photoData.selection];
+    }
+    return photoData.mapPhotos.map((p) => p.id);
+  }, [photoData.selection, photoData.mapPhotos]);
+
+  const exportScopeLabel = useMemo(() => {
+    if (photoData.selection.size > 0) {
+      return `${photoData.selection.size} selected photo${photoData.selection.size !== 1 ? 's' : ''}`;
+    }
+    return `${photoData.mapPhotos.length} photo${photoData.mapPhotos.length !== 1 ? 's' : ''} in view`;
+  }, [photoData.selection, photoData.mapPhotos]);
 
   const handleScanFolder = async () => {
     try {
@@ -376,6 +393,7 @@ function App() {
           glassSurfaceOpacity={settings.glassSurfaceOpacity}
           onSelectionModeToggle={handleSelectionModeToggle}
           onOperationsOpen={() => setShowOperations(true)}
+          onExportOpen={() => setShowExport(true)}
           onSettingsOpen={() => setShowSettings(true)}
           onStatsOpen={() => setShowStats(true)}
           onTimelineToggle={handleTimelineToggle}
@@ -535,6 +553,20 @@ function App() {
 
       {/* Help Modal */}
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} theme={theme} />}
+
+      {/* Export Sheet */}
+      {showExport && (
+        <ExportSheet
+          photoIds={exportPhotoIds}
+          scopeLabel={exportScopeLabel}
+          onClose={() => setShowExport(false)}
+          theme={theme}
+          glassBlur={settings.glassBlur}
+          glassSurfaceOpacity={settings.glassSurfaceOpacity}
+          onSuccess={toast.success}
+          onError={toast.error}
+        />
+      )}
 
       {/* Toast Notifications */}
       <ToastContainer

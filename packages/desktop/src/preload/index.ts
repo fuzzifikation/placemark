@@ -75,4 +75,8 @@ contextBridge.exposeInMainWorld('api', {
       return () => ipcRenderer.removeListener('onedrive:importProgress', listener);
     },
   },
+  export: {
+    saveFile: (photoIds: number[], format: 'csv' | 'geojson' | 'gpx') =>
+      ipcRenderer.invoke('export:saveFile', { photoIds, format }),
+  },
 });

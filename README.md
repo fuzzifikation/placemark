@@ -133,7 +133,18 @@ The Timeline at the bottom shows the distribution of your photos over time.
   - Click **Play (▶)** to animate through your photo history.
   - **Auto-Zoom:** By default, the map zooms to follow your photos. You can disable this in Settings.
 
-### 5. Settings
+### 5. Exporting Your Data
+
+Click the **Export** button in the toolbar (Tools group) to save your photo locations to a file.
+
+- **Scope:** If you have photos selected (via Lasso), only those are exported. Otherwise all photos currently visible on the map are exported.
+- **Formats:**
+  - **GeoJSON** — standard geographic data format, compatible with QGIS, Google Earth, Mapbox
+  - **CSV** — spreadsheet-compatible table (filename, date, lat/lon, camera, folder path)
+  - **GPX** — GPS Exchange Format, importable into navigation apps and devices
+- All exports are written to a local file you choose — no data leaves your device.
+
+### 6. Settings
 
 Access the Settings panel via the **Gear ⚙️** icon.
 
@@ -202,9 +213,9 @@ The app reads version from Electron's `app.getVersion()` at runtime (no hardcode
 
 ### Project Status
 
-**Current Version:** v0.7.2  
-**Current Phase:** Phase 6+ (pre-store)  
-**Next Phase:** Export, Stats & Filters, Microsoft Store
+**Current Version:** v0.8.0  
+**Current Phase:** Phase 6.2 complete (pre-store)  
+**Next Phase:** Stats & Filters, Microsoft Store
 
 See [docs/plan.md](docs/plan.md) for the complete roadmap.
 

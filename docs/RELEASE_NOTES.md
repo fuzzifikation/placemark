@@ -1,5 +1,23 @@
 # Release Notes
 
+## Unreleased - Export (CSV / GeoJSON / GPX) (Mar 2026)
+
+### ✨ Added
+
+- **Export to CSV / GeoJSON / GPX:** New **Export** button in the toolbar (Tools group). Opens a popover with three format options; default is GeoJSON. Only photos with GPS coordinates are exported.
+- **Selection-aware export scope:** If photos are selected (lasso), only those are exported. Otherwise all photos in the current map view are exported. Scope is shown in the popover header ("47 selected photos" / "152 photos in view").
+- **Native save dialog:** Exports are written as local files via the OS save dialog — no data leaves the device.
+- **Core export formatters (`@placemark/core`):** Pure TypeScript `toCsv()`, `toGeoJson()`, `toGpx()` functions with 21 unit tests. CSVs use CRLF line endings and RFC-4180 quoting; GeoJSON follows RFC 7946 `[longitude, latitude]` coordinate order; GPX 1.1 waypoints sorted chronologically.
+
+### 🛠️ Internal
+
+- **`packages/core/src/export/formatters.ts`:** New module — pure functions, no I/O, no platform dependencies, fully unit-tested.
+- **`packages/desktop/src/main/ipc/export.ts`:** `registerExportHandlers()` IPC module — queries DB by photo IDs, formats content, writes file.
+- **`preload/index.ts`:** Exposes `window.api.export.saveFile(photoIds, format)`.
+- **`mapPhotoUtils.ts`:** Fixed missing `cloudWebUrl` / `cloudFolderWebUrl` fields (pre-existing type error).
+
+---
+
 ## v0.8.0 - Code Quality & Cleanup (2026-03-22)
 
 ### 🛠️ Internal

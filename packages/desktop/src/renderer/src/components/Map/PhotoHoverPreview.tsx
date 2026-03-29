@@ -92,7 +92,9 @@ export function PhotoHoverPreview({
               <span style={{ fontSize: FONT_SIZE.SM, fontWeight: 600, color: colors.textPrimary }}>
                 RAW File
               </span>
-              <span style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted, textAlign: 'center' }}>
+              <span
+                style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted, textAlign: 'center' }}
+              >
                 No preview available
               </span>
             </>

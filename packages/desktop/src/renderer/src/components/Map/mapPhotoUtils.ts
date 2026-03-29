@@ -18,5 +18,7 @@ export function photoFromProps(props: Record<string, unknown>): Photo {
     cloudItemId: (props.cloudItemId as string) ?? null,
     cloudFolderPath: (props.cloudFolderPath as string) ?? null,
     cloudSha256: (props.cloudSha256 as string) ?? null,
+    cloudWebUrl: (props.cloudWebUrl as string) ?? null,
+    cloudFolderWebUrl: (props.cloudFolderWebUrl as string) ?? null,
   };
 }

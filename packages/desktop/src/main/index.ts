@@ -105,6 +105,9 @@ app.whenReady().then(async () => {
     placemarksModule.registerPlacemarksHandlers();
     onedriveModule.registerOneDriveHandlers();
 
+    const exportModule = await import('./ipc/export');
+    exportModule.registerExportHandlers();
+
     createWindow();
   } catch (error) {
     console.error('Failed to initialize app:', error);

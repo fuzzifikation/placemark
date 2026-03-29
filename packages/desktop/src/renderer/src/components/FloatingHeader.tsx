@@ -24,6 +24,7 @@ import {
   Trash2,
   HelpCircle,
   Bookmark,
+  Download,
 } from 'lucide-react';
 import type { ThemeColors } from '../theme';
 
@@ -40,6 +41,7 @@ interface FloatingHeaderProps {
   glassSurfaceOpacity: number; // 0-100
   onSelectionModeToggle: () => void;
   onOperationsOpen: () => void;
+  onExportOpen: () => void;
   onSettingsOpen: () => void;
   onStatsOpen: () => void;
   onTimelineToggle: () => void;
@@ -62,6 +64,7 @@ export function FloatingHeader({
   glassSurfaceOpacity,
   onSelectionModeToggle,
   onOperationsOpen,
+  onExportOpen,
   onSettingsOpen,
   onStatsOpen,
   onTimelineToggle,
@@ -361,6 +364,23 @@ export function FloatingHeader({
           >
             <FolderOpen size={16} />
             Organize {selectionCount > 0 ? `(${selectionCount})` : ''}
+          </button>
+
+          {/* Export */}
+          <button
+            title="Export photos (CSV / GeoJSON / GPX)"
+            onClick={onExportOpen}
+            className="floating-header-button"
+            style={{
+              ...outlinedButtonBase,
+              backgroundColor: 'transparent',
+              color: colors.textPrimary,
+            }}
+            onMouseEnter={outlinedHoverOn}
+            onMouseLeave={outlinedHoverOff}
+          >
+            <Download size={16} />
+            Export
           </button>
         </div>
 
