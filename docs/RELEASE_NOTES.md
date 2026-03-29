@@ -129,14 +129,14 @@
 
 ## v0.7.0 - RAW Format Support (2026-02-14)
 
-📷 **Professional camera RAW formats now fully supported.**
+📷 **Experimental support for professional camera RAW formats introduced.**
 
 ### ✨ New Features
 
-- **12 RAW format support:** Canon (CR2, CR3), Nikon (NEF, NRW), Sony (ARW), Adobe DNG, Fujifilm (RAF), Olympus (ORF), Panasonic (RW2), Pentax (PEF), Samsung (SRW), and Leica (RWL).
-- **EXIF extraction from RAW files:** GPS coordinates and timestamps are read directly from RAW files using existing `exifr` library.
-- **Thumbnail extraction:** Embedded JPEG previews are extracted from RAW files and resized to 400×400px thumbnails.
-- **Graceful fallback:** RAW files without embedded thumbnails are indexed (GPS/timestamp) but show "Thumbnail not available" in preview.
+- **RAW file scanning:** Canon (CR2, CR3), Nikon (NEF, NRW), Sony (ARW), Adobe DNG, Fujifilm (RAF), Olympus (ORF), Panasonic (RW2), Pentax (PEF), Samsung (SRW), and Leica (RWL) files are now indexed.
+- **EXIF extraction from RAW files:** GPS and timestamps are read from TIFF-based RAW formats (NEF, ARW, DNG, CR2, etc.) via `exifr`. CR3 GPS extraction is unreliable.
+- **Thumbnail extraction:** Embedded JPEG previews are extracted and resized where available. CR2 thumbnails may fail; CR3 thumbnails are not currently supported.
+- **Graceful fallback:** Files where GPS or thumbnail extraction fails are still indexed — they appear in library counts but not on the map.
 - **Increased file size limit:** Maximum file size raised from 100MB to 150MB to accommodate professional medium-format RAW files.
 
 ### 🏗️ Architecture
@@ -151,7 +151,7 @@
 - **No database schema changes:** Existing `mime_type TEXT` column accommodates new RAW MIME types.
 - **No breaking changes:** All existing functionality preserved.
 - **Testing recommended:** Verify EXIF extraction and thumbnail generation with sample RAW files from [raw.pixls.us](https://raw.pixls.us/).
-- **CR3 and RAF support:** May vary depending on embedded thumbnail format — graceful fallback applies if extraction fails.
+- **RAW support is experimental:** Tested only with a small number of sample files. CR3 GPS extraction is known to be unreliable (CR3 uses a Canon ISOBMFF container not supported by exifr 7.x). CR2 thumbnails may fail on some files. Other brands are untested with real files. Full RAW support is planned for a post-v1.0 release.
 
 ---
 

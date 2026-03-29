@@ -72,20 +72,11 @@ Placemark reads EXIF metadata (GPS coordinates, timestamps) and generates thumbn
 - TIFF (`.tiff`, `.tif`)
 - WebP (`.webp`)
 
-**Professional RAW Formats:**
+**Professional RAW Formats (experimental):**
 
-- **Canon:** CR2, CR3
-- **Nikon:** NEF, NRW
-- **Sony:** ARW
-- **Adobe/Universal:** DNG
-- **Fujifilm:** RAF
-- **Olympus/OM System:** ORF
-- **Panasonic/Lumix:** RW2
-- **Pentax/Ricoh:** PEF
-- **Samsung:** SRW
-- **Leica:** RWL
+CR2, CR3, NEF, NRW, ARW, DNG, RAF, ORF, RW2, PEF, SRW, RWL
 
-RAW files are supported through embedded JPEG thumbnail extraction — no external dependencies required.
+RAW files are scanned and map-placed when GPS data is readable. Support quality varies by format: TIFF-based formats (NEF, ARW, DNG, etc.) generally work well; Canon CR3 GPS and thumbnail extraction are known to be unreliable. RAW support is not fully tested across all brands.
 
 ---
 
@@ -212,8 +203,8 @@ The app reads version from Electron's `app.getVersion()` at runtime (no hardcode
 ### Project Status
 
 **Current Version:** v0.7.2  
-**Current Phase:** Phase 5.5 Complete — RAW format support (12 camera brands)  
-**Next Phase:** Phase 6 — Collections & Export
+**Current Phase:** Phase 6+ (pre-store)  
+**Next Phase:** Export, Stats & Filters, Microsoft Store
 
 See [docs/plan.md](docs/plan.md) for the complete roadmap.
 

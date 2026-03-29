@@ -12,17 +12,19 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 
 All items below must ship before Microsoft Store submission. Ordered by implementation sequence.
 
-| # | Feature | Phase | Status | Notes |
-|---|---------|-------|--------|-------|
-| 1 | **Export** (CSV / GeoJSON / GPX) | 6.2 | ❌ Not started | ~1 day. Core trust promise: "your data, your control" |
-| 2 | **Concurrent import** (`runWithConcurrency`) | 8.1 | ❌ Not started | ~1 day. Local EXIF reads + OneDrive subfolder walks in parallel |
-| 3 | **Stats → Filters** (clickable format/camera rows + chips) | 7 | ❌ Not started | ~2 days. Turns read-only stats into the app's best feature |
-| 4 | **"Fit timeline to view" button** | 7 | ❌ Not started | ~half day. Makes timeline usable at a single location |
-| 5 | **Freemium gating** (1 000-photo free tier + Pro unlock) | 8.2 | ❌ Not started | ~2 days. Needs monetization decision first |
-| 6 | **MSIX packaging + Store assets** | 8.3 | ❌ Not started | ~2 days. Screenshots, icons, signing cert |
-| 7 | **Privacy policy page** | 8.3 | ❌ Not started | ~1 hour. Required URL for Store submission |
+| #   | Feature                                                    | Phase | Status         | Notes                                                           |
+| --- | ---------------------------------------------------------- | ----- | -------------- | --------------------------------------------------------------- |
+| 1   | **Export** (CSV / GeoJSON / GPX)                           | 6.2   | ❌ Not started | ~1 day. Core trust promise: "your data, your control"           |
+| 2   | **Concurrent import** (`runWithConcurrency`)               | 8.1   | ❌ Not started | ~1 day. Local EXIF reads + OneDrive subfolder walks in parallel |
+| 3   | **Stats → Filters** (clickable format/camera rows + chips) | 7     | ❌ Not started | ~2 days. Turns read-only stats into the app's best feature      |
+| 4   | **"Fit timeline to view" button**                          | 7     | ❌ Not started | ~half day. Makes timeline usable at a single location           |
+| 5   | **Freemium gating** (1 000-photo free tier + Pro unlock)   | 8.2   | ❌ Not started | ~2 days. Needs monetization decision first                      |
+| 6   | **MSIX packaging + Store assets**                          | 8.3   | ❌ Not started | ~2 days. Screenshots, icons, signing cert                       |
+| 7   | **Privacy policy page**                                    | 8.3   | ❌ Not started | ~1 hour. Required URL for Store submission                      |
 
 **Estimated total: ~8 days of implementation work.**
+
+**Post-v1.0 backlog (not blocking store):** Full RAW support (CR3 GPS via exiftool-vendored or custom ISOBMFF parser; thumbnail reliability for all 12 brands; cross-brand test suite).
 
 ---
 
@@ -219,7 +221,7 @@ All items below must ship before Microsoft Store submission. Ordered by implemen
 
 ### Phase 5.5: Camera RAW Format Support
 
-**Goal:** Support professional camera RAW formats for EXIF extraction and thumbnail preview. Immediate priority — expands the audience to serious photographers.
+**Goal:** Scan professional camera RAW formats and extract GPS/timestamps where possible. **Status: Experimental** — TIFF-based formats (NEF, ARW, DNG, CR2) generally work for GPS; CR3 GPS is unreliable; thumbnail extraction is partial. Not advertised as a v1.0 feature.
 
 **Context:** Currently Placemark only supports JPEG, PNG, HEIC/HEIF, TIFF, and WebP. Professional photographers shoot in RAW. Windows 10/11 natively supports RAW previews via the free "Raw Image Extension" from the Microsoft Store, so users already expect these formats to work.
 

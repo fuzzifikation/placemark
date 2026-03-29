@@ -29,7 +29,9 @@ export const isSupportedImageFile = checkSupportedImage;
  * Extract EXIF data from a photo file
  * Only extracts GPS and timestamp to minimize processing time
  *
- * exifr automatically handles all image formats (JPEG, RAW, HEIC, TIFF, etc.) by detecting
+ * exifr handles standard formats (JPEG, HEIC, TIFF, PNG) reliably. RAW support is partial —
+ * TIFF-based formats (NEF, ARW, DNG, CR2) work for GPS; CR3 is not supported by exifr 7.x.
+ * exifr detects file format by
  * file signatures. Uses optimal 512-byte chunks for Node.js local file I/O.
  *
  * Safety: This function only READS from photo files, never writes or modifies them.
