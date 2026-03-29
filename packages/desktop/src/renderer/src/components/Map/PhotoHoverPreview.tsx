@@ -79,13 +79,26 @@ export function PhotoHoverPreview({
             width: '150px',
             height: '150px',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: SPACING.XS,
             backgroundColor: colors.surface,
             borderRadius: BORDER_RADIUS.SM,
           }}
         >
-          <span style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted }}>No preview</span>
+          {photo.mimeType.startsWith('image/x-') ? (
+            <>
+              <span style={{ fontSize: FONT_SIZE.SM, fontWeight: 600, color: colors.textPrimary }}>
+                RAW File
+              </span>
+              <span style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted, textAlign: 'center' }}>
+                No preview available
+              </span>
+            </>
+          ) : (
+            <span style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted }}>No preview</span>
+          )}
         </div>
       )}
       <div style={{ marginTop: SPACING.SM, fontSize: FONT_SIZE.XS }}>

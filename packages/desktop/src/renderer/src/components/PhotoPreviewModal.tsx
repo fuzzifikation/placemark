@@ -205,14 +205,27 @@ export function PhotoPreviewModal({
           <div
             style={{
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: '0.5rem',
               height: '400px',
               backgroundColor: colors.surface,
               borderRadius: '4px',
             }}
           >
-            <p style={{ color: colors.textMuted }}>Thumbnail not available</p>
+            {photo.mimeType.startsWith('image/x-') ? (
+              <>
+                <p style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: colors.textPrimary }}>
+                  RAW File
+                </p>
+                <p style={{ margin: 0, fontSize: '0.8125rem', color: colors.textMuted }}>
+                  Preview not supported for this format
+                </p>
+              </>
+            ) : (
+              <p style={{ margin: 0, color: colors.textMuted }}>Thumbnail not available</p>
+            )}
           </div>
         )}
 
