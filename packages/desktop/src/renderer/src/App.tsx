@@ -11,6 +11,7 @@ import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { ScanOverlay } from './components/ScanOverlay';
 import { ExportSheet } from './components/ExportSheet';
 import type { Photo } from '@placemark/core';
+import { filterPhotos } from '@placemark/core';
 import type { OneDriveFolderItem } from './types/preload';
 import { usePhotoData } from './hooks/usePhotoData';
 import { useTheme } from './hooks/useTheme';
@@ -127,15 +128,21 @@ function App() {
     if (photoData.selection.size > 0) {
       return [...photoData.selection];
     }
-    return photoData.mapPhotos.map((p) => p.id);
-  }, [photoData.selection, photoData.mapPhotos]);
+    const visiblePhotos = photoData.mapBounds
+      ? filterPhotos(photoData.mapPhotos, { bounds: photoData.mapBounds })
+      : photoData.mapPhotos;
+    return visiblePhotos.map((p) => p.id);
+  }, [photoData.selection, photoData.mapPhotos, photoData.mapBounds]);
 
   const exportScopeLabel = useMemo(() => {
     if (photoData.selection.size > 0) {
       return `${photoData.selection.size} selected photo${photoData.selection.size !== 1 ? 's' : ''}`;
     }
-    return `${photoData.mapPhotos.length} photo${photoData.mapPhotos.length !== 1 ? 's' : ''} in view`;
-  }, [photoData.selection, photoData.mapPhotos]);
+    const count = photoData.mapBounds
+      ? filterPhotos(photoData.mapPhotos, { bounds: photoData.mapBounds }).length
+      : photoData.mapPhotos.length;
+    return `${count} photo${count !== 1 ? 's' : ''} in view`;
+  }, [photoData.selection, photoData.mapPhotos, photoData.mapBounds]);
 
   const handleScanFolder = async () => {
     try {
