@@ -29,6 +29,14 @@ export interface DatabaseStats {
   totalPhotoCount: number;
 }
 
+export interface LastImportSummary {
+  source: 'local' | 'onedrive';
+  scanned: number;
+  imported: number;
+  duplicates: number;
+  completedAt: number;
+}
+
 export interface LibraryStats {
   totalPhotos: number;
   photosWithLocation: number;
@@ -42,6 +50,8 @@ export interface LibraryStats {
   formatBreakdown: Array<{ mimeType: string; count: number }>;
   cameraBreakdown: Array<{ make: string; model: string; count: number }>;
   lastScannedAt: number | null;
+  photosWithIssues: number;
+  lastImportSummary: LastImportSummary | null;
 }
 
 export interface ThumbnailStats {

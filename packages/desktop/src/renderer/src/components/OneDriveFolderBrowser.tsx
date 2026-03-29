@@ -263,7 +263,7 @@ export function OneDriveFolderBrowser({ colors, onSelectFolder }: OneDriveFolder
                 {folder.name}
               </span>
               <span style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted }}>
-                {folder.childCount} subfolders
+                {folder.childCount} items
               </span>
             </button>
           ))

@@ -10,24 +10,35 @@
 - **Renderer `console.error` sweep:** Removed all redundant `console.error` calls across renderer files (`OperationsPanel`, `useHistogram`, `useMapHover`, `StorageSettings`, `DryRunPreview`, `PhotoPreviewModal`, `useLibraryStats`). Errors that are user-visible via toast remain; non-critical failures now degrade silently.
 - **Unused function parameter removed:** `_folderPath` parameter dropped from `DryRunPreview.handleShowInFolder`.
 
-## Unreleased - OneDrive Sketch Milestone (2026-03-22)
+## Unreleased - OneDrive Import + Library Health (Mar 2026)
 
 ### ✨ Added
 
 - **OneDrive OAuth login (desktop):** System-browser Microsoft login using Authorization Code + PKCE with fixed loopback callback `http://localhost:3001/oauth/callback`.
-- **Secure credential handling:** OneDrive credentials are persisted locally with Electron secure storage behavior and removed immediately on disconnect.
+- **Secure credential handling:** OneDrive credentials are persisted locally using Electron `safeStorage` encryption and removed immediately on disconnect.
 - **Main-process OneDrive browse service:** Minimal Graph folder browsing API for root folders, Camera Roll lookup, and child-folder traversal.
-- **Add Source integration:** Scan overlay now supports a sketch-mode OneDrive path with connect, browse, and folder select flow.
+- **Add Source integration:** Scan overlay supports OneDrive path with connect, browse, and folder select + metadata import flow.
+- **OneDrive metadata import:** Folder and subfolders are walked via Graph API; photo records (GPS, timestamp, camera make/model, cloud item ID, SHA-256 hash) are written to SQLite. Duplicate detection guards re-imports.
+- **OneDrive abort:** Stop button in the scan overlay now correctly cancels an in-progress OneDrive import (module-level `abortRequested` flag checked at each item and subfolder boundary). `useFolderScan.abortScan` is the single abort call site regardless of source — it branches on an `activeSource` ref (`'local' | 'onedrive' | null`).
+- **Subdirectory toggle shared:** The "Include subdirectories" toggle in the scan overlay now appears for both local and OneDrive import modes.
+- **Accounts tab in Settings:** New "Accounts" tab (cloud icon) lists connected cloud services. Shows account email when connected + two-stage Disconnect button (confirm → wipes local token). Shows "Connect OneDrive" when disconnected. Privacy note: tokens stored locally via OS secure encryption only.
+- **Library Health card in Stats panel:** New card showing the count of photos with metadata issues (amber when non-zero, muted "None" otherwise).
+- **Last Import card in Stats panel:** After any scan or OneDrive import, a "Last Import" card shows source, processed/imported/duplicates-skipped counts, and relative completion time.
+
+### 🛠️ Internal
+
+- **`photoMetadata.ts`:** New shared service (`normalizeGps`, `normalizeCameraMake`, `normalizeTimestamp`) used by both local EXIF and OneDrive import paths — eliminates duplication and ensures consistent validation rules.
+- **`photo_issues` schema table:** Records validation anomalies per photo (`gps_zero`, `future_timestamp`, `invalid_timestamp`) with FK cascade. `recordPhotoIssues()` uses delete+reinsert semantics so re-scanning a fixed photo clears stale rows.
+- **`LastImportSummary` singleton:** Module-level in `storage.ts`, written after each scan/import, included in `getLibraryStats()` response — no extra IPC call.
 
 ### 🔒 Security
 
-- **Token exposure reduced:** Raw access tokens are no longer exposed through renderer-facing IPC.
+- **Token exposure reduced:** Raw access tokens are not exposed through renderer-facing IPC.
 - **Fail-closed auth behavior:** Invalid or revoked credentials transition cleanly to reconnect state.
 
 ### 📝 Notes
 
-- This milestone is intentionally sketch-phase UX. It validates auth and folder selection behavior only.
-- Folder selection currently stops before metadata import and does not write photo records yet.
+- **Database rebuild required:** `photo_issues` table added. Delete `placemark.db` from the app data folder and re-scan.
 
 ## v0.7.5 - Camera Data & Library Stats (2026-03-20)
 

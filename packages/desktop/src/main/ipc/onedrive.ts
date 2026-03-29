@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { OneDriveAuthService } from '../services/onedriveAuth';
 import { OneDriveGraphService } from '../services/onedriveGraph';
 import { OneDriveImportService, requestOneDriveAbort } from '../services/onedriveImport';
+import { setLastImportSummary } from '../services/storage';
 
 const authService = new OneDriveAuthService();
 export { authService as oneDriveAuthService };
@@ -49,13 +50,23 @@ export function registerOneDriveHandlers(): void {
         throw new Error('Cannot import from OneDrive: invalid folder ID');
       }
 
-      return importService.importFolder(
+      const result = await importService.importFolder(
         itemId.trim(),
         includeSubdirectories === true,
         (progress) => {
           event.sender.send('onedrive:importProgress', progress);
         }
       );
+
+      setLastImportSummary({
+        source: 'onedrive',
+        scanned: result.scanned,
+        imported: result.imported,
+        duplicates: result.duplicates,
+        completedAt: Date.now(),
+      });
+
+      return result;
     }
   );
 }

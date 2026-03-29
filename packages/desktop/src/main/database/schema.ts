@@ -26,6 +26,8 @@ const SCHEMA_SQL = `
     cloud_item_id TEXT,
     cloud_folder_path TEXT,
     cloud_sha256 TEXT,
+    cloud_web_url TEXT,
+    cloud_folder_web_url TEXT,
     UNIQUE(source, path)
   );
 

@@ -19,6 +19,18 @@ import { logger } from '../services/logger';
 import { promises as fs, constants, statSync } from 'fs';
 import * as path from 'path';
 
+function isSafeOneDriveUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === 'https:' &&
+      (parsed.hostname === 'onedrive.live.com' || parsed.hostname.endsWith('.sharepoint.com'))
+    );
+  } catch {
+    return false;
+  }
+}
+
 let thumbnailService: ThumbnailService;
 
 export function registerPhotoHandlers(): void {
@@ -80,34 +92,54 @@ export function registerPhotoHandlers(): void {
     return getPhotoCountWithLocation();
   });
 
-  // Open photo in system default viewer
+  // Open photo in system default viewer (or OneDrive web viewer)
   ipcMain.handle('photos:openInViewer', async (_event, photoId: number) => {
     const photo = getPhotoById(photoId);
     if (!photo) {
       throw new Error(`Photo not found: ${photoId}`);
     }
-    // Validate path exists and is readable
-    try {
-      await fs.access(photo.path, constants.R_OK);
-    } catch {
-      throw new Error(`Photo file not accessible: ${photo.path}`);
+    if (photo.source === 'onedrive') {
+      if (!photo.cloudWebUrl) {
+        throw new Error('No OneDrive web URL available for this photo');
+      }
+      if (!isSafeOneDriveUrl(photo.cloudWebUrl)) {
+        throw new Error('Invalid OneDrive URL');
+      }
+      await shell.openExternal(photo.cloudWebUrl);
+    } else {
+      // Validate path exists and is readable
+      try {
+        await fs.access(photo.path, constants.R_OK);
+      } catch {
+        throw new Error(`Photo file not accessible: ${photo.path}`);
+      }
+      await shell.openPath(photo.path);
     }
-    await shell.openPath(photo.path);
   });
 
-  // Show photo in file explorer
+  // Show photo in file explorer (or OneDrive folder in browser)
   ipcMain.handle('photos:showInFolder', async (_event, photoId: number) => {
     const photo = getPhotoById(photoId);
     if (!photo) {
       throw new Error(`Photo not found: ${photoId}`);
     }
-    // Validate path exists
-    try {
-      await fs.access(photo.path, constants.R_OK);
-    } catch {
-      throw new Error(`Photo file not accessible: ${photo.path}`);
+    if (photo.source === 'onedrive') {
+      if (!photo.cloudFolderWebUrl) {
+        throw new Error('No OneDrive folder URL available for this photo');
+      }
+      if (!isSafeOneDriveUrl(photo.cloudFolderWebUrl)) {
+        throw new Error('Invalid OneDrive URL');
+      }
+      await shell.openExternal(photo.cloudFolderWebUrl);
+    } else {
+      // Validate path exists
+      try {
+        await fs.access(photo.path, constants.R_OK);
+      } catch {
+        throw new Error(`Photo file not accessible: ${photo.path}`);
+      }
+      shell.showItemInFolder(photo.path);
     }
-    shell.showItemInFolder(photo.path);
   });
 
   // Show multiple photos in file explorer

@@ -251,34 +251,69 @@ export function PhotoPreviewModal({
             justifyContent: 'flex-end',
           }}
         >
-          <button
-            onClick={() => window.api.photos.openInViewer(photo.id)}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: colors.primary,
-              color: colors.buttonText,
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-            }}
-          >
-            Open in Viewer
-          </button>
-          <button
-            onClick={() => window.api.photos.showInFolder(photo.id)}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: colors.secondary,
-              color: colors.buttonText,
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-            }}
-          >
-            Show in Folder
-          </button>
+          {photo.source === 'onedrive' ? (
+            <>
+              <button
+                onClick={() => window.api.photos.openInViewer(photo.id)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: colors.primary,
+                  color: colors.buttonText,
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                }}
+              >
+                View in OneDrive ↗
+              </button>
+              <button
+                onClick={() => window.api.photos.showInFolder(photo.id)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: colors.secondary,
+                  color: colors.buttonText,
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                }}
+              >
+                Open Folder in OneDrive ↗
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => window.api.photos.openInViewer(photo.id)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: colors.primary,
+                  color: colors.buttonText,
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                }}
+              >
+                Open in Viewer
+              </button>
+              <button
+                onClick={() => window.api.photos.showInFolder(photo.id)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: colors.secondary,
+                  color: colors.buttonText,
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                }}
+              >
+                Show in Folder
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

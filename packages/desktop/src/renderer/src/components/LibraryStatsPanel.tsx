@@ -295,7 +295,33 @@ export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPa
                   formatNumber(stats.totalPhotos - stats.photosWithTimestamp)
                 )}
               </div>
-
+              {/* Library Health */}
+              <div style={cardStyle}>
+                <div style={labelStyle}>Library Health</div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: `${SPACING.XS} 0`,
+                  }}
+                >
+                  <span style={{ fontSize: FONT_SIZE.SM, color: colors.textSecondary }}>
+                    Metadata issues
+                  </span>
+                  <span
+                    style={{
+                      fontSize: FONT_SIZE.SM,
+                      fontWeight: 600,
+                      color: stats.photosWithIssues > 0 ? '#f59e0b' : colors.textMuted,
+                    }}
+                  >
+                    {stats.photosWithIssues > 0
+                      ? `${formatNumber(stats.photosWithIssues)} photo${stats.photosWithIssues !== 1 ? 's' : ''}`
+                      : 'None'}
+                  </span>
+                </div>
+              </div>
               {/* File Formats */}
               <div style={cardStyle}>
                 <div style={labelStyle}>File Formats</div>
@@ -481,6 +507,22 @@ export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPa
                     `${formatNumber(thumbStats.thumbnailCount)} (${thumbStats.totalSizeMB.toFixed(1)} MB)`
                   )}
               </div>
+
+              {/* Last Import */}
+              {stats.lastImportSummary && (
+                <div style={cardStyle}>
+                  <div style={labelStyle}>Last Import</div>
+                  {statRow(
+                    'Source',
+                    stats.lastImportSummary.source === 'onedrive' ? 'OneDrive' : 'Local folder'
+                  )}
+                  {statRow('Processed', formatNumber(stats.lastImportSummary.scanned))}
+                  {statRow('Imported', formatNumber(stats.lastImportSummary.imported))}
+                  {stats.lastImportSummary.source === 'onedrive' &&
+                    statRow('Duplicates skipped', formatNumber(stats.lastImportSummary.duplicates))}
+                  {statRow('Completed', timeAgo(stats.lastImportSummary.completedAt))}
+                </div>
+              )}
 
               {/* Last Scan */}
               {stats.lastScannedAt && (

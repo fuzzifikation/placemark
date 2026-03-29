@@ -50,16 +50,6 @@
 
 ---
 
-- **Show duplicate counts in the Stats panel.** After an OneDrive (or future cloud) import, the stats panel has no visibility into how many photos were skipped as duplicates. Add a "Duplicates skipped" counter to the last-import summary or as a persistent stat in the library health section. Could show: total photos in DB, photos added in last import, duplicates skipped in last import. This gives the user confidence that the dedup logic is working and lets them spot unexpected duplicates.
-
-- **Privacy & Cloud Accounts section in Settings.** Add a dedicated "Privacy" tab (or section within Settings) that surfaces all connected cloud accounts in one place. For each connection:
-  - Show the signed-in account name / email address (already available from `getConnectionStatus` response).
-  - A "Sign out" button that revokes the local token via the existing `onedrive:logout` IPC handler.
-  - A "Delete all stored keys" button (destructive, with confirm) that wipes all tokens from Electron `safeStorage` and clears any persisted account state.
-  - A clear note: _"Signing out removes your access tokens from this device only. No data is sent to Placemark servers."_
-  - When no cloud account is connected, the section shows "No cloud accounts connected" with a button to add one (opens the OneDrive connect flow).
-  - Future: extend to other cloud providers as they are added.
-
 ### Medium work (half day – 1 day each)
 
 - **Duplicate detection: strengthen the current heuristic before considering hashing.** The current `filename + filesize` rule is cheap, but it can incorrectly merge distinct photos once local and OneDrive libraries mix at scale. Investigate a safer duplicate-candidate approach that adds more lightweight metadata, such as **taken date/time**, and possibly camera info or source path context, before auto-skipping an import. Keep hashing as a last resort only — full-content hashes are more correct, but they significantly slow file reads and database ingest, which cuts against Placemark's large-library performance goals.
@@ -177,6 +167,10 @@
 - **OneDrive import: "include subdirectories" toggle.** The subfolder toggle in `ScanOverlay` is now shared between local and OneDrive import modes. `useFolderScan.importOneDriveFolder` already threaded the param through to the IPC call; the only change was rendering the toggle in the OneDrive branch of `ScanOverlay`.
 
 - **Abort during OneDrive import.** `useFolderScan.abortScan` now branches on an `activeSource` ref (`'local' | 'onedrive' | null`), dispatching `onedrive:abortImport` when a OneDrive import is in progress. `onedriveImport.ts` gained a module-level `abortRequested` flag checked at each item and subfolder boundary. IPC handler, preload bridge, and type definitions updated accordingly.
+
+- **Duplicate counts + metadata issues in Stats panel.** `getLibraryStats` now returns `photosWithIssues` (count of distinct photos with entries in `photo_issues`) and `lastImportSummary` (in-memory singleton set after each local or OneDrive scan). `LibraryStatsPanel` shows a new **Library Health** card ("Metadata issues — N photos" in amber, or "None" in muted) and a **Last Import** card with source, processed/imported/duplicates-skipped counts and relative time. `LastImportSummary` interface added to `preload.d.ts`.
+
+- **Accounts tab in Settings.** "Accounts" tab (`AccountsSettings.tsx`) wired to the existing `onedrive:getConnectionStatus`, `onedrive:login`, and `onedrive:logout` IPC calls. Connected state shows account email + two-stage Disconnect button (first click → "Confirm disconnect" in red + Cancel; second click → deletes local token, refreshes state, toasts). Disconnected state shows "Connect OneDrive" button that calls `login()` directly. Privacy note: tokens stored locally via OS secure encryption, never sent to Placemark servers.
 
 - **Align all floating glass panels to a shared layout grid.** Introduced `LAYOUT` constants in `ui.ts` (`PANEL_INSET`, `PANEL_GAP`, `HEADER_HEIGHT`, `TIMELINE_HEIGHT`, `PLACEMARKS_WIDTH`). `App.tsx` is now the single layout authority — all panel `position/top/left/bottom/right` declarations live there; `FloatingHeader` and `PlacemarksPanel` are fully layout-agnostic. Map controls use `LAYOUT.PANEL_INSET_PX` margins so they align with the panels. `BORDER_RADIUS.XL` used consistently on all glass surfaces.
 

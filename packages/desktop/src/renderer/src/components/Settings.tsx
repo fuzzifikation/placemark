@@ -16,8 +16,9 @@ import { AboutSection } from './Settings/AboutSection';
 import { AppearanceSettings } from './Settings/AppearanceSettings';
 import { MapDisplaySettings } from './Settings/MapDisplaySettings';
 import { PlacemarksSettings } from './Settings/PlacemarksSettings';
+import { AccountsSettings } from './Settings/AccountsSettings';
 import { FONT_FAMILY } from '../constants/ui';
-import { Palette, Database, Map as MapIcon, Info, X, Bookmark } from 'lucide-react';
+import { Palette, Database, Map as MapIcon, Info, X, Bookmark, Cloud } from 'lucide-react';
 import type { SpiderSettings } from './MapView';
 
 interface SettingsProps {
@@ -134,6 +135,7 @@ export function Settings({
     { id: 'map', label: 'Map', icon: <MapIcon size={16} /> },
     { id: 'placemarks', label: 'Placemarks', icon: <Bookmark size={16} /> },
     { id: 'library', label: 'Library', icon: <Database size={16} /> },
+    { id: 'accounts', label: 'Accounts', icon: <Cloud size={16} /> },
   ];
 
   const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
@@ -401,6 +403,8 @@ export function Settings({
               toast={toast}
             />
           )}
+
+          {activeSection === 'accounts' && <AccountsSettings theme={theme} toast={toast} />}
 
           {activeSection === 'about' && <AboutSection theme={theme} />}
         </div>

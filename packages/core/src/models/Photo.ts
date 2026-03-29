@@ -22,6 +22,8 @@ export interface Photo {
   cloudItemId: string | null;
   cloudFolderPath: string | null;
   cloudSha256: string | null;
+  cloudWebUrl: string | null;
+  cloudFolderWebUrl: string | null;
 }
 
 export interface PhotoCreateInput {
@@ -39,4 +41,6 @@ export interface PhotoCreateInput {
   cloudItemId?: string;
   cloudFolderPath?: string;
   cloudSha256?: string;
+  cloudWebUrl?: string;
+  cloudFolderWebUrl?: string;
 }

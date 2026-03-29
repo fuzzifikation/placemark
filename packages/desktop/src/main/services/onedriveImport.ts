@@ -61,6 +61,7 @@ interface GraphDriveItem {
   parentReference?: {
     path?: string;
   };
+  webUrl?: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -169,6 +170,8 @@ export class OneDriveImportService {
             cloudItemId: item.id,
             cloudFolderPath: parseFolderPath(item),
             cloudSha256: sha256 ?? undefined,
+            cloudWebUrl: item.webUrl,
+            cloudFolderWebUrl: folderItem.webUrl,
           });
 
           if (issues.length > 0) recordPhotoIssues(photo.id, issues);
@@ -196,7 +199,7 @@ export class OneDriveImportService {
     );
     url.searchParams.set(
       '$select',
-      'id,name,size,file,folder,photo,location,createdDateTime,parentReference'
+      'id,name,size,file,folder,photo,location,createdDateTime,parentReference,webUrl'
     );
     url.searchParams.set('$top', '200');
     return url.toString();
@@ -205,7 +208,7 @@ export class OneDriveImportService {
   private async fetchItem(itemId: string): Promise<GraphDriveItem> {
     const accessToken = await this.authService.getValidAccessToken();
     if (!accessToken) throw new Error('Cannot import from OneDrive: not connected');
-    const url = `${ONEDRIVE_CONFIG.graphBaseUrl}/me/drive/items/${encodeURIComponent(itemId)}?$select=id,folder`;
+    const url = `${ONEDRIVE_CONFIG.graphBaseUrl}/me/drive/items/${encodeURIComponent(itemId)}?$select=id,folder,webUrl`;
     const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!response.ok) throw new Error(`OneDrive folder fetch failed (${response.status})`);
     return (await response.json()) as GraphDriveItem;

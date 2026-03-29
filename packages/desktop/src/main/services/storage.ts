@@ -50,6 +50,8 @@ function rowToPhoto(row: any): Photo {
     cloudItemId: row.cloud_item_id ?? null,
     cloudFolderPath: row.cloud_folder_path ?? null,
     cloudSha256: row.cloud_sha256 ?? null,
+    cloudWebUrl: row.cloud_web_url ?? null,
+    cloudFolderWebUrl: row.cloud_folder_web_url ?? null,
   };
 }
 
@@ -64,9 +66,10 @@ export function createPhoto(input: PhotoCreateInput): Photo {
     INSERT INTO photos (
       source, path, latitude, longitude, timestamp, file_hash, scanned_at,
       file_size, mime_type, camera_make, camera_model,
-      cloud_item_id, cloud_folder_path, cloud_sha256
+      cloud_item_id, cloud_folder_path, cloud_sha256,
+      cloud_web_url, cloud_folder_web_url
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(source, path) DO UPDATE SET
       latitude = excluded.latitude,
       longitude = excluded.longitude,
@@ -78,6 +81,8 @@ export function createPhoto(input: PhotoCreateInput): Photo {
       cloud_item_id = excluded.cloud_item_id,
       cloud_folder_path = excluded.cloud_folder_path,
       cloud_sha256 = excluded.cloud_sha256,
+      cloud_web_url = excluded.cloud_web_url,
+      cloud_folder_web_url = excluded.cloud_folder_web_url,
       scanned_at = excluded.scanned_at
     RETURNING *
   `
@@ -96,7 +101,9 @@ export function createPhoto(input: PhotoCreateInput): Photo {
       input.cameraModel ?? null,
       input.cloudItemId ?? null,
       input.cloudFolderPath ?? null,
-      input.cloudSha256 ?? null
+      input.cloudSha256 ?? null,
+      input.cloudWebUrl ?? null,
+      input.cloudFolderWebUrl ?? null
     );
 
   return rowToPhoto(result);
@@ -256,6 +263,26 @@ export function getPhotoCountWithLocation(): number {
   return result.count;
 }
 
+// ── Last import summary (in-memory, reset on app restart) ────────────────────
+
+export interface LastImportSummary {
+  source: 'local' | 'onedrive';
+  scanned: number;
+  imported: number;
+  duplicates: number;
+  completedAt: number;
+}
+
+let lastImportSummary: LastImportSummary | null = null;
+
+export function setLastImportSummary(summary: LastImportSummary): void {
+  lastImportSummary = summary;
+}
+
+export function getLastImportSummary(): LastImportSummary | null {
+  return lastImportSummary;
+}
+
 /**
  * Library statistics — single query aggregating photo metadata for the stats panel.
  * Returns total counts, GPS/timestamp coverage, format breakdown, file sizes, and date range.
@@ -273,6 +300,8 @@ export interface LibraryStats {
   formatBreakdown: Array<{ mimeType: string; count: number }>;
   cameraBreakdown: Array<{ make: string; model: string; count: number }>;
   lastScannedAt: number | null;
+  photosWithIssues: number;
+  lastImportSummary: LastImportSummary | null;
 }
 
 export function getLibraryStats(): LibraryStats {
@@ -333,12 +362,18 @@ export function getLibraryStats(): LibraryStats {
     )
     .all() as Array<{ make: string; model: string; count: number }>;
 
+  const issuesRow = db
+    .prepare(`SELECT COUNT(DISTINCT photo_id) AS photosWithIssues FROM photo_issues`)
+    .get() as { photosWithIssues: number };
+
   return {
     ...summary,
     oldestPhotoId: oldestRow?.id ?? null,
     newestPhotoId: newestRow?.id ?? null,
     formatBreakdown: formatRows,
     cameraBreakdown: cameraRows,
+    photosWithIssues: issuesRow.photosWithIssues,
+    lastImportSummary: getLastImportSummary(),
   };
 }
 

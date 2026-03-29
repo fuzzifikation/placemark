@@ -106,6 +106,7 @@ placemark/
 │           │   └── services/      # Business logic services
 │           │       ├── exif.ts
 │           │       ├── filesystem.ts
+│           │       ├── photoMetadata.ts
 │           │       ├── storage.ts
 │           │       └── thumbnails.ts
 │           │

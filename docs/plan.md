@@ -4,12 +4,15 @@ Step-by-step roadmap for building Placemark. See [ARCHITECTURE.md](ARCHITECTURE.
 
 Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
 
-**Current Status:** ✅ Phase 0–6.1 Complete | ⚙️ Phase 6.2 Export + Phase 7 Stats & Filters in progress | 🧪 OneDrive Phase 15 sketch (auth + folder browse slice complete) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
+**Current Status:** ✅ Phase 0–6.1 Complete | ⚙️ Phase 6.2 Export + Phase 7 Stats & Filters in progress | 🧪 OneDrive Phase 15 (auth + import + abort + accounts UI complete) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
 
 **Recent Work:**
 
+- **OneDrive import complete (Mar 2026, pre-release):** Full metadata import pipeline — Graph API subfolder walk, photo record creation, duplicate dedup via SHA-256 + item ID, abort support, subdirectory toggle, progress reporting. `photo_issues` schema table records validation anomalies (`gps_zero`, `future_timestamp`, `invalid_timestamp`) from both local and OneDrive scans. Shared `photoMetadata.ts` normalizers used by both paths.
+- **Settings: Accounts tab (Mar 2026):** New "Accounts" tab in Settings modal shows connected cloud services with email display and two-stage Disconnect. Connect OneDrive flow available without opening the scan overlay.
+- **Stats panel: Library Health + Last Import (Mar 2026):** Library Stats panel now shows a "Library Health" card (metadata issue counts from `photo_issues`) and a "Last Import" card (scanned/imported/duplicates-skipped with relative time).
+- **v0.8.0 — Code Quality & Cleanup (Mar 2026):** Dead parameters removed, null-coalescing correctness fixes, renderer `console.error` sweep, impossible type guard removed.
 - **v0.7.5 — Camera data & Library Stats (Mar 2026):** EXIF `Make`/`Model` extracted and stored during scan; brand names normalised to title case. Camera breakdown bar chart added to Library Stats panel. `camera_make`/`camera_model` columns auto-migrated in existing databases.
-- **OneDrive sketch progress (Mar 2026, pre-release):** Azure app registration validated, OAuth + PKCE login implemented, secure local token storage wired, and minimal folder browsing integrated into Add Source overlay (connect, root, camera roll, subfolder traversal, select-only).
 - **v0.7.4 — Timeline histogram & Spider improvements (Mar 2026):** Two-layer histogram behind the timeline scrubber (GPS vs non-GPS bars). Multi-ring spider layout for dense clusters. Help modal (keyboard shortcuts). Settings polish and locale-aware formatting.
 - **Phase 6.1 Complete — Placemarks:** Full placemarks system with `placemarks` table, PlacemarksPanel sidebar, Smart Placemarks ("This Year", "Last 3 Months"), reverse geocoding labels via Nominatim, create/rename/delete.
 - **Phase 5 Complete (v0.5.0):** Full file operations execution with atomic batch semantics, undo support, and database sync. Copy/move operations fully functional with conflict detection, rollback on failure, and OS trash integration for undo.

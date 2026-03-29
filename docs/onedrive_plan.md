@@ -1,7 +1,7 @@
 # OneDrive Integration Plan
 
-**Status:** Step 3 (DB schema + metadata import) complete — proceed to Step 4: show OneDrive photos on the map  
-**Last Updated:** March 22, 2026
+**Status:** Steps 0–3.5 complete — OneDrive import, abort, and UI wired. Proceed to Step 4: show OneDrive photos on the map  
+**Last Updated:** March 29, 2026
 
 ---
 
@@ -457,7 +457,7 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 - [x] Returned folder data is stable enough to drive a later picker UI
 - [x] No photo records are written to the DB yet
 
-### Step 3: Import Minimal Metadata Into the Database
+### Step 3: Import Minimal Metadata Into the Database ✅ COMPLETE
 
 **Build:**
 
@@ -473,12 +473,12 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 
 **Test / Exit Criteria:**
 
-- [ ] Import writes OneDrive photo records into the local DB
-- [ ] Duplicate OneDrive/local files are skipped according to the current rule
-- [ ] Import summary matches actual DB changes
-- [ ] Re-running the same import does not create duplicate rows
+- [x] Import writes OneDrive photo records into the local DB
+- [x] Duplicate OneDrive/local files are skipped according to the current rule
+- [x] Import summary matches actual DB changes
+- [x] Re-running the same import does not create duplicate rows
 
-### Step 3.5: Wire Import Into the UI
+### Step 3.5: Wire Import Into the UI ✅ COMPLETE
 
 **Design decisions:**
 
@@ -492,17 +492,19 @@ Only begin this step after Step 0 confirms the metadata and thumbnail plan is vi
 
 **Build:**
 
-- [ ] Add `includeSubdirectories` param to `onedrive:importFolder` IPC handler and `onedriveImport.ts` service (recurse via `listChildFolders`)
-- [ ] Add `importOneDriveFolder` method to `useFolderScan` hook
-- [ ] Replace toast stub in `App.tsx` `handleSelectOneDriveFolder` with `folderScan.importOneDriveFolder(folder.id, photoData.loadPhotos)`
+- [x] Add `includeSubdirectories` param to `onedrive:importFolder` IPC handler and `onedriveImport.ts` service (recurse via `listChildFolders`)
+- [x] Add `importOneDriveFolder` method to `useFolderScan` hook
+- [x] Replace toast stub in `App.tsx` `handleSelectOneDriveFolder` with `folderScan.importOneDriveFolder(folder.id, photoData.loadPhotos)`
+- [x] Abort: `useFolderScan.abortScan` dispatches `onedrive:abortImport` when `activeSource === 'onedrive'`; `onedriveImport.ts` checks `abortRequested` flag at each item and subfolder boundary
+- [x] `includeSubdirectories` toggle in `ScanOverlay` shared across local and OneDrive modes
 
 **Test / Exit Criteria:**
 
-- [ ] Selecting a OneDrive folder triggers import immediately
-- [ ] Progress bar shows scanned/total counts updating in real time
-- [ ] Abort stops the import, keeping photos already inserted
-- [ ] Map shows imported photos after completion
-- [ ] Re-importing the same folder skips duplicates and completes cleanly
+- [x] Selecting a OneDrive folder triggers import immediately
+- [x] Progress bar shows scanned/total counts updating in real time
+- [x] Abort stops the import, keeping photos already inserted
+- [ ] Map shows imported photos after completion (Step 4)
+- [x] Re-importing the same folder skips duplicates and completes cleanly
 
 ### Step 4: Show OneDrive Photos on the Map
 

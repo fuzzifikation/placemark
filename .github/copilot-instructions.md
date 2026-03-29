@@ -114,6 +114,7 @@ pnpm -C packages/desktop build    # Production build
 - **Prefer SQL over ORM:** Use raw SQL with prepared statements (better-sqlite3)
 - **Type everything:** No `any` types except for true external unknowns
 - **Error messages for users:** "Cannot access folder: permission denied" not "EACCES"
+- **Never guard against 0% errors in UI:** If a data contract guarantees a value (e.g. the Graph API always returns `webUrl`), do NOT add null-checks that hide UI elements. A hidden button is a broken feature. Only add UI guards when there is a real, observable probability of absence. When in doubt, ask the user first — never silently hide functionality.
 
 ## Build & Cache Management
 

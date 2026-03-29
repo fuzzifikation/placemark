@@ -5,7 +5,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { createPhoto, recordPhotoIssues } from './storage';
+import { createPhoto, recordPhotoIssues, setLastImportSummary } from './storage';
 import { extractExif } from './exif';
 import { isSupportedImageFile, isRawFile, getMimeType } from './formats';
 import { PhotoSource } from '@placemark/core';
@@ -88,6 +88,14 @@ export async function scanDirectory(
       result.errors.push(errorMsg);
     }
   }
+
+  setLastImportSummary({
+    source: 'local',
+    scanned: result.totalFiles,
+    imported: result.processedFiles,
+    duplicates: 0,
+    completedAt: Date.now(),
+  });
 
   return result;
 }
