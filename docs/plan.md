@@ -36,6 +36,7 @@ All items below must ship before Microsoft Store submission. Ordered by implemen
 - **v0.8.0 — Code Quality & Cleanup (Mar 2026):** Dead parameters removed, null-coalescing correctness fixes, renderer `console.error` sweep, impossible type guard removed.
 - **v0.7.5 — Camera data & Library Stats (Mar 2026):** EXIF `Make`/`Model` extracted and stored during scan; brand names normalised to title case. Camera breakdown bar chart added to Library Stats panel. `camera_make`/`camera_model` columns auto-migrated in existing databases.
 - **v0.7.4 — Timeline histogram & Spider improvements (Mar 2026):** Two-layer histogram behind the timeline scrubber (GPS vs non-GPS bars). Multi-ring spider layout for dense clusters. Help modal (keyboard shortcuts). Settings polish and locale-aware formatting.
+- **Phase 6.2 Complete — Export (Mar 2026):** CSV / GeoJSON / GPX export via native save dialog. Core formatters in `packages/core` (21 unit tests). ExportSheet glass popover with format picker. Export button in toolbar Tools group. Selection-trumps-view scope logic.
 - **Phase 6.1 Complete — Placemarks:** Full placemarks system with `placemarks` table, PlacemarksPanel sidebar, Smart Placemarks ("This Year", "Last 3 Months"), reverse geocoding labels via Nominatim, create/rename/delete.
 - **Phase 5 Complete (v0.5.0):** Full file operations execution with atomic batch semantics, undo support, and database sync. Copy/move operations fully functional with conflict detection, rollback on failure, and OS trash integration for undo.
 

@@ -5,6 +5,13 @@ All notable changes to Placemark will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Export (CSV / GeoJSON / GPX):** Export button in toolbar opens a format picker popover. Exports only GPS-tagged photos. Selection-aware: selected photos are exported when a lasso selection is active; otherwise the current map view is exported. All exports are local file writes via the OS save dialog.
+- Core export formatters (`toCsv`, `toGeoJson`, `toGpx`) in `@placemark/core` — pure functions, no I/O, 21 unit tests.
+
 ## [0.7.1] - 2026-03-16
 
 ### Added
