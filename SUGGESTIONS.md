@@ -7,6 +7,8 @@
 
 ## Open
 
+> **v1.0 store-track items are in [plan.md](docs/plan.md) § v1.0 Store Readiness Checklist** — not listed here to avoid duplication.
+
 ---
 
 ## UI / Layout

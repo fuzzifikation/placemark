@@ -6,9 +6,29 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 
 **Current Status:** ✅ Phase 0–6.1 Complete | ⚙️ Phase 6.2 Export + Phase 7 Stats & Filters in progress | 🧪 OneDrive Phase 15 (auth + import + abort + accounts UI complete) | Phase 6–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
 
+---
+
+## 🏪 v1.0 Store Readiness Checklist
+
+All items below must ship before Microsoft Store submission. Ordered by implementation sequence.
+
+| # | Feature | Phase | Status | Notes |
+|---|---------|-------|--------|-------|
+| 1 | **Export** (CSV / GeoJSON / GPX) | 6.2 | ❌ Not started | ~1 day. Core trust promise: "your data, your control" |
+| 2 | **Concurrent import** (`runWithConcurrency`) | 8.1 | ❌ Not started | ~1 day. Local EXIF reads + OneDrive subfolder walks in parallel |
+| 3 | **Stats → Filters** (clickable format/camera rows + chips) | 7 | ❌ Not started | ~2 days. Turns read-only stats into the app's best feature |
+| 4 | **"Fit timeline to view" button** | 7 | ❌ Not started | ~half day. Makes timeline usable at a single location |
+| 5 | **Freemium gating** (1 000-photo free tier + Pro unlock) | 8.2 | ❌ Not started | ~2 days. Needs monetization decision first |
+| 6 | **MSIX packaging + Store assets** | 8.3 | ❌ Not started | ~2 days. Screenshots, icons, signing cert |
+| 7 | **Privacy policy page** | 8.3 | ❌ Not started | ~1 hour. Required URL for Store submission |
+
+**Estimated total: ~8 days of implementation work.**
+
+---
+
 **Recent Work:**
 
-- **OneDrive import complete (Mar 2026, pre-release):** Full metadata import pipeline — Graph API subfolder walk, photo record creation, duplicate dedup via SHA-256 + item ID, abort support, subdirectory toggle, progress reporting. `photo_issues` schema table records validation anomalies (`gps_zero`, `future_timestamp`, `invalid_timestamp`) from both local and OneDrive scans. Shared `photoMetadata.ts` normalizers used by both paths.
+- **OneDrive import (Mar 2026, pre-release):** Full metadata import pipeline — Graph API subfolder walk, photo record creation, duplicate dedup via SHA-256 + item ID, abort support, subdirectory toggle, progress reporting. `photo_issues` schema table records validation anomalies (`gps_zero`, `future_timestamp`, `invalid_timestamp`) from both local and OneDrive scans. Shared `photoMetadata.ts` normalizers used by both paths.
 - **Settings: Accounts tab (Mar 2026):** New "Accounts" tab in Settings modal shows connected cloud services with email display and two-stage Disconnect. Connect OneDrive flow available without opening the scan overlay.
 - **Stats panel: Library Health + Last Import (Mar 2026):** Library Stats panel now shows a "Library Health" card (metadata issue counts from `photo_issues`) and a "Last Import" card (scanned/imported/duplicates-skipped with relative time).
 - **v0.8.0 — Code Quality & Cleanup (Mar 2026):** Dead parameters removed, null-coalescing correctness fixes, renderer `console.error` sweep, impossible type guard removed.
