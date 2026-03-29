@@ -142,6 +142,14 @@ export function Settings({
     onSettingsChange({ ...settings, [key]: value });
   };
 
+  const resetSection = (keys: (keyof AppSettings)[], label: string) => {
+    const patch = Object.fromEntries(
+      keys.map((k) => [k, DEFAULT_SETTINGS[k]])
+    ) as Partial<AppSettings>;
+    onSettingsChange({ ...settings, ...patch });
+    toast.success(label);
+  };
+
   const resetAllSettings = () => {
     if (theme !== 'light') onThemeChange();
     onSettingsChange(DEFAULT_SETTINGS);
@@ -150,59 +158,54 @@ export function Settings({
 
   const resetGeneral = () => {
     if (theme !== 'light') onThemeChange();
-    onSettingsChange({
-      ...settings,
-      devSettingsEnabled: DEFAULT_SETTINGS.devSettingsEnabled,
-      glassBlur: DEFAULT_SETTINGS.glassBlur,
-      glassSurfaceOpacity: DEFAULT_SETTINGS.glassSurfaceOpacity,
-      toastDuration: DEFAULT_SETTINGS.toastDuration,
-      singleClickOpensViewer: DEFAULT_SETTINGS.singleClickOpensViewer,
-    });
-    toast.success('Appearance settings reset');
+    resetSection(
+      [
+        'devSettingsEnabled',
+        'glassBlur',
+        'glassSurfaceOpacity',
+        'toastDuration',
+        'singleClickOpensViewer',
+      ],
+      'Appearance settings reset'
+    );
   };
 
-  const resetLibrary = () => {
-    onSettingsChange({
-      ...settings,
-      maxFileSizeMB: DEFAULT_SETTINGS.maxFileSizeMB,
-    });
-    toast.success('Library settings reset');
-  };
+  const resetLibrary = () => resetSection(['maxFileSizeMB'], 'Library settings reset');
 
-  const resetPlacemarks = () => {
-    onSettingsChange({
-      ...settings,
-      reverseGeocodeEnabled: DEFAULT_SETTINGS.reverseGeocodeEnabled,
-      autoZoomDuringPlay: DEFAULT_SETTINGS.autoZoomDuringPlay,
-      timelineUpdateInterval: DEFAULT_SETTINGS.timelineUpdateInterval,
-      playSpeedSlowDays: DEFAULT_SETTINGS.playSpeedSlowDays,
-      playSpeedMediumDays: DEFAULT_SETTINGS.playSpeedMediumDays,
-      playSpeedFastDays: DEFAULT_SETTINGS.playSpeedFastDays,
-    });
-    toast.success('Placemarks settings reset');
-  };
+  const resetPlacemarks = () =>
+    resetSection(
+      [
+        'reverseGeocodeEnabled',
+        'autoZoomDuringPlay',
+        'timelineUpdateInterval',
+        'playSpeedSlowDays',
+        'playSpeedMediumDays',
+        'playSpeedFastDays',
+      ],
+      'Placemarks settings reset'
+    );
 
-  const resetMap = () => {
-    onSettingsChange({
-      ...settings,
-      clusteringEnabled: DEFAULT_SETTINGS.clusteringEnabled,
-      clusterRadius: DEFAULT_SETTINGS.clusterRadius,
-      clusterMaxZoom: DEFAULT_SETTINGS.clusterMaxZoom,
-      clusterOpacity: DEFAULT_SETTINGS.clusterOpacity,
-      unclusteredPointOpacity: DEFAULT_SETTINGS.unclusteredPointOpacity,
-      mapPadding: DEFAULT_SETTINGS.mapPadding,
-      mapTransitionDuration: DEFAULT_SETTINGS.mapTransitionDuration,
-      showHeatmap: DEFAULT_SETTINGS.showHeatmap,
-      tileMaxZoom: DEFAULT_SETTINGS.tileMaxZoom,
-      spiderOverlapTolerance: DEFAULT_SETTINGS.spiderOverlapTolerance,
-      spiderRadius: DEFAULT_SETTINGS.spiderRadius,
-      spiderAnimationDuration: DEFAULT_SETTINGS.spiderAnimationDuration,
-      spiderTriggerZoom: DEFAULT_SETTINGS.spiderTriggerZoom,
-      spiderCollapseMargin: DEFAULT_SETTINGS.spiderCollapseMargin,
-      spiderClearZoom: DEFAULT_SETTINGS.spiderClearZoom,
-    });
-    toast.success('Map settings reset');
-  };
+  const resetMap = () =>
+    resetSection(
+      [
+        'clusteringEnabled',
+        'clusterRadius',
+        'clusterMaxZoom',
+        'clusterOpacity',
+        'unclusteredPointOpacity',
+        'mapPadding',
+        'mapTransitionDuration',
+        'showHeatmap',
+        'tileMaxZoom',
+        'spiderOverlapTolerance',
+        'spiderRadius',
+        'spiderAnimationDuration',
+        'spiderTriggerZoom',
+        'spiderCollapseMargin',
+        'spiderClearZoom',
+      ],
+      'Map settings reset'
+    );
 
   return (
     <div
