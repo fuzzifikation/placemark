@@ -361,18 +361,14 @@ See [collections_plan.md](collections_plan.md) for the full UX design of Placema
 - [x] Deleting a placemark doesn't affect photos
 - [x] Smart placemarks update automatically when new photos are scanned
 
-**Testing (6.2 — complete):**
+**Testing (6.2 — pending):**
 
-- [x] Core formatters (toCsv, toGeoJson, toGpx) — 21 passing unit tests
-- [x] IPC handler queries DB, shows native save dialog, writes file
-- [x] ExportSheet glass popover with GeoJSON/CSV/GPX radio options
-- [x] Export button in toolbar Tools group — always clickable
-- [x] Selection trumps view: if photos are selected, exports those; otherwise exports current map view
-- [x] Success/error toast feedback
-- [ ] CSV opens in Excel/LibreOffice with correct columns (manual test)
-- [ ] GeoJSON export opens correctly in geojson.io (manual test)
-- [ ] GPX export imports into a GPS app (manual test)
-- [ ] Export 10,000 photos in <5 seconds (manual test)
+- [ ] Core formatters (toCsv, toGeoJson, toGpx) — unit tests pass
+- [ ] CSV opens in Excel/LibreOffice with correct columns
+- [ ] GeoJSON export opens correctly in geojson.io
+- [ ] GPX export imports into a GPS app
+- [ ] Selection-aware scope: selected photos exported when selection active; map view otherwise
+- [ ] Export 10,000 photos in <5 seconds
 
 **Deliverable:** ✅ Placemarks complete. ✅ Photo data export (CSV/GeoJSON/GPX) complete.
 
