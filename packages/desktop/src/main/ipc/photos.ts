@@ -152,43 +152,17 @@ export function registerPhotoHandlers(): void {
     for (const filePath of filePaths) {
       try {
         await fs.access(filePath, constants.R_OK);
-      } catch (error) {
+      } catch {
         throw new Error(`File not accessible: ${filePath}`);
       }
     }
 
-    // Group files by folder — path.dirname handles all OS separator variants
-    const folders = new Set<string>();
-    filePaths.forEach((filePath) => {
-      folders.add(path.dirname(filePath));
-    });
-
-    if (folders.size > 1) {
-      // If files are in different folders, just show the first one
-      // This shouldn't happen with our current UI, but handle it gracefully
-      shell.showItemInFolder(filePaths[0]);
-      return;
-    }
-
-    const folder = Array.from(folders)[0];
-
-    // Platform-specific implementation
-    if (process.platform === 'win32') {
-      // Sort files by creation date and show the oldest (most likely the "main" photo)
-      const filesWithStats = await Promise.all(
-        filePaths.map(async (filePath) => {
-          const stats = await fs.stat(filePath);
-          return { path: filePath, birthtime: stats.birthtime };
-        })
-      );
-      filesWithStats.sort((a, b) => a.birthtime.getTime() - b.birthtime.getTime());
-      shell.showItemInFolder(filesWithStats[0].path);
-    } else if (process.platform === 'darwin') {
-      // macOS: shell.showItemInFolder opens Finder and selects the file (no shell, no injection risk)
-      shell.showItemInFolder(filePaths[0]);
+    // Show the first file — all selected photos are always in the same folder
+    // from the current UI. On Linux, open the containing folder instead.
+    if (process.platform === 'linux') {
+      shell.openPath(path.dirname(filePaths[0]));
     } else {
-      // Linux and others: Use xdg-open to open the folder
-      shell.openPath(folder);
+      shell.showItemInFolder(filePaths[0]);
     }
   });
 
