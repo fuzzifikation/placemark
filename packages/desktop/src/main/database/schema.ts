@@ -73,6 +73,20 @@ const SCHEMA_SQL = `
   );
 
   CREATE INDEX IF NOT EXISTS idx_placemarks_type ON placemarks(type);
+
+  CREATE TABLE IF NOT EXISTS photo_issues (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    photo_id     INTEGER NOT NULL,
+    issue_code   TEXT NOT NULL CHECK(issue_code IN ('gps_zero', 'future_timestamp', 'invalid_timestamp')),
+    field        TEXT NOT NULL,
+    raw_value    TEXT,
+    detected_at  INTEGER NOT NULL,
+    FOREIGN KEY (photo_id) REFERENCES photos(id) ON DELETE CASCADE,
+    UNIQUE(photo_id, issue_code)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_photo_issues_photo ON photo_issues(photo_id);
+  CREATE INDEX IF NOT EXISTS idx_photo_issues_code  ON photo_issues(issue_code);
 `;
 
 export function initializeDatabase(options: DatabaseOptions): Database.Database {

@@ -165,6 +165,7 @@ export interface OneDriveAPI {
   getCameraRollFolder: () => Promise<OneDriveFolderItem>;
   listChildFolders: (itemId: string) => Promise<OneDriveFolderItem[]>;
   importFolder: (itemId: string, includeSubdirectories: boolean) => Promise<OneDriveImportResult>;
+  abortImport: () => Promise<void>;
   onImportProgress: (callback: (progress: OneDriveImportProgress) => void) => () => void;
 }
 

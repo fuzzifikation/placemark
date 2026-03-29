@@ -177,64 +177,67 @@ export function ScanOverlay({
 
         {!scanning ? (
           /* ── Pre-scan state ─────────────────────── */
-          sourceMode === 'local' ? (
-            <>
-              <p
-                style={{
-                  margin: `0 0 ${SPACING.XL}`,
-                  fontSize: FONT_SIZE.SM,
-                  color: colors.textSecondary,
-                  lineHeight: 1.6,
-                }}
-              >
-                {hasPhotos
+          <>
+            {/* Source-specific description */}
+            <p
+              style={{
+                margin: `0 0 ${SPACING.XL}`,
+                fontSize: FONT_SIZE.SM,
+                color: colors.textSecondary,
+                lineHeight: 1.6,
+              }}
+            >
+              {sourceMode === 'local'
+                ? hasPhotos
                   ? 'Select a folder to add more photos to your library.'
-                  : 'Select a folder to scan for photos with GPS location data.'}
-              </p>
+                  : 'Select a folder to scan for photos with GPS location data.'
+                : 'Select a OneDrive folder to import photo metadata into your library. No files are downloaded.'}
+            </p>
 
-              {/* Subfolder toggle */}
-              <label
+            {/* Subfolder toggle — shared by both sources */}
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: SPACING.LG,
+                cursor: 'pointer',
+                marginBottom: SPACING.XL,
+                userSelect: 'none',
+              }}
+              onClick={() => onIncludeSubdirectoriesChange(!includeSubdirectories)}
+            >
+              <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: SPACING.LG,
-                  cursor: 'pointer',
-                  marginBottom: SPACING.XL,
-                  userSelect: 'none',
+                  position: 'relative',
+                  width: '44px',
+                  height: '24px',
+                  backgroundColor: includeSubdirectories ? colors.primary : colors.border,
+                  borderRadius: '12px',
+                  transition: 'background-color 0.2s ease',
+                  flexShrink: 0,
                 }}
-                onClick={() => onIncludeSubdirectoriesChange(!includeSubdirectories)}
               >
                 <div
                   style={{
-                    position: 'relative',
-                    width: '44px',
-                    height: '24px',
-                    backgroundColor: includeSubdirectories ? colors.primary : colors.border,
-                    borderRadius: '12px',
-                    transition: 'background-color 0.2s ease',
-                    flexShrink: 0,
+                    position: 'absolute',
+                    top: '2px',
+                    left: includeSubdirectories ? '22px' : '2px',
+                    width: '20px',
+                    height: '20px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '50%',
+                    transition: 'left 0.2s ease',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                   }}
-                >
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '2px',
-                      left: includeSubdirectories ? '22px' : '2px',
-                      width: '20px',
-                      height: '20px',
-                      backgroundColor: '#ffffff',
-                      borderRadius: '50%',
-                      transition: 'left 0.2s ease',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                    }}
-                  />
-                </div>
-                <span style={{ fontSize: FONT_SIZE.SM, color: colors.textPrimary }}>
-                  Include subdirectories
-                </span>
-              </label>
+                />
+              </div>
+              <span style={{ fontSize: FONT_SIZE.SM, color: colors.textPrimary }}>
+                Include subdirectories
+              </span>
+            </label>
 
-              {/* Scan button */}
+            {/* Source-specific action */}
+            {sourceMode === 'local' ? (
               <button
                 onClick={onScan}
                 style={{
@@ -257,10 +260,10 @@ export function ScanOverlay({
                 <FolderOpen size={16} />
                 Select Folder &amp; Scan
               </button>
-            </>
-          ) : (
-            <OneDriveFolderBrowser colors={colors} onSelectFolder={onOneDriveSelect} />
-          )
+            ) : (
+              <OneDriveFolderBrowser colors={colors} onSelectFolder={onOneDriveSelect} />
+            )}
+          </>
         ) : (
           /* ── Scanning in progress ───────────────── */
           <>

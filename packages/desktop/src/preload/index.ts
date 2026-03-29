@@ -68,6 +68,7 @@ contextBridge.exposeInMainWorld('api', {
     listChildFolders: (itemId: string) => ipcRenderer.invoke('onedrive:listChildFolders', itemId),
     importFolder: (itemId: string, includeSubdirectories: boolean) =>
       ipcRenderer.invoke('onedrive:importFolder', itemId, includeSubdirectories),
+    abortImport: () => ipcRenderer.invoke('onedrive:abortImport'),
     onImportProgress: (callback: (progress: any) => void) => {
       const listener = (_event: any, progress: any) => callback(progress);
       ipcRenderer.on('onedrive:importProgress', listener);

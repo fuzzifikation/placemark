@@ -5,6 +5,12 @@
 
 import exifr from 'exifr';
 import { isSupportedImageFile as checkSupportedImage } from './formats';
+import {
+  normalizeGps,
+  normalizeCameraMake,
+  normalizeTimestamp,
+  ValidationIssue,
+} from './photoMetadata';
 
 export interface ExifData {
   latitude?: number;
@@ -12,6 +18,8 @@ export interface ExifData {
   timestamp?: number;
   cameraMake?: string;
   cameraModel?: string;
+  /** Validation issues found in this photo's metadata. */
+  issues?: ValidationIssue[];
 }
 
 // Re-export format helper for convenience
@@ -46,34 +54,34 @@ export async function extractExif(filePath: string): Promise<ExifData> {
     });
 
     const result: ExifData = {};
+    const issues: ValidationIssue[] = [];
 
-    // GPS coordinates — reject (0, 0) as implausible (default/error value from faulty firmware)
-    if (data?.latitude !== undefined && data?.longitude !== undefined) {
-      if (data.latitude !== 0 || data.longitude !== 0) {
-        result.latitude = data.latitude;
-        result.longitude = data.longitude;
-      }
+    // GPS — shared normalizer rejects (0, 0)
+    const gpsResult = normalizeGps(data?.latitude, data?.longitude);
+    if (gpsResult.gps) {
+      result.latitude = gpsResult.gps.latitude;
+      result.longitude = gpsResult.gps.longitude;
+    } else if (gpsResult.issue) {
+      issues.push(gpsResult.issue);
     }
 
-    // Timestamp
     if (data) {
+      // Timestamp — shared normalizer rejects invalid/future dates
       const dateTime = data.DateTimeOriginal || data.CreateDate || data.DateTime;
-      if (dateTime) {
-        result.timestamp = new Date(dateTime).getTime();
-      }
+      const tsResult = normalizeTimestamp(dateTime);
+      result.timestamp = tsResult.timestamp;
+      if (tsResult.issue) issues.push(tsResult.issue);
 
-      // Camera make / model — stored in IFD0 (tiff segment).
-      // Normalize Make to title case so "SAMSUNG", "Samsung", and "samsung" all
-      // become "Samsung". Model keeps original casing (e.g. "SM-G991B" is meaningful).
-      if (typeof data.Make === 'string' && data.Make.trim()) {
-        const make = data.Make.trim();
-        result.cameraMake = make.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-      }
+      // Camera make — shared normalizer applies title-case
+      result.cameraMake = normalizeCameraMake(data.Make);
+
+      // Model keeps original casing (e.g. "SM-G991B" is meaningful)
       if (typeof data.Model === 'string' && data.Model.trim()) {
         result.cameraModel = data.Model.trim();
       }
     }
 
+    if (issues.length > 0) result.issues = issues;
     return result;
   } catch (error) {
     // Silently skip files with unreadable EXIF data

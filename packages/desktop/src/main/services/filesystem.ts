@@ -5,7 +5,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { createPhoto } from './storage';
+import { createPhoto, recordPhotoIssues } from './storage';
 import { extractExif } from './exif';
 import { isSupportedImageFile, isRawFile, getMimeType } from './formats';
 import { PhotoSource } from '@placemark/core';
@@ -226,7 +226,7 @@ async function processImageFile(
   const exifData = await extractExif(filePath);
   const ext = path.extname(filePath).toLowerCase();
 
-  createPhoto({
+  const photo = createPhoto({
     source,
     path: filePath,
     latitude: exifData.latitude,
@@ -237,6 +237,10 @@ async function processImageFile(
     cameraMake: exifData.cameraMake,
     cameraModel: exifData.cameraModel,
   });
+
+  if (exifData.issues?.length) {
+    recordPhotoIssues(photo.id, exifData.issues);
+  }
 
   if (exifData.latitude != null && exifData.longitude != null) {
     result.photosWithLocation++;

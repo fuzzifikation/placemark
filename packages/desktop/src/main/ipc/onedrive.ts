@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import { OneDriveAuthService } from '../services/onedriveAuth';
 import { OneDriveGraphService } from '../services/onedriveGraph';
-import { OneDriveImportService } from '../services/onedriveImport';
+import { OneDriveImportService, requestOneDriveAbort } from '../services/onedriveImport';
 
 const authService = new OneDriveAuthService();
 export { authService as oneDriveAuthService };
@@ -36,6 +36,10 @@ export function registerOneDriveHandlers(): void {
     }
 
     return graphService.listChildFolders(itemId);
+  });
+
+  ipcMain.handle('onedrive:abortImport', () => {
+    requestOneDriveAbort();
   });
 
   ipcMain.handle(

@@ -2,7 +2,7 @@
  * useFolderScan - Manages folder scanning state and operations
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 interface ScanProgress {
   currentFile: string;
@@ -16,8 +16,10 @@ export function useFolderScan() {
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
   const [includeSubdirectories, setIncludeSubdirectories] = useState(true);
+  const activeSource = useRef<'local' | 'onedrive' | null>(null);
 
   const scanFolder = async (onComplete?: () => Promise<void>, maxFileSizeMB: number = 150) => {
+    activeSource.current = 'local';
     setScanning(true);
     setScanProgress(null);
 
@@ -46,6 +48,7 @@ export function useFolderScan() {
 
       return scanResult;
     } finally {
+      activeSource.current = null;
       removeListener();
       setScanProgress(null);
       setScanning(false);
@@ -53,10 +56,15 @@ export function useFolderScan() {
   };
 
   const abortScan = async () => {
-    await window.api.photos.abortScan();
+    if (activeSource.current === 'onedrive') {
+      await window.api.onedrive.abortImport();
+    } else {
+      await window.api.photos.abortScan();
+    }
   };
 
   const importOneDriveFolder = async (folderId: string, onComplete?: () => Promise<void>) => {
+    activeSource.current = 'onedrive';
     setScanning(true);
     setScanProgress(null);
 
@@ -80,6 +88,7 @@ export function useFolderScan() {
       await window.api.onedrive.importFolder(folderId, includeSubdirectories);
       if (onComplete) await onComplete();
     } finally {
+      activeSource.current = null;
       removeListener();
       setScanProgress(null);
       setScanning(false);

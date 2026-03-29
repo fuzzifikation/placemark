@@ -174,6 +174,10 @@
 
 <!-- Move items here once resolved -->
 
+- **OneDrive import: "include subdirectories" toggle.** The subfolder toggle in `ScanOverlay` is now shared between local and OneDrive import modes. `useFolderScan.importOneDriveFolder` already threaded the param through to the IPC call; the only change was rendering the toggle in the OneDrive branch of `ScanOverlay`.
+
+- **Abort during OneDrive import.** `useFolderScan.abortScan` now branches on an `activeSource` ref (`'local' | 'onedrive' | null`), dispatching `onedrive:abortImport` when a OneDrive import is in progress. `onedriveImport.ts` gained a module-level `abortRequested` flag checked at each item and subfolder boundary. IPC handler, preload bridge, and type definitions updated accordingly.
+
 - **Align all floating glass panels to a shared layout grid.** Introduced `LAYOUT` constants in `ui.ts` (`PANEL_INSET`, `PANEL_GAP`, `HEADER_HEIGHT`, `TIMELINE_HEIGHT`, `PLACEMARKS_WIDTH`). `App.tsx` is now the single layout authority — all panel `position/top/left/bottom/right` declarations live there; `FloatingHeader` and `PlacemarksPanel` are fully layout-agnostic. Map controls use `LAYOUT.PANEL_INSET_PX` margins so they align with the panels. `BORDER_RADIUS.XL` used consistently on all glass surfaces.
 
 - **File operations: merge Organize panel and preview into one window.** Eliminated the two-step "configure → Preview → Modify Settings → Execute" flow. The Organize modal is now a single scrollable panel: SourceSummary (collapsible) + Copy/Move radio + destination picker at top; dry-run preview auto-generates below as soon as a destination is selected, and auto-regenerates when op type or destination changes. Execute button lives in a permanent footer, disabled until a valid preview with pending ops is ready. Progress bar and "Cancel (Rollback)" appear inline during execution. No IPC or core-logic changes — renderer-only refactor in `OperationsPanel.tsx`.

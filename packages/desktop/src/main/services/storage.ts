@@ -9,6 +9,7 @@ import * as path from 'path';
 import { Photo, PhotoCreateInput, OperationType, BatchStatus } from '@placemark/core';
 import { initializeDatabase, closeDatabase } from '../database/schema';
 import { logger } from './logger';
+import { ValidationIssue } from './photoMetadata';
 
 let db: Database.Database | null = null;
 
@@ -116,6 +117,24 @@ export function isDuplicateOneDrivePhoto(cloudSha256: string | null, cloudItemId
     .prepare("SELECT 1 FROM photos WHERE source = 'onedrive' AND cloud_item_id = ?")
     .get(cloudItemId);
   return !!row;
+}
+
+/**
+ * Record validation issues found in a photo's metadata.
+ * Replaces any previously recorded issues for the same photo, so re-scanning
+ * a fixed photo does not leave stale issue rows.
+ */
+export function recordPhotoIssues(photoId: number, issues: ValidationIssue[]): void {
+  if (issues.length === 0) return;
+  const db = getDb();
+  db.prepare('DELETE FROM photo_issues WHERE photo_id = ?').run(photoId);
+  const insert = db.prepare(
+    'INSERT INTO photo_issues (photo_id, issue_code, field, raw_value, detected_at) VALUES (?, ?, ?, ?, ?)'
+  );
+  const now = Date.now();
+  for (const issue of issues) {
+    insert.run(photoId, issue.code, issue.field, issue.rawValue, now);
+  }
 }
 
 /**

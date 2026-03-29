@@ -6,7 +6,13 @@
 
 import { ONEDRIVE_CONFIG } from '../config/onedrive';
 import { OneDriveAuthService } from './onedriveAuth';
-import { createPhoto, isDuplicateOneDrivePhoto } from './storage';
+import { createPhoto, isDuplicateOneDrivePhoto, recordPhotoIssues } from './storage';
+import {
+  normalizeGps,
+  normalizeCameraMake,
+  normalizeTimestamp,
+  ValidationIssue,
+} from './photoMetadata';
 
 export interface OneDriveImportProgress {
   scanned: number;
@@ -63,11 +69,8 @@ function isImageItem(item: GraphDriveItem): boolean {
   return item.file?.mimeType?.startsWith('image/') === true;
 }
 
-function parseTimestamp(item: GraphDriveItem): number | undefined {
-  const dt = item.photo?.takenDateTime ?? item.createdDateTime;
-  if (!dt) return undefined;
-  const ms = Date.parse(dt);
-  return Number.isFinite(ms) ? ms : undefined;
+function parseTimestamp(item: GraphDriveItem): string | undefined {
+  return item.photo?.takenDateTime ?? item.createdDateTime;
 }
 
 /**
@@ -81,6 +84,16 @@ function parseFolderPath(item: GraphDriveItem): string | undefined {
   const idx = ref.indexOf(marker);
   const folder = idx === -1 ? ref : ref.slice(idx + marker.length);
   return folder || '/';
+}
+
+// ── Abort ────────────────────────────────────────────────────────────────────
+
+/** Set to true by requestOneDriveAbort(); reset at the start of each top-level import. */
+let abortRequested = false;
+
+/** Signal the currently running OneDrive import to stop at the next item boundary. */
+export function requestOneDriveAbort(): void {
+  abortRequested = true;
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────
@@ -99,8 +112,12 @@ export class OneDriveImportService {
     includeSubdirectories: boolean,
     onProgress: (progress: OneDriveImportProgress) => void,
     counts = { scanned: 0, imported: 0, duplicates: 0 },
-    totals = { total: 0 }
+    totals = { total: 0 },
+    _isTopLevel = true
   ): Promise<OneDriveImportResult> {
+    if (_isTopLevel) abortRequested = false; // reset for each new top-level import
+    if (abortRequested) return counts;
+
     // Fetch this folder's own childCount and add it to the running total.
     // This is a single lightweight item GET (not a children listing).
     const folderItem = await this.fetchItem(itemId);
@@ -122,6 +139,8 @@ export class OneDriveImportService {
 
         if (!isImageItem(item) || !item.id || !item.name) continue;
 
+        if (abortRequested) break;
+
         counts.scanned++;
 
         const sha256 = item.file?.hashes?.sha256Hash ?? null;
@@ -130,20 +149,29 @@ export class OneDriveImportService {
         if (duplicate) {
           counts.duplicates++;
         } else {
-          createPhoto({
+          const gpsResult = normalizeGps(item.location?.latitude, item.location?.longitude);
+          const tsResult = normalizeTimestamp(parseTimestamp(item));
+          const issues: ValidationIssue[] = [
+            ...(gpsResult.issue ? [gpsResult.issue] : []),
+            ...(tsResult.issue ? [tsResult.issue] : []),
+          ];
+
+          const photo = createPhoto({
             source: 'onedrive',
             path: (parseFolderPath(item)?.replace(/\/$/, '') ?? '') + '/' + item.name,
-            latitude: item.location?.latitude,
-            longitude: item.location?.longitude,
-            timestamp: parseTimestamp(item),
+            latitude: gpsResult.gps?.latitude,
+            longitude: gpsResult.gps?.longitude,
+            timestamp: tsResult.timestamp,
             fileSize: item.size ?? 0,
             mimeType: item.file?.mimeType ?? 'image/jpeg',
-            cameraMake: item.photo?.cameraMake,
+            cameraMake: normalizeCameraMake(item.photo?.cameraMake),
             cameraModel: item.photo?.cameraModel,
             cloudItemId: item.id,
             cloudFolderPath: parseFolderPath(item),
             cloudSha256: sha256 ?? undefined,
           });
+
+          if (issues.length > 0) recordPhotoIssues(photo.id, issues);
           counts.imported++;
         }
 
@@ -155,7 +183,8 @@ export class OneDriveImportService {
 
     // Recurse into subfolders (shares same counts and totals objects so they accumulate)
     for (const subfolderId of subfolderIds) {
-      await this.importFolder(subfolderId, true, onProgress, counts, totals);
+      if (abortRequested) break;
+      await this.importFolder(subfolderId, true, onProgress, counts, totals, false);
     }
 
     return counts;
