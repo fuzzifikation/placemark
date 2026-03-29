@@ -153,15 +153,21 @@ export function getPhotoById(id: number): Photo | null {
 }
 
 /**
- * Get multiple photos by IDs
+ * Get multiple photos by IDs.
+ * Chunks queries into batches of 500 to stay well under SQLite's 999-parameter limit.
  */
 export function getPhotosByIds(ids: number[]): Photo[] {
   if (ids.length === 0) return [];
-  const placeholders = ids.map(() => '?').join(',');
-  const rows = getDb()
-    .prepare(`SELECT * FROM photos WHERE id IN (${placeholders})`)
-    .all(...ids);
-  return rows.map(rowToPhoto);
+  const db = getDb();
+  const CHUNK_SIZE = 500;
+  const results: Photo[] = [];
+  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + CHUNK_SIZE);
+    const placeholders = chunk.map(() => '?').join(',');
+    const rows = db.prepare(`SELECT * FROM photos WHERE id IN (${placeholders})`).all(...chunk);
+    results.push(...rows.map(rowToPhoto));
+  }
+  return results;
 }
 
 /**

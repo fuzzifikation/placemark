@@ -7,6 +7,7 @@ import type { Photo } from '@placemark/core';
 import type { Theme } from '../theme';
 import { formatDateTime } from '../utils/formatLocale';
 import { useThemeColors } from '../hooks/useThemeColors';
+import { Z_INDEX } from '../constants/ui';
 
 interface PhotoPreviewModalProps {
   photo: Photo;
@@ -136,7 +137,7 @@ export function PhotoPreviewModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000,
+        zIndex: Z_INDEX.PHOTO_PREVIEW,
       }}
       onClick={onClose}
     >

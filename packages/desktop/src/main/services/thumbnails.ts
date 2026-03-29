@@ -119,7 +119,7 @@ export class ThumbnailService {
         .toBuffer();
 
       // Store thumbnail
-      await this.storeThumbnail(photoId, thumbnailBuffer);
+      this.storeThumbnail(photoId, thumbnailBuffer);
 
       return thumbnailBuffer;
     } catch (error) {
@@ -167,7 +167,7 @@ export class ThumbnailService {
       .jpeg({ quality: THUMBNAIL_CONFIG.quality })
       .toBuffer();
 
-    await this.storeThumbnail(photoId, thumbnailBuffer);
+    this.storeThumbnail(photoId, thumbnailBuffer);
     return thumbnailBuffer;
   }
 
@@ -193,7 +193,7 @@ export class ThumbnailService {
   /**
    * Store thumbnail in cache (with LRU eviction if needed)
    */
-  private async storeThumbnail(photoId: number, thumbnailData: Buffer): Promise<void> {
+  private storeThumbnail(photoId: number, thumbnailData: Buffer): void {
     const sizeBytes = thumbnailData.length;
     const now = Date.now();
 
@@ -249,27 +249,28 @@ export class ThumbnailService {
   }
 
   /**
-   * Recalculate cache metadata from actual database state
+   * Recalculate cache metadata from actual database state.
+   * Runs in a transaction so both counters are always consistent.
    */
   private recalculateMetadata(): void {
-    // Get actual counts from database
     const stats = this.db
       .prepare(
-        `SELECT 
+        `SELECT
           COUNT(*) as count,
           COALESCE(SUM(size_bytes), 0) as total_size
          FROM thumbnails`
       )
       .get() as { count: number; total_size: number };
 
-    // Update metadata with actual values
-    this.db
-      .prepare('UPDATE thumbnail_metadata SET value = ? WHERE key = ?')
-      .run(stats.total_size.toString(), 'total_size_bytes');
-
-    this.db
-      .prepare('UPDATE thumbnail_metadata SET value = ? WHERE key = ?')
-      .run(stats.count.toString(), 'thumbnail_count');
+    const updateMeta = this.db.transaction(() => {
+      this.db
+        .prepare('UPDATE thumbnail_metadata SET value = ? WHERE key = ?')
+        .run(stats.total_size.toString(), 'total_size_bytes');
+      this.db
+        .prepare('UPDATE thumbnail_metadata SET value = ? WHERE key = ?')
+        .run(stats.count.toString(), 'thumbnail_count');
+    });
+    updateMeta();
   }
 
   /**
@@ -309,7 +310,7 @@ export class ThumbnailService {
   /**
    * Set maximum cache size in MB
    */
-  async setMaxSizeMB(sizeMB: number): Promise<void> {
+  setMaxSizeMB(sizeMB: number): void {
     this.db
       .prepare('UPDATE thumbnail_metadata SET value = ? WHERE key = ?')
       .run(sizeMB.toString(), 'max_size_mb');
