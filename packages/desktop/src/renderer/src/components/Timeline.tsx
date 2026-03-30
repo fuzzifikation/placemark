@@ -29,6 +29,8 @@ interface TimelineProps {
   autoZoomDuringPlay: boolean;
   onAutoZoomToggle: () => void;
   onPlayingChange?: (isPlaying: boolean) => void;
+  /** When provided, shows a "Fit to view" button in the controls bar. */
+  onFitToView?: () => void;
 }
 
 export function Timeline({
@@ -48,6 +50,7 @@ export function Timeline({
   autoZoomDuringPlay,
   onAutoZoomToggle,
   onPlayingChange,
+  onFitToView,
 }: TimelineProps) {
   const [localStart, setLocalStart] = useState(startDate);
   const [localEnd, setLocalEnd] = useState(endDate);
@@ -137,6 +140,7 @@ export function Timeline({
         theme={theme}
         autoZoomDuringPlay={autoZoomDuringPlay}
         onAutoZoomToggle={onAutoZoomToggle}
+        onFitToView={onFitToView}
       />
       {/* Histogram overlaid behind the slider in the same coordinate space.
           TUNE: HISTOGRAM_HEIGHT controls bar height (px). HISTOGRAM_TOP_OFFSET shifts bars down toward the track. */}

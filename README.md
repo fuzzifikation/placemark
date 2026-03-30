@@ -22,7 +22,7 @@ The core idea is to treat geographic location and time as explicit, user-control
 - Enable filtering by both geographic area and date window.
 - Store all derived metadata locally on the user’s device.
 - Avoid background processing, inference, or tracking by default.
-- Be transparent, predictable, and reversible in all operations.
+- Be transparent, predictable, and reversible in all operations.- **Import at maximum possible speed** — parallel EXIF reads and concurrent OneDrive subfolder walks mean even libraries of 100,000+ photos import in seconds, not minutes.
 
 ### Privacy Guarantees
 

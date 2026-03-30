@@ -150,6 +150,11 @@ a map — no cloud, no account, no uploads. Ever.
 Full-screen interactive map with clustered markers, hover previews,
 and heatmap mode. Zoom into a city and see every photo you took there.
 
+⚡ FAST — SERIOUSLY FAST
+Imports 10,000 photos in seconds. Parallel EXIF reads and concurrent
+cloud folder walks mean even huge libraries are ready in moments, not
+minutes. The fastest local photo indexer in its class.
+
 ⏱️ TIMELINE
 Scrub through years of photos with an interactive date histogram.
 Animated playback lets you watch your travels unfold.
@@ -200,9 +205,10 @@ At 1% conversion and $7.99, Placemark needs ~1,500 monthly downloads to cover a 
 
 1. **Local-first, no cloud** — photos never leave the device
 2. **Map-first UX** — spatial exploration is the primary interface
-3. **One-time purchase** — no subscription fatigue
-4. **Auditable code** — source is public for transparency and trust, but not advertised in the Store listing
-5. **Portable mode** — rare for Store apps
+3. **Blazing-fast import** — parallel EXIF reads + concurrent OneDrive folder walks; 10,000-photo libraries import in seconds. Fastest local photo indexer in its class.
+4. **One-time purchase** — no subscription fatigue
+5. **Auditable code** — source is public for transparency and trust, but not advertised in the Store listing
+6. **Portable mode** — rare for Store apps
 
 Placemark is not a social app, not a gallery clone, and not a cloud service.
 

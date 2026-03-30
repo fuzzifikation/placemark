@@ -27,6 +27,8 @@ interface TimelineControlsProps {
   theme: Theme;
   autoZoomDuringPlay: boolean;
   onAutoZoomToggle: () => void;
+  /** When provided, shows a "Fit to view" button that snaps thumbs to the date range of photos in the current map viewport. */
+  onFitToView?: () => void;
 }
 
 export function TimelineControls({
@@ -42,6 +44,7 @@ export function TimelineControls({
   theme,
   autoZoomDuringPlay,
   onAutoZoomToggle,
+  onFitToView,
 }: TimelineControlsProps) {
   const colors = useThemeColors(theme);
   const isDark = theme === 'dark';
@@ -113,6 +116,33 @@ export function TimelineControls({
           </div>
           <span>Auto Zoom</span>
         </label>
+        {onFitToView && (
+          <button
+            onClick={onFitToView}
+            style={{
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.75rem',
+              backgroundColor: colors.surface,
+              color: colors.textPrimary,
+              border: `1px solid ${colors.border}`,
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: 'scale(1)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.backgroundColor = colors.surfaceHover;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.backgroundColor = colors.surface;
+            }}
+            title="Fit timeline to photos in current map view"
+          >
+            Fit to view
+          </button>
+        )}
         <button
           onClick={onSpeedCycle}
           style={{

@@ -13,6 +13,7 @@ import {
   normalizeTimestamp,
   ValidationIssue,
 } from './photoMetadata';
+import { runWithConcurrency, IMPORT_CONCURRENCY } from '../utils/concurrency';
 
 export interface OneDriveImportProgress {
   scanned: number;
@@ -184,11 +185,14 @@ export class OneDriveImportService {
       nextUrl = page['@odata.nextLink'] ?? null;
     }
 
-    // Recurse into subfolders (shares same counts and totals objects so they accumulate)
-    for (const subfolderId of subfolderIds) {
-      if (abortRequested) break;
+    // Recurse into subfolders concurrently — each subfolder is an independent Graph API
+    // walk, so running them in parallel cuts wall-clock time proportionally to folder count.
+    // The shared counts/totals objects are safe: all DB writes are synchronous
+    // (better-sqlite3) and cannot interleave in the JS event loop.
+    await runWithConcurrency(subfolderIds, IMPORT_CONCURRENCY, async (subfolderId) => {
+      if (abortRequested) return;
       await this.importFolder(subfolderId, true, onProgress, counts, totals, false);
-    }
+    });
 
     return counts;
   }
@@ -201,7 +205,7 @@ export class OneDriveImportService {
       '$select',
       'id,name,size,file,folder,photo,location,createdDateTime,parentReference,webUrl'
     );
-    url.searchParams.set('$top', '200');
+    url.searchParams.set('$top', '1000'); // Graph API max — 5× fewer pages for large flat folders
     return url.toString();
   }
 

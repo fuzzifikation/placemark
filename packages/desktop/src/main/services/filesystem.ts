@@ -10,6 +10,7 @@ import { extractExif } from './exif';
 import { isSupportedImageFile, isRawFile, getMimeType } from './formats';
 import { PhotoSource } from '@placemark/core';
 import { logger } from './logger';
+import { runWithConcurrency, IMPORT_CONCURRENCY } from '../utils/concurrency';
 
 // 150MB  default limit to accommodate professional RAW files (medium format cameras can exceed 100MB)
 // This is now configurable via settings
@@ -66,12 +67,12 @@ export async function scanDirectory(
 
   logger.info(`Found ${imageFiles.length} image files in ${dirPath}`);
 
-  // Process each file
-  for (const filePath of imageFiles) {
-    if (abortRequested) {
-      logger.info('Scan aborted by user request');
-      break;
-    }
+  // Process files concurrently — EXIF reads are async I/O-bound, so running
+  // IMPORT_CONCURRENCY tasks in parallel significantly reduces total scan time.
+  // All DB writes (createPhoto, recordPhotoIssues) are synchronous (better-sqlite3)
+  // and cannot interleave between tasks, so no locking is needed.
+  await runWithConcurrency(imageFiles, IMPORT_CONCURRENCY, async (filePath) => {
+    if (abortRequested) return;
     try {
       if (onProgress) {
         onProgress({
@@ -87,7 +88,7 @@ export async function scanDirectory(
       const errorMsg = `Error processing ${path.basename(filePath)}: ${error instanceof Error ? error.message : String(error)}`;
       result.errors.push(errorMsg);
     }
-  }
+  });
 
   setLastImportSummary({
     source: 'local',

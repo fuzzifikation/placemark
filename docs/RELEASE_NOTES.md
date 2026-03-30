@@ -1,8 +1,13 @@
 # Release Notes
 
-## Unreleased - Export (CSV / GeoJSON / GPX) (Mar 2026)
+## Unreleased - Export (CSV / GeoJSON / GPX) + Concurrent Import + Fit Timeline to View (Mar 2026)
 
 ### ✨ Added
+
+- **Blazing-fast concurrent import:** Local EXIF reads and OneDrive subfolder walks now run with up to 8 parallel tasks (semaphore pool, not batch chunking). On typical hardware, a 10,000-photo library that previously took minutes now imports in seconds. OneDrive page size increased from 200 → 1,000 items per request — flat Camera Roll folders (common case) now require ~5× fewer API round-trips.
+- **Auto-fit map after import:** When a scan or OneDrive import finishes, the map automatically fits to show all imported photos — no manual zoom required.
+- **"Fit timeline to view" button:** New button in the timeline controls bar. Snaps both timeline thumbs to the oldest and youngest photo currently visible in the map viewport. Makes the timeline immediately useful after panning to a specific location.
+- **Export filename from oldest photo:** The suggested filename in the export save dialog now uses the date of the oldest photo being exported (e.g. `placemark-export-2019-06-14.geojson`) rather than today's date.
 
 - **Export to CSV / GeoJSON / GPX:** New **Export** button in the toolbar (Tools group). Opens a popover with three format options; default is GeoJSON. Only photos with GPS coordinates are exported.
 - **Selection-aware export scope:** If photos are selected (lasso), only those are exported. Otherwise all photos in the current map view are exported. Scope is shown in the popover header ("47 selected photos" / "152 photos in view").

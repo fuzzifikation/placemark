@@ -101,6 +101,8 @@ interface MapViewProps {
   fitPadding?: { top: number; right: number; bottom: number; left: number };
   // When set, the map flies to these bounds (e.g. when activating a saved placemark)
   targetBounds?: { north: number; south: number; east: number; west: number } | null;
+  // Increment to trigger a programmatic fit-to-content (e.g. after import completes)
+  fitSignal?: number;
 }
 
 export function MapView({
@@ -127,6 +129,7 @@ export function MapView({
   unclusteredPointOpacity = 0.9,
   fitPadding,
   targetBounds,
+  fitSignal = 0,
 }: MapViewProps) {
   // ========== STATE ==========
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -397,6 +400,12 @@ export function MapView({
       });
     };
   }, [photos, selectedIds, padding, fitPadding, transitionDuration, tileMaxZoom]);
+
+  // When fitSignal increments (e.g. after an import), fit the map to the current photos.
+  // This effect runs after the render that delivered new photos, so fitToContentRef is up to date.
+  useEffect(() => {
+    if (fitSignal > 0) fitToContentRef.current();
+  }, [fitSignal]);
 
   // Mount the fit-to-content control once the map is ready (stays mounted for lifetime of map).
   const fitControlRef = useRef<FitToContentControl | null>(null);

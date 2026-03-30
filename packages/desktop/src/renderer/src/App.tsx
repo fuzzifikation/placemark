@@ -11,7 +11,7 @@ import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { ScanOverlay } from './components/ScanOverlay';
 import { ExportSheet } from './components/ExportSheet';
 import type { Photo } from '@placemark/core';
-import { filterPhotos } from '@placemark/core';
+import { filterPhotos, getDateRange } from '@placemark/core';
 import type { OneDriveFolderItem } from './types/preload';
 import { usePhotoData } from './hooks/usePhotoData';
 import { useTheme } from './hooks/useTheme';
@@ -89,6 +89,8 @@ function App() {
     end: number;
   } | null>(null);
   const { settings, setSettings } = useSettings();
+  // Incremented after a successful import to trigger map fit-to-content
+  const [fitSignal, setFitSignal] = useState(0);
 
   // Auto-show scan overlay when library is empty after init
   useEffect(() => {
@@ -144,6 +146,19 @@ function App() {
     return `${count} photo${count !== 1 ? 's' : ''} in view`;
   }, [photoData.selection, photoData.mapPhotos, photoData.mapBounds]);
 
+  // Date range of GPS photos currently visible in the map viewport (ignores active date filter).
+  // Used by the "Fit timeline to view" button to snap the timeline thumbs.
+  const fitToViewRange = useMemo(() => {
+    if (!photoData.mapBounds) return null;
+    const inBounds = filterPhotos(photoData.allPhotos, { bounds: photoData.mapBounds });
+    return getDateRange(inBounds);
+  }, [photoData.allPhotos, photoData.mapBounds]);
+
+  const handleFitTimelineToView = () => {
+    if (!fitToViewRange) return;
+    handleDateRangeChange(fitToViewRange.start, fitToViewRange.end);
+  };
+
   const handleScanFolder = async () => {
     try {
       const result = await folderScan.scanFolder(photoData.loadPhotos, settings.maxFileSizeMB);
@@ -166,6 +181,7 @@ function App() {
       } else if (result.photosWithLocation === 0) {
         toast.info('No photos with location data found in this folder.');
       } else {
+        setFitSignal((n) => n + 1);
         toast.success(
           `Found ${result.photosWithLocation} photo${result.photosWithLocation !== 1 ? 's' : ''} with location data.`
         );
@@ -194,6 +210,7 @@ function App() {
     // Keep overlay mounted so it can show the scanning progress UI.
     // Close it after import completes (or fails).
     await folderScan.importOneDriveFolder(folder.id, photoData.loadPhotos);
+    setFitSignal((n) => n + 1);
     setShowScanOverlay(false);
   };
 
@@ -375,6 +392,7 @@ function App() {
             left: settings.mapPadding,
           }}
           targetBounds={targetMapBounds}
+          fitSignal={fitSignal}
         />
       </div>
 
@@ -477,6 +495,7 @@ function App() {
               setSettings((prev) => ({ ...prev, autoZoomDuringPlay: !prev.autoZoomDuringPlay }))
             }
             onPlayingChange={setIsTimelinePlaying}
+            onFitToView={fitToViewRange ? handleFitTimelineToView : undefined}
           />
         </div>
       )}

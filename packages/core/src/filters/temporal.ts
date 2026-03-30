@@ -20,3 +20,22 @@ export function isPhotoInDateRange(photo: Photo, range: DateRange): boolean {
 
   return photo.timestamp >= range.start && photo.timestamp <= range.end;
 }
+
+/**
+ * Return the oldest and youngest timestamps across a set of photos.
+ * Only photos with a non-null timestamp are considered.
+ * Returns null when no photo has a timestamp.
+ */
+export function getDateRange(photos: Photo[]): DateRange | null {
+  let min = Infinity;
+  let max = -Infinity;
+
+  for (const p of photos) {
+    if (p.timestamp === null) continue;
+    if (p.timestamp < min) min = p.timestamp;
+    if (p.timestamp > max) max = p.timestamp;
+  }
+
+  if (!isFinite(min)) return null;
+  return { start: min, end: max };
+}

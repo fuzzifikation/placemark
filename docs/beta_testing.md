@@ -335,19 +335,19 @@ Record actual numbers for your test machine:
 
 Requires: At least 10 geolocated photos loaded.
 
-| #    | Test                                                    | Expected                                                                                             | ✅  | Notes |
-| ---- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --- | ----- |
-| 20.1 | Click Export button in toolbar (Tools group)            | ExportSheet popover opens below the header with GeoJSON selected by default                          |     |       |
-| 20.2 | Verify scope label — no selection active                | Header shows "N photos in view" matching the current map view count                                  |     |       |
-| 20.3 | Verify scope label — with lasso selection active        | Header shows "N selected photos"                                                                     |     |       |
-| 20.4 | Click Export with GeoJSON format                        | Native save dialog opens with default filename `placemark-export-YYYY-MM-DD.geojson`                 |     |       |
-| 20.5 | Save the file and open in geojson.io                    | All GPS photos appear as markers at correct locations                                                |     |       |
-| 20.6 | Export as CSV, open in Excel or LibreOffice             | Columns: filename, date_iso, latitude, longitude, camera_make, camera_model, folder_path             |     |       |
-| 20.7 | Export as GPX, import into a GPS app or gpx.studio      | Waypoints appear at correct locations                                                                |     |       |
-| 20.8 | Export with photos selected (lasso)                     | Exported file contains only the selected photos                                                      |     |       |
-| 20.9 | Cancel the save dialog                                  | No file written, no error toast, popover stays open                                                  |     |       |
-| 20.10 | Click outside the popover                              | Popover closes                                                                                       |     |       |
-| 20.11 | Export with no GPS photos in view (all filtered out)   | Popover shows "No photos with GPS data in the current view" and Export button is disabled            |     |       |
+| #     | Test                                                 | Expected                                                                                  | ✅  | Notes |
+| ----- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------- | --- | ----- |
+| 20.1  | Click Export button in toolbar (Tools group)         | ExportSheet popover opens below the header with GeoJSON selected by default               |     |       |
+| 20.2  | Verify scope label — no selection active             | Header shows "N photos in view" matching the current map view count                       |     |       |
+| 20.3  | Verify scope label — with lasso selection active     | Header shows "N selected photos"                                                          |     |       |
+| 20.4  | Click Export with GeoJSON format                     | Native save dialog opens with default filename `placemark-export-YYYY-MM-DD.geojson`      |     |       |
+| 20.5  | Save the file and open in geojson.io                 | All GPS photos appear as markers at correct locations                                     |     |       |
+| 20.6  | Export as CSV, open in Excel or LibreOffice          | Columns: filename, date_iso, latitude, longitude, camera_make, camera_model, folder_path  |     |       |
+| 20.7  | Export as GPX, import into a GPS app or gpx.studio   | Waypoints appear at correct locations                                                     |     |       |
+| 20.8  | Export with photos selected (lasso)                  | Exported file contains only the selected photos                                           |     |       |
+| 20.9  | Cancel the save dialog                               | No file written, no error toast, popover stays open                                       |     |       |
+| 20.10 | Click outside the popover                            | Popover closes                                                                            |     |       |
+| 20.11 | Export with no GPS photos in view (all filtered out) | Popover shows "No photos with GPS data in the current view" and Export button is disabled |     |       |
 
 ---
 

@@ -7,7 +7,7 @@
 import { ipcMain, dialog } from 'electron';
 import { promises as fs } from 'fs';
 import { getPhotosByIds } from '../services/storage';
-import { toCsv, toGeoJson, toGpx } from '@placemark/core';
+import { toCsv, toGeoJson, toGpx, getDateRange } from '@placemark/core';
 import { logger } from '../services/logger';
 
 export type ExportFormat = 'csv' | 'geojson' | 'gpx';
@@ -35,8 +35,12 @@ const FILTER_NAME: Record<ExportFormat, string> = {
   gpx: 'GPX Waypoints',
 };
 
-function defaultFilename(format: ExportFormat): string {
-  const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+function defaultFilename(format: ExportFormat, photos: ReturnType<typeof getPhotosByIds>): string {
+  const range = getDateRange(photos);
+  // Use the oldest photo's date; fall back to today if no timestamps present
+  const date = range
+    ? new Date(range.start).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
   return `placemark-export-${date}.${EXTENSION[format]}`;
 }
 
@@ -58,7 +62,7 @@ export function registerExportHandlers(): void {
       const photos = getPhotosByIds(photoIds);
 
       const { filePath, canceled } = await dialog.showSaveDialog({
-        defaultPath: defaultFilename(format),
+        defaultPath: defaultFilename(format, photos),
         filters: [
           { name: FILTER_NAME[format], extensions: [EXTENSION[format]] },
           { name: 'All Files', extensions: ['*'] },

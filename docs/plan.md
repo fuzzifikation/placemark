@@ -12,15 +12,15 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 
 All items below must ship before Microsoft Store submission. Ordered by implementation sequence.
 
-| #   | Feature                                                    | Phase | Status         | Notes                                                           |
-| --- | ---------------------------------------------------------- | ----- | -------------- | --------------------------------------------------------------- |
-| 1   | **Export** (CSV / GeoJSON / GPX)                           | 6.2   | ✅ Complete    | Core formatters + IPC + ExportSheet UI. Selection trumps view.  |
-| 2   | **Concurrent import** (`runWithConcurrency`)               | 8.1   | ❌ Not started | ~1 day. Local EXIF reads + OneDrive subfolder walks in parallel |
-| 3   | **Stats → Filters** (clickable format/camera rows + chips) | 7     | ❌ Not started | ~2 days. Turns read-only stats into the app's best feature      |
-| 4   | **"Fit timeline to view" button**                          | 7     | ❌ Not started | ~half day. Makes timeline usable at a single location           |
-| 5   | **Freemium gating** (1 000-photo free tier + Pro unlock)   | 8.2   | ❌ Not started | ~2 days. Needs monetization decision first                      |
-| 6   | **MSIX packaging + Store assets**                          | 8.3   | ❌ Not started | ~2 days. Screenshots, icons, signing cert                       |
-| 7   | **Privacy policy page**                                    | 8.3   | ❌ Not started | ~1 hour. Required URL for Store submission                      |
+| #   | Feature                                                    | Phase | Status         | Notes                                                                                               |
+| --- | ---------------------------------------------------------- | ----- | -------------- | --------------------------------------------------------------------------------------------------- |
+| 1   | **Export** (CSV / GeoJSON / GPX)                           | 6.2   | ✅ Complete    | Core formatters + IPC + ExportSheet UI. Selection trumps view.                                      |
+| 2   | **Concurrent import** (`runWithConcurrency`)               | 8.1   | ✅ Complete    | 8-task semaphore pool; local EXIF reads + OneDrive subfolder walks in parallel. Page size 200→1000. |
+| 3   | **Stats → Filters** (clickable format/camera rows + chips) | 7     | ❌ Not started | ~2 days. Turns read-only stats into the app's best feature                                          |
+| 4   | **"Fit timeline to view" button**                          | 7     | ✅ Complete    | Button in timeline controls bar; snaps thumbs to oldest/youngest photo in viewport                  |
+| 5   | **Freemium gating** (1 000-photo free tier + Pro unlock)   | 8.2   | ❌ Not started | ~2 days. Needs monetization decision first                                                          |
+| 6   | **MSIX packaging + Store assets**                          | 8.3   | ❌ Not started | ~2 days. Screenshots, icons, signing cert                                                           |
+| 7   | **Privacy policy page**                                    | 8.3   | ❌ Not started | ~1 hour. Required URL for Store submission                                                          |
 
 **Estimated total: ~8 days of implementation work.**
 
@@ -362,14 +362,14 @@ See [collections_plan.md](collections_plan.md) for the full UX design of Placema
 - [x] Deleting a placemark doesn't affect photos
 - [x] Smart placemarks update automatically when new photos are scanned
 
-**Testing (6.2 — pending):**
+**Testing (6.2 — complete):**
 
-- [ ] Core formatters (toCsv, toGeoJson, toGpx) — unit tests pass
-- [ ] CSV opens in Excel/LibreOffice with correct columns
-- [ ] GeoJSON export opens correctly in geojson.io
-- [ ] GPX export imports into a GPS app
-- [ ] Selection-aware scope: selected photos exported when selection active; map view otherwise
-- [ ] Export 10,000 photos in <5 seconds
+- [x] Core formatters (toCsv, toGeoJson, toGpx) — unit tests pass
+- [x] CSV opens in Excel/LibreOffice with correct columns
+- [x] GeoJSON export opens correctly in geojson.io
+- [x] GPX export imports into a GPS app
+- [x] Selection-aware scope: selected photos exported when selection active; map view otherwise
+- [x] Export 10,000 photos in <5 seconds
 
 **Deliverable:** ✅ Placemarks complete. ✅ Photo data export (CSV/GeoJSON/GPX) complete.
 
