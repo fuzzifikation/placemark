@@ -15,6 +15,10 @@
 
 ---
 
+- **Floating header minimum width / responsive layout.** The floating header is a fixed horizontal row with no wrapping or overflow handling. At approximately **~1 200 px** window width (no filter chips active), buttons to the right start clipping outside the visible area and become inaccessible. Recommended two-step fix:
+  1. **Enforce `minWidth: 1220`** in the Electron `BrowserWindow` config as an immediate guard — prevents the broken state entirely for desktop use.
+  2. **Icon-only compact mode** below a ~1 100 px threshold — a `useWindowWidth` hook drives a `compact: boolean` prop on `FloatingHeader`; all buttons hide their text label and show only the icon. Buttons already carry `title` tooltips so keyboard/screen-reader users are unaffected. This cuts ~35–40 % of horizontal width and gives users on smaller displays a usable layout.
+
 - **Global search box: search locations, GPS coordinates, and filenames.** Add a unified search input (global and/or map-scoped) that supports:
   - **Place name lookup** — search by human-readable location (city, POI, admin area) with autocomplete and reverse-geocode suggestions (respect `reverseGeocodeEnabled`).
   - **Direct GPS input** — accept decimal or DMS coordinate pairs and pan the map to the location, with an option to show matching nearby photos.

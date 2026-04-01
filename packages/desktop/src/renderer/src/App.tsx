@@ -3,9 +3,9 @@ import { MapView, SelectionMode } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { Settings } from './components/Settings';
 import { OperationsPanel } from './components/Operations/OperationsPanel';
-import { LibraryStatsPanel } from './components/LibraryStatsPanel';
+import { LibraryStatsPanel, formatMimeLabel } from './components/LibraryStatsPanel';
 import { PlacemarksPanel } from './components/PlacemarksPanel';
-import { FloatingHeader } from './components/FloatingHeader';
+import { FloatingHeader, type FilterChip } from './components/FloatingHeader';
 import { HelpModal } from './components/HelpModal';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { ScanOverlay } from './components/ScanOverlay';
@@ -22,7 +22,16 @@ import { useSettings } from './hooks/useSettings';
 import { useModals } from './hooks/useModals';
 import { ToastContainer } from './components/Toast/ToastContainer';
 import { initSystemLocale } from './utils/formatLocale';
-import { LAYOUT, Z_INDEX, TRANSITIONS, getGlassStyle } from './constants/ui';
+import {
+  LAYOUT,
+  Z_INDEX,
+  TRANSITIONS,
+  getGlassStyle,
+  SPACING,
+  BORDER_RADIUS,
+  FONT_SIZE,
+  FONT_FAMILY,
+} from './constants/ui';
 import './types/preload.d'; // Import type definitions
 
 function App() {
@@ -154,6 +163,31 @@ function App() {
     return getDateRange(inBounds);
   }, [photoData.allPhotos, photoData.mapBounds]);
 
+  // Filter chips for the floating header (active format and camera filters)
+  const filterChips = useMemo<FilterChip[]>(() => {
+    const chips: FilterChip[] = [];
+    for (const mimeType of photoData.activeFilters.mimeTypes) {
+      chips.push({ key: mimeType, label: formatMimeLabel(mimeType), type: 'mimeType' });
+    }
+    for (const cameraKey of photoData.activeFilters.cameras) {
+      const [make, model] = cameraKey.split('|');
+      const label = make === model || make === 'Unknown' ? model : `${make} ${model}`;
+      chips.push({ key: cameraKey, label, type: 'camera' });
+    }
+    return chips;
+  }, [photoData.activeFilters]);
+
+  const handleRemoveFilter = useCallback(
+    (chip: FilterChip) => {
+      if (chip.type === 'mimeType') {
+        photoData.toggleMimeTypeFilter(chip.key);
+      } else {
+        photoData.toggleCameraFilter(chip.key);
+      }
+    },
+    [photoData.toggleMimeTypeFilter, photoData.toggleCameraFilter]
+  );
+
   const handleFitTimelineToView = () => {
     if (!fitToViewRange) return;
     handleDateRangeChange(fitToViewRange.start, fitToViewRange.end);
@@ -202,6 +236,7 @@ function App() {
     // Clear both DB and thumbnail cache — thumbnails are keyed to photo IDs that no longer exist
     await window.api.photos.clearDatabase();
     await window.api.thumbnails.clearCache();
+    photoData.clearAllFilters();
     await photoData.loadPhotos();
     // useEffect will auto-show scan overlay since photos.length becomes 0
   };
@@ -381,7 +416,12 @@ function App() {
               LAYOUT.PANEL_INSET_PX +
               LAYOUT.HEADER_HEIGHT_PX +
               LAYOUT.PANEL_GAP_PX,
-            right: settings.mapPadding,
+            right: showStats
+              ? settings.mapPadding +
+                LAYOUT.PANEL_INSET_PX +
+                LAYOUT.STATS_PANEL_WIDTH_PX +
+                LAYOUT.PANEL_GAP_PX
+              : settings.mapPadding,
             // Clear the timeline panel when visible: inset + timeline height + gap above it
             bottom: showTimeline
               ? settings.mapPadding +
@@ -393,6 +433,8 @@ function App() {
           }}
           targetBounds={targetMapBounds}
           fitSignal={fitSignal}
+          rightPanelWidth={showStats ? LAYOUT.STATS_PANEL_WIDTH_PX + LAYOUT.PANEL_GAP_PX : 0}
+          rightPanelTopPx={LAYOUT.PANEL_INSET_PX + LAYOUT.HEADER_HEIGHT_PX + LAYOUT.PANEL_GAP_PX}
         />
       </div>
 
@@ -420,7 +462,8 @@ function App() {
           onOperationsOpen={() => setShowOperations(true)}
           onExportOpen={() => setShowExport(true)}
           onSettingsOpen={() => setShowSettings(true)}
-          onStatsOpen={() => setShowStats(true)}
+          showStats={showStats}
+          onStatsToggle={() => setShowStats((v) => !v)}
           onTimelineToggle={handleTimelineToggle}
           onPlacemarksToggle={togglePlacemarks}
           onScanFolder={() => setShowScanOverlay(true)}
@@ -428,6 +471,87 @@ function App() {
           onHelpOpen={() => setShowHelp(true)}
         />
       </div>
+
+      {/* Filter chip strip — appears below the header when format/camera filters are active */}
+      {!showScanOverlay && filterChips.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.HEADER_HEIGHT} + ${LAYOUT.PANEL_GAP})`,
+            left: LAYOUT.PANEL_INSET,
+            right: showStats
+              ? `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.STATS_PANEL_WIDTH} + ${LAYOUT.PANEL_GAP})`
+              : LAYOUT.PANEL_INSET,
+            zIndex: Z_INDEX.HEADER,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: SPACING.XS,
+            alignItems: 'center',
+          }}
+        >
+          {filterChips.map((chip) => (
+            <div
+              key={`${chip.type}:${chip.key}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: `3px ${SPACING.SM} 3px ${SPACING.SM}`,
+                borderRadius: BORDER_RADIUS.LG,
+                backgroundColor: `${colors.primary}22`,
+                border: `1px solid ${colors.primary}66`,
+                fontSize: FONT_SIZE.XS,
+                fontWeight: 600,
+                color: colors.primary,
+                whiteSpace: 'nowrap',
+                fontFamily: FONT_FAMILY,
+                backdropFilter: `blur(${settings.glassBlur}px)`,
+                WebkitBackdropFilter: `blur(${settings.glassBlur}px)`,
+              }}
+            >
+              {chip.label}
+              <button
+                onClick={() => handleRemoveFilter(chip)}
+                title={`Remove filter: ${chip.label}`}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: colors.primary,
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  lineHeight: 1,
+                  fontSize: '14px',
+                }}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          {filterChips.length > 1 && (
+            <button
+              onClick={photoData.clearAllFilters}
+              title="Clear all filters"
+              style={{
+                background: 'none',
+                border: `1px solid ${colors.border}`,
+                cursor: 'pointer',
+                color: colors.textMuted,
+                padding: `3px ${SPACING.SM}`,
+                borderRadius: BORDER_RADIUS.LG,
+                fontSize: FONT_SIZE.XS,
+                fontFamily: FONT_FAMILY,
+                whiteSpace: 'nowrap',
+                backdropFilter: `blur(${settings.glassBlur}px)`,
+                WebkitBackdropFilter: `blur(${settings.glassBlur}px)`,
+              }}
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Scan Overlay - blocks map/header during scan or when library is empty */}
       {showScanOverlay && (
@@ -548,13 +672,32 @@ function App() {
         </div>
       )}
 
-      {/* Library Stats Panel - stays visible during scan for live updates */}
+      {/* Library Stats Panel - floating glass panel, right side, below header */}
       {showStats && (
-        <LibraryStatsPanel
-          onClose={() => setShowStats(false)}
-          theme={theme}
-          isScanning={folderScan.scanning}
-        />
+        <div
+          style={{
+            position: 'absolute',
+            top: `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.HEADER_HEIGHT} + ${LAYOUT.PANEL_GAP})`,
+            right: LAYOUT.PANEL_INSET,
+            bottom: showTimeline
+              ? `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.TIMELINE_HEIGHT} + ${LAYOUT.PANEL_GAP})`
+              : LAYOUT.PANEL_INSET,
+            width: LAYOUT.STATS_PANEL_WIDTH,
+            zIndex: Z_INDEX.HEADER,
+            transition: `bottom ${TRANSITIONS.MEDIUM}`,
+          }}
+        >
+          <LibraryStatsPanel
+            onClose={() => setShowStats(false)}
+            theme={theme}
+            isScanning={folderScan.scanning}
+            activeFilters={photoData.activeFilters}
+            onToggleMimeType={photoData.toggleMimeTypeFilter}
+            onToggleCamera={photoData.toggleCameraFilter}
+            glassBlur={settings.glassBlur}
+            glassSurfaceOpacity={settings.glassSurfaceOpacity}
+          />
+        </div>
       )}
 
       {/* Operations Modal - hidden during scan */}

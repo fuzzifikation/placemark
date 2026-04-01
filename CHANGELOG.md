@@ -7,10 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-01
+
 ### Added
 
-- **Export (CSV / GeoJSON / GPX):** Export button in toolbar opens a format picker popover. Exports only GPS-tagged photos. Selection-aware: selected photos are exported when a lasso selection is active; otherwise the current map view is exported. All exports are local file writes via the OS save dialog.
-- Core export formatters (`toCsv`, `toGeoJson`, `toGpx`) in `@placemark/core` — pure functions, no I/O, 21 unit tests.
+- **Stats & Filters:** Format and camera rows in the Stats panel are now interactive filters. Clicking a row filters the map to matching photos; click again to remove. Non-blocking floating glass panel (no longer a full-height modal). Filter chips moved to a dedicated strip below the header that wraps on overflow.
+- **Stats panel toggle:** Stats header button lights up blue when panel is open; clicking again closes it.
+- **Map controls layout:** Right-side zoom / fit controls permanently positioned below the floating header. Shift left when Stats panel is open to stay unobscured.
+- **Concurrent import:** Up to 8 parallel EXIF tasks. OneDrive page size 200 → 1 000.
+- **Auto-fit map after import:** Map fits to all imported photos after each scan or OneDrive import completes.
+- **“Fit timeline to view” button:** Snaps timeline thumbs to the date range of photos in the current viewport.
+- **Export (CSV / GeoJSON / GPX):** Selection-aware, native save dialog, GPS-only. Core formatters in `@placemark/core` (21 unit tests).
 
 ## [0.7.1] - 2026-03-16
 

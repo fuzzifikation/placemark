@@ -3,11 +3,12 @@
  * Mirrors the Settings panel pattern (right-side overlay, themed, glassmorphic).
  */
 
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { formatNumber, formatDateWithOptions } from '../utils/formatLocale';
-import { FONT_FAMILY, Z_INDEX, BORDER_RADIUS, SPACING, FONT_SIZE } from '../constants/ui';
+import { FONT_FAMILY, BORDER_RADIUS, SPACING, FONT_SIZE, getGlassStyle } from '../constants/ui';
 import { useLibraryStats } from '../hooks/useLibraryStats';
 
 /** Human-readable label for a MIME type */
@@ -80,15 +81,35 @@ function formatSpan(ms: number): string {
   return `${Math.round(years)} years`;
 }
 
+/** Exported so callers can compute human-readable filter chip labels */
+export { formatMimeLabel };
+
+const CAMERAS_INITIAL_VISIBLE = 5;
+
 interface LibraryStatsPanelProps {
   onClose: () => void;
   theme: Theme;
   isScanning?: boolean;
+  activeFilters?: { mimeTypes: Set<string>; cameras: Set<string> };
+  onToggleMimeType?: (mimeType: string) => void;
+  onToggleCamera?: (cameraKey: string) => void;
+  glassBlur?: number;
+  glassSurfaceOpacity?: number;
 }
 
-export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPanelProps) {
+export function LibraryStatsPanel({
+  onClose,
+  theme,
+  isScanning,
+  activeFilters,
+  onToggleMimeType,
+  onToggleCamera,
+  glassBlur = 12,
+  glassSurfaceOpacity = 70,
+}: LibraryStatsPanelProps) {
   const colors = useThemeColors(theme);
   const { stats, dbStats, thumbStats, loading } = useLibraryStats(isScanning);
+  const [showAllCameras, setShowAllCameras] = useState(false);
 
   const cardStyle: React.CSSProperties = {
     backgroundColor: colors.surface,
@@ -173,174 +194,187 @@ export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPa
   const maxCameraCount = stats?.cameraBreakdown[0]?.count ?? 1;
 
   return (
-    <>
-      {/* Transparent backdrop — click outside panel to close */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: Z_INDEX.MODAL - 1 }} onClick={onClose} />
+    <div
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        ...getGlassStyle(colors, glassBlur, glassSurfaceOpacity),
+        fontFamily: FONT_FAMILY,
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header */}
       <div
         style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: '380px',
-          backgroundColor: colors.modalBackground,
-          borderLeft: `1px solid ${colors.border}`,
-          boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.15)',
-          zIndex: Z_INDEX.MODAL,
           display: 'flex',
-          flexDirection: 'column',
-          fontFamily: FONT_FAMILY,
-          overflow: 'hidden',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: `${SPACING.LG} ${SPACING.XL}`,
+          borderBottom: `1px solid ${colors.glassBorder}`,
+          flexShrink: 0,
         }}
       >
-        {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: `${SPACING.LG} ${SPACING.XL}`,
-            borderBottom: `1px solid ${colors.border}`,
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.SM }}>
-            <span style={{ fontSize: '1.25rem' }}>📊</span>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: '1.125rem',
-                fontWeight: 700,
-                color: colors.textPrimary,
-              }}
-            >
-              Library Statistics
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
+        <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.SM }}>
+          <span style={{ fontSize: '1.25rem' }}>📊</span>
+          <h2
             style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: colors.textSecondary,
-              padding: SPACING.XS,
-              borderRadius: BORDER_RADIUS.SM,
+              margin: 0,
+              fontSize: '1.125rem',
+              fontWeight: 700,
+              color: colors.textPrimary,
+            }}
+          >
+            Library Statistics
+          </h2>
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: colors.textSecondary,
+            padding: SPACING.XS,
+            borderRadius: BORDER_RADIUS.SM,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          title="Close"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: SPACING.XL,
+        }}
+      >
+        {loading ? (
+          <div
+            style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              height: '200px',
+              color: colors.textMuted,
+              fontSize: FONT_SIZE.SM,
             }}
-            title="Close"
           >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: SPACING.XL,
-          }}
-        >
-          {loading ? (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '200px',
-                color: colors.textMuted,
-                fontSize: FONT_SIZE.SM,
-              }}
-            >
-              Loading statistics…
+            Loading statistics…
+          </div>
+        ) : !stats || stats.totalPhotos === 0 ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '200px',
+              color: colors.textMuted,
+              fontSize: FONT_SIZE.SM,
+              textAlign: 'center',
+              gap: SPACING.SM,
+            }}
+          >
+            <span style={{ fontSize: '2rem' }}>📷</span>
+            No photos in library yet. Scan a folder to get started.
+          </div>
+        ) : (
+          <>
+            {/* Overview */}
+            <div style={cardStyle}>
+              <div style={labelStyle}>Overview</div>
+              {statRow('Total photos', formatNumber(stats.totalPhotos))}
+              {statRow(
+                '📍 With GPS location',
+                `${formatNumber(stats.photosWithLocation)} (${Math.round((stats.photosWithLocation / stats.totalPhotos) * 100)}%)`,
+                true
+              )}
+              {statRow('Without GPS', formatNumber(stats.totalPhotos - stats.photosWithLocation))}
+              {statRow(
+                '📅 With date',
+                `${formatNumber(stats.photosWithTimestamp)} (${Math.round((stats.photosWithTimestamp / stats.totalPhotos) * 100)}%)`
+              )}
+              {statRow('Without date', formatNumber(stats.totalPhotos - stats.photosWithTimestamp))}
             </div>
-          ) : !stats || stats.totalPhotos === 0 ? (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '200px',
-                color: colors.textMuted,
-                fontSize: FONT_SIZE.SM,
-                textAlign: 'center',
-                gap: SPACING.SM,
-              }}
-            >
-              <span style={{ fontSize: '2rem' }}>📷</span>
-              No photos in library yet. Scan a folder to get started.
-            </div>
-          ) : (
-            <>
-              {/* Overview */}
-              <div style={cardStyle}>
-                <div style={labelStyle}>Overview</div>
-                {statRow('Total photos', formatNumber(stats.totalPhotos))}
-                {statRow(
-                  '📍 With GPS location',
-                  `${formatNumber(stats.photosWithLocation)} (${Math.round((stats.photosWithLocation / stats.totalPhotos) * 100)}%)`,
-                  true
-                )}
-                {statRow('Without GPS', formatNumber(stats.totalPhotos - stats.photosWithLocation))}
-                {statRow(
-                  '📅 With date',
-                  `${formatNumber(stats.photosWithTimestamp)} (${Math.round((stats.photosWithTimestamp / stats.totalPhotos) * 100)}%)`
-                )}
-                {statRow(
-                  'Without date',
-                  formatNumber(stats.totalPhotos - stats.photosWithTimestamp)
-                )}
-              </div>
-              {/* Library Health */}
-              <div style={cardStyle}>
-                <div style={labelStyle}>Library Health</div>
-                <div
+            {/* Library Health */}
+            <div style={cardStyle}>
+              <div style={labelStyle}>Library Health</div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: `${SPACING.XS} 0`,
+                }}
+              >
+                <span style={{ fontSize: FONT_SIZE.SM, color: colors.textSecondary }}>
+                  Metadata issues
+                </span>
+                <span
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: `${SPACING.XS} 0`,
+                    fontSize: FONT_SIZE.SM,
+                    fontWeight: 600,
+                    color: stats.photosWithIssues > 0 ? '#f59e0b' : colors.textMuted,
                   }}
                 >
-                  <span style={{ fontSize: FONT_SIZE.SM, color: colors.textSecondary }}>
-                    Metadata issues
-                  </span>
-                  <span
-                    style={{
-                      fontSize: FONT_SIZE.SM,
-                      fontWeight: 600,
-                      color: stats.photosWithIssues > 0 ? '#f59e0b' : colors.textMuted,
-                    }}
-                  >
-                    {stats.photosWithIssues > 0
-                      ? `${formatNumber(stats.photosWithIssues)} photo${stats.photosWithIssues !== 1 ? 's' : ''}`
-                      : 'None'}
-                  </span>
-                </div>
+                  {stats.photosWithIssues > 0
+                    ? `${formatNumber(stats.photosWithIssues)} photo${stats.photosWithIssues !== 1 ? 's' : ''}`
+                    : 'None'}
+                </span>
               </div>
-              {/* File Formats */}
-              <div style={cardStyle}>
-                <div style={labelStyle}>File Formats</div>
-                {stats.formatBreakdown.map((fmt) => (
+            </div>
+            {/* File Formats */}
+            <div style={cardStyle}>
+              <div style={labelStyle}>File Formats</div>
+              {stats.formatBreakdown.map((fmt) => {
+                const isActive = activeFilters?.mimeTypes.has(fmt.mimeType) ?? false;
+                return (
                   <div
                     key={fmt.mimeType}
+                    onClick={() => onToggleMimeType?.(fmt.mimeType)}
+                    title={
+                      onToggleMimeType
+                        ? isActive
+                          ? 'Remove filter'
+                          : 'Filter by this format'
+                        : undefined
+                    }
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: SPACING.SM,
-                      padding: `${SPACING.XS} 0`,
+                      padding: `${SPACING.XS} ${SPACING.SM}`,
+                      borderRadius: BORDER_RADIUS.SM,
+                      cursor: onToggleMimeType ? 'pointer' : 'default',
+                      backgroundColor: isActive ? `${colors.primary}22` : 'transparent',
+                      outline: isActive ? `1px solid ${colors.primary}66` : 'none',
+                      transition: 'background-color 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive)
+                        (e.currentTarget as HTMLDivElement).style.backgroundColor =
+                          colors.borderLight;
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.backgroundColor = isActive
+                        ? `${colors.primary}22`
+                        : 'transparent';
                     }}
                   >
                     <span
                       style={{
                         fontSize: FONT_SIZE.SM,
-                        color: colors.textSecondary,
+                        color: isActive ? colors.primary : colors.textSecondary,
                         width: '120px',
                         flexShrink: 0,
+                        fontWeight: isActive ? 600 : 400,
                       }}
                     >
                       {formatMimeLabel(fmt.mimeType)}
@@ -358,7 +392,7 @@ export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPa
                         style={{
                           width: `${(fmt.count / maxFormatCount) * 100}%`,
                           height: '100%',
-                          backgroundColor: colors.primary,
+                          backgroundColor: isActive ? colors.primary : colors.textMuted,
                           borderRadius: '4px',
                           transition: 'width 0.3s ease',
                           minWidth: '4px',
@@ -369,7 +403,7 @@ export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPa
                       style={{
                         fontSize: FONT_SIZE.XS,
                         fontWeight: 600,
-                        color: colors.textPrimary,
+                        color: isActive ? colors.primary : colors.textPrimary,
                         minWidth: '40px',
                         textAlign: 'right',
                       }}
@@ -377,170 +411,218 @@ export function LibraryStatsPanel({ onClose, theme, isScanning }: LibraryStatsPa
                       {formatNumber(fmt.count)}
                     </span>
                   </div>
-                ))}
-              </div>
+                );
+              })}
+            </div>
 
-              {/* Cameras */}
-              {stats.cameraBreakdown.length > 0 && (
-                <div style={cardStyle}>
-                  <div style={labelStyle}>Cameras</div>
-                  {stats.cameraBreakdown.map((cam) => {
-                    const label =
-                      cam.make === cam.model || cam.make === 'Unknown'
-                        ? cam.model
-                        : `${cam.make} ${cam.model}`;
-                    return (
-                      <div
-                        key={`${cam.make}-${cam.model}`}
+            {/* Cameras */}
+            {stats.cameraBreakdown.length > 0 && (
+              <div style={cardStyle}>
+                <div style={labelStyle}>Cameras</div>
+                {(showAllCameras
+                  ? stats.cameraBreakdown
+                  : stats.cameraBreakdown.slice(0, CAMERAS_INITIAL_VISIBLE)
+                ).map((cam) => {
+                  const cameraKey = `${cam.make}|${cam.model}`;
+                  const isActive = activeFilters?.cameras.has(cameraKey) ?? false;
+                  const label =
+                    cam.make === cam.model || cam.make === 'Unknown'
+                      ? cam.model
+                      : `${cam.make} ${cam.model}`;
+                  return (
+                    <div
+                      key={cameraKey}
+                      onClick={() => onToggleCamera?.(cameraKey)}
+                      title={
+                        onToggleCamera
+                          ? isActive
+                            ? 'Remove filter'
+                            : 'Filter by this camera'
+                          : undefined
+                      }
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: SPACING.SM,
+                        padding: `${SPACING.XS} ${SPACING.SM}`,
+                        borderRadius: BORDER_RADIUS.SM,
+                        cursor: onToggleCamera ? 'pointer' : 'default',
+                        backgroundColor: isActive ? `${colors.primary}22` : 'transparent',
+                        outline: isActive ? `1px solid ${colors.primary}66` : 'none',
+                        transition: 'background-color 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive)
+                          (e.currentTarget as HTMLDivElement).style.backgroundColor =
+                            colors.borderLight;
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLDivElement).style.backgroundColor = isActive
+                          ? `${colors.primary}22`
+                          : 'transparent';
+                      }}
+                    >
+                      <span
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: SPACING.SM,
-                          padding: `${SPACING.XS} 0`,
+                          fontSize: FONT_SIZE.SM,
+                          color: isActive ? colors.primary : colors.textSecondary,
+                          width: '140px',
+                          flexShrink: 0,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          fontWeight: isActive ? 600 : 400,
+                        }}
+                        title={label}
+                      >
+                        {label}
+                      </span>
+                      <div
+                        style={{
+                          flex: 1,
+                          height: '8px',
+                          backgroundColor: colors.borderLight,
+                          borderRadius: '4px',
+                          overflow: 'hidden',
                         }}
                       >
-                        <span
-                          style={{
-                            fontSize: FONT_SIZE.SM,
-                            color: colors.textSecondary,
-                            width: '140px',
-                            flexShrink: 0,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                          title={label}
-                        >
-                          {label}
-                        </span>
                         <div
                           style={{
-                            flex: 1,
-                            height: '8px',
-                            backgroundColor: colors.borderLight,
+                            width: `${(cam.count / maxCameraCount) * 100}%`,
+                            height: '100%',
+                            backgroundColor: isActive ? colors.primary : colors.textMuted,
                             borderRadius: '4px',
-                            overflow: 'hidden',
+                            transition: 'width 0.3s ease',
+                            minWidth: '4px',
                           }}
-                        >
-                          <div
-                            style={{
-                              width: `${(cam.count / maxCameraCount) * 100}%`,
-                              height: '100%',
-                              backgroundColor: colors.primary,
-                              borderRadius: '4px',
-                              transition: 'width 0.3s ease',
-                              minWidth: '4px',
-                            }}
-                          />
-                        </div>
-                        <span
-                          style={{
-                            fontSize: FONT_SIZE.XS,
-                            fontWeight: 600,
-                            color: colors.textPrimary,
-                            minWidth: '40px',
-                            textAlign: 'right',
-                          }}
-                        >
-                          {formatNumber(cam.count)}
-                        </span>
+                        />
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Date Range */}
-              {stats.minTimestamp && stats.maxTimestamp && (
-                <div style={cardStyle}>
-                  <div style={labelStyle}>Date Range</div>
-                  {stats.oldestPhotoId != null
-                    ? clickableStatRow(
-                        'Oldest photo',
-                        formatDateWithOptions(stats.minTimestamp, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        }),
-                        stats.oldestPhotoId
-                      )
-                    : statRow(
-                        'Oldest photo',
-                        formatDateWithOptions(stats.minTimestamp, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })
-                      )}
-                  {stats.newestPhotoId != null
-                    ? clickableStatRow(
-                        'Newest photo',
-                        formatDateWithOptions(stats.maxTimestamp, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        }),
-                        stats.newestPhotoId
-                      )
-                    : statRow(
-                        'Newest photo',
-                        formatDateWithOptions(stats.maxTimestamp, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })
-                      )}
-                  {statRow('Span', formatSpan(stats.maxTimestamp - stats.minTimestamp))}
-                </div>
-              )}
-
-              {/* Storage */}
-              <div style={cardStyle}>
-                <div style={labelStyle}>Storage</div>
-                {statRow('All photos size', formatBytes(stats.totalFileSizeBytes))}
-                {statRow('Avg photo size', formatBytes(stats.avgFileSizeBytes))}
-                {dbStats && statRow('Photos DB', `${dbStats.photosDbSizeMB.toFixed(1)} MB`)}
-                {dbStats && statRow('Thumbnails DB', `${dbStats.thumbnailsDbSizeMB.toFixed(1)} MB`)}
-                {thumbStats &&
-                  statRow(
-                    'Cached thumbnails',
-                    `${formatNumber(thumbStats.thumbnailCount)} (${thumbStats.totalSizeMB.toFixed(1)} MB)`
-                  )}
+                      <span
+                        style={{
+                          fontSize: FONT_SIZE.XS,
+                          fontWeight: 600,
+                          color: isActive ? colors.primary : colors.textPrimary,
+                          minWidth: '40px',
+                          textAlign: 'right',
+                        }}
+                      >
+                        {formatNumber(cam.count)}
+                      </span>
+                    </div>
+                  );
+                })}
+                {stats.cameraBreakdown.length > CAMERAS_INITIAL_VISIBLE && (
+                  <button
+                    onClick={() => setShowAllCameras((v) => !v)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: colors.primary,
+                      fontSize: FONT_SIZE.XS,
+                      padding: `${SPACING.XS} 0`,
+                      textAlign: 'left',
+                      width: '100%',
+                    }}
+                  >
+                    {showAllCameras
+                      ? 'Show fewer'
+                      : `Show all ${stats.cameraBreakdown.length} cameras`}
+                  </button>
+                )}
               </div>
+            )}
 
-              {/* Last Import */}
-              {stats.lastImportSummary && (
-                <div style={cardStyle}>
-                  <div style={labelStyle}>Last Import</div>
-                  {statRow(
-                    'Source',
-                    stats.lastImportSummary.source === 'onedrive' ? 'OneDrive' : 'Local folder'
-                  )}
-                  {statRow('Processed', formatNumber(stats.lastImportSummary.scanned))}
-                  {statRow('Imported', formatNumber(stats.lastImportSummary.imported))}
-                  {stats.lastImportSummary.source === 'onedrive' &&
-                    statRow('Duplicates skipped', formatNumber(stats.lastImportSummary.duplicates))}
-                  {statRow('Completed', timeAgo(stats.lastImportSummary.completedAt))}
-                </div>
-              )}
+            {/* Date Range */}
+            {stats.minTimestamp && stats.maxTimestamp && (
+              <div style={cardStyle}>
+                <div style={labelStyle}>Date Range</div>
+                {stats.oldestPhotoId != null
+                  ? clickableStatRow(
+                      'Oldest photo',
+                      formatDateWithOptions(stats.minTimestamp, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      }),
+                      stats.oldestPhotoId
+                    )
+                  : statRow(
+                      'Oldest photo',
+                      formatDateWithOptions(stats.minTimestamp, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    )}
+                {stats.newestPhotoId != null
+                  ? clickableStatRow(
+                      'Newest photo',
+                      formatDateWithOptions(stats.maxTimestamp, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      }),
+                      stats.newestPhotoId
+                    )
+                  : statRow(
+                      'Newest photo',
+                      formatDateWithOptions(stats.maxTimestamp, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    )}
+                {statRow('Span', formatSpan(stats.maxTimestamp - stats.minTimestamp))}
+              </div>
+            )}
 
-              {/* Last Scan */}
-              {stats.lastScannedAt && (
-                <div
-                  style={{
-                    fontSize: FONT_SIZE.XS,
-                    color: colors.textMuted,
-                    textAlign: 'center',
-                    paddingTop: SPACING.SM,
-                  }}
-                >
-                  Last scanned {timeAgo(stats.lastScannedAt)}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+            {/* Storage */}
+            <div style={cardStyle}>
+              <div style={labelStyle}>Storage</div>
+              {statRow('All photos size', formatBytes(stats.totalFileSizeBytes))}
+              {statRow('Avg photo size', formatBytes(stats.avgFileSizeBytes))}
+              {dbStats && statRow('Photos DB', `${dbStats.photosDbSizeMB.toFixed(1)} MB`)}
+              {dbStats && statRow('Thumbnails DB', `${dbStats.thumbnailsDbSizeMB.toFixed(1)} MB`)}
+              {thumbStats &&
+                statRow(
+                  'Cached thumbnails',
+                  `${formatNumber(thumbStats.thumbnailCount)} (${thumbStats.totalSizeMB.toFixed(1)} MB)`
+                )}
+            </div>
+
+            {/* Last Import */}
+            {stats.lastImportSummary && (
+              <div style={cardStyle}>
+                <div style={labelStyle}>Last Import</div>
+                {statRow(
+                  'Source',
+                  stats.lastImportSummary.source === 'onedrive' ? 'OneDrive' : 'Local folder'
+                )}
+                {statRow('Processed', formatNumber(stats.lastImportSummary.scanned))}
+                {statRow('Imported', formatNumber(stats.lastImportSummary.imported))}
+                {stats.lastImportSummary.source === 'onedrive' &&
+                  statRow('Duplicates skipped', formatNumber(stats.lastImportSummary.duplicates))}
+                {statRow('Completed', timeAgo(stats.lastImportSummary.completedAt))}
+              </div>
+            )}
+
+            {/* Last Scan */}
+            {stats.lastScannedAt && (
+              <div
+                style={{
+                  fontSize: FONT_SIZE.XS,
+                  color: colors.textMuted,
+                  textAlign: 'center',
+                  paddingTop: SPACING.SM,
+                }}
+              >
+                Last scanned {timeAgo(stats.lastScannedAt)}
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </>
+    </div>
   );
 }

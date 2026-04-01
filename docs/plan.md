@@ -4,7 +4,7 @@ Step-by-step roadmap for building Placemark. See [ARCHITECTURE.md](ARCHITECTURE.
 
 Placemark is intended to be cross-platform: it targets Windows and macOS on desktop, and iPhone and Android devices (phones and tablets) for future mobile support. The initial realization and primary platform target for the first release is Windows; however, all design and implementation decisions should prioritize future portability so macOS and mobile ports remain practical and low-effort.
 
-**Current Status:** ✅ Phase 0–6.2 Complete | ⚙️ Phase 7 Stats & Filters in progress | 🧪 OneDrive Phase 15 (auth + import + abort + accounts UI complete) | Phase 7–8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
+**Current Status:** ✅ Phase 0–7 Complete | 🧪 OneDrive Phase 15 (auth + import + abort + accounts UI complete) | Phase 8 pre-store | 🏪 v1.0 Store Launch | Phase 9–17 post-store
 
 ---
 
@@ -12,15 +12,15 @@ Placemark is intended to be cross-platform: it targets Windows and macOS on desk
 
 All items below must ship before Microsoft Store submission. Ordered by implementation sequence.
 
-| #   | Feature                                                    | Phase | Status         | Notes                                                                                               |
-| --- | ---------------------------------------------------------- | ----- | -------------- | --------------------------------------------------------------------------------------------------- |
-| 1   | **Export** (CSV / GeoJSON / GPX)                           | 6.2   | ✅ Complete    | Core formatters + IPC + ExportSheet UI. Selection trumps view.                                      |
-| 2   | **Concurrent import** (`runWithConcurrency`)               | 8.1   | ✅ Complete    | 8-task semaphore pool; local EXIF reads + OneDrive subfolder walks in parallel. Page size 200→1000. |
-| 3   | **Stats → Filters** (clickable format/camera rows + chips) | 7     | ❌ Not started | ~2 days. Turns read-only stats into the app's best feature                                          |
-| 4   | **"Fit timeline to view" button**                          | 7     | ✅ Complete    | Button in timeline controls bar; snaps thumbs to oldest/youngest photo in viewport                  |
-| 5   | **Freemium gating** (1 000-photo free tier + Pro unlock)   | 8.2   | ❌ Not started | ~2 days. Needs monetization decision first                                                          |
-| 6   | **MSIX packaging + Store assets**                          | 8.3   | ❌ Not started | ~2 days. Screenshots, icons, signing cert                                                           |
-| 7   | **Privacy policy page**                                    | 8.3   | ❌ Not started | ~1 hour. Required URL for Store submission                                                          |
+| #   | Feature                                                    | Phase | Status                     | Notes                                                                                                                                                                                  |
+| --- | ---------------------------------------------------------- | ----- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Export** (CSV / GeoJSON / GPX)                           | 6.2   | ✅ Complete                | Core formatters + IPC + ExportSheet UI. Selection trumps view.                                                                                                                         |
+| 2   | **Concurrent import** (`runWithConcurrency`)               | 8.1   | ✅ Complete                | 8-task semaphore pool; local EXIF reads + OneDrive subfolder walks in parallel. Page size 200→1000.                                                                                    |
+| 3   | **Stats → Filters** (clickable format/camera rows + chips) | 7     | ⚠️ Implemented, not tested | Stats panel is now a floating glass panel (non-blocking). Format/camera rows are clickable filters. Active chips shown in strip below the header. Map controls shift to avoid overlap. |
+| 4   | **"Fit timeline to view" button**                          | 7     | ✅ Complete                | Button in timeline controls bar; snaps thumbs to oldest/youngest photo in viewport                                                                                                     |
+| 5   | **Freemium gating** (1 000-photo free tier + Pro unlock)   | 8.2   | ❌ Not started             | ~2 days. Needs monetization decision first                                                                                                                                             |
+| 6   | **MSIX packaging + Store assets**                          | 8.3   | ❌ Not started             | ~2 days. Screenshots, icons, signing cert                                                                                                                                              |
+| 7   | **Privacy policy page**                                    | 8.3   | ❌ Not started             | ~1 hour. Required URL for Store submission                                                                                                                                             |
 
 **Estimated total: ~8 days of implementation work.**
 
@@ -30,6 +30,7 @@ All items below must ship before Microsoft Store submission. Ordered by implemen
 
 **Recent Work:**
 
+- **v0.9.0 — Stats & Filters UI overhaul (Apr 2026):** Stats panel converted from a full-height modal overlay to a non-blocking floating glass panel (matching Placemarks panel pattern). Format and camera rows in the stats panel are now interactive filters — click to toggle, activates instantly on the map. Active filter chips moved out of the header bar into a dedicated strip below it (wraps on overflow, respects stats panel width). Map controls (zoom +/−, fit) permanently positioned below the floating header, shift right when the stats panel is open. Stats button in header acts as a toggle (highlights blue when open).
 - **OneDrive import (Mar 2026, pre-release):** Full metadata import pipeline — Graph API subfolder walk, photo record creation, duplicate dedup via SHA-256 + item ID, abort support, subdirectory toggle, progress reporting. `photo_issues` schema table records validation anomalies (`gps_zero`, `future_timestamp`, `invalid_timestamp`) from both local and OneDrive scans. Shared `photoMetadata.ts` normalizers used by both paths.
 - **Settings: Accounts tab (Mar 2026):** New "Accounts" tab in Settings modal shows connected cloud services with email display and two-stage Disconnect. Connect OneDrive flow available without opening the scan overlay.
 - **Stats panel: Library Health + Last Import (Mar 2026):** Library Stats panel now shows a "Library Health" card (metadata issue counts from `photo_issues`) and a "Last Import" card (scanned/imported/duplicates-skipped with relative time).

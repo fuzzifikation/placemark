@@ -28,6 +28,12 @@ import {
 } from 'lucide-react';
 import type { ThemeColors } from '../theme';
 
+export interface FilterChip {
+  key: string;
+  label: string;
+  type: 'mimeType' | 'camera';
+}
+
 interface FloatingHeaderProps {
   photoCount: number;
   selectionCount: number;
@@ -42,8 +48,9 @@ interface FloatingHeaderProps {
   onSelectionModeToggle: () => void;
   onOperationsOpen: () => void;
   onExportOpen: () => void;
+  showStats: boolean;
   onSettingsOpen: () => void;
-  onStatsOpen: () => void;
+  onStatsToggle: () => void;
   onTimelineToggle: () => void;
   onPlacemarksToggle: () => void;
   onScanFolder: () => void;
@@ -65,8 +72,9 @@ export function FloatingHeader({
   onSelectionModeToggle,
   onOperationsOpen,
   onExportOpen,
+  showStats,
   onSettingsOpen,
-  onStatsOpen,
+  onStatsToggle,
   onTimelineToggle,
   onPlacemarksToggle,
   onScanFolder,
@@ -406,12 +414,21 @@ export function FloatingHeader({
       {/* ── Group 5: App utilities — Stats & Settings ─────── */}
       <div style={{ display: 'flex', gap: SPACING.XS }}>
         <button
-          onClick={onStatsOpen}
+          onClick={onStatsToggle}
           className="floating-header-button"
-          style={{ ...iconButtonBase, color: colors.textPrimary }}
-          onMouseEnter={iconButtonHoverOn}
-          onMouseLeave={iconButtonHoverOff}
-          title="Library Statistics"
+          style={{
+            ...iconButtonBase,
+            color: showStats ? colors.buttonText : colors.textPrimary,
+            backgroundColor: showStats ? colors.primary : 'transparent',
+            boxShadow: showStats ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
+          }}
+          onMouseEnter={(e) => {
+            if (!showStats) iconButtonHoverOn(e);
+          }}
+          onMouseLeave={(e) => {
+            if (!showStats) iconButtonHoverOff(e);
+          }}
+          title={showStats ? 'Hide Statistics' : 'Show Statistics'}
         >
           <BarChart3 size={18} />
         </button>

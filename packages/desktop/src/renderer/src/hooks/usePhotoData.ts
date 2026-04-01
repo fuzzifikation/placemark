@@ -26,16 +26,52 @@ export function usePhotoData() {
   const [filterSource, setFilterSource] = useState<'date' | 'map' | 'scan' | 'init'>('init');
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const [activeFilters, setActiveFilters] = useState<{
+    mimeTypes: Set<string>;
+    cameras: Set<string>;
+  }>({ mimeTypes: new Set(), cameras: new Set() });
+
+  const toggleMimeTypeFilter = useCallback((mimeType: string) => {
+    setActiveFilters((prev) => {
+      const next = new Set(prev.mimeTypes);
+      next.has(mimeType) ? next.delete(mimeType) : next.add(mimeType);
+      return { ...prev, mimeTypes: next };
+    });
+  }, []);
+
+  const toggleCameraFilter = useCallback((cameraKey: string) => {
+    setActiveFilters((prev) => {
+      const next = new Set(prev.cameras);
+      next.has(cameraKey) ? next.delete(cameraKey) : next.add(cameraKey);
+      return { ...prev, cameras: next };
+    });
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setActiveFilters({ mimeTypes: new Set(), cameras: new Set() });
+  }, []);
+
   /**
-   * Photos filtered only by date range - used for map display.
+   * Photos filtered by date range and active format/camera filters — used for map display.
    * MapLibre handles viewport culling efficiently, so we don't filter by bounds.
    */
   const mapPhotos = useMemo(() => {
-    if (!selectedDateRange) return allPhotosRef.current;
-    return filterPhotos(allPhotosRef.current, {
-      dateRange: { start: selectedDateRange.start, end: selectedDateRange.end },
-    });
-  }, [selectedDateRange, photos]); // photos dep ensures refresh after load
+    let filtered = allPhotosRef.current;
+    if (selectedDateRange) {
+      filtered = filterPhotos(filtered, {
+        dateRange: { start: selectedDateRange.start, end: selectedDateRange.end },
+      });
+    }
+    if (activeFilters.mimeTypes.size > 0) {
+      filtered = filtered.filter((p) => activeFilters.mimeTypes.has(p.mimeType));
+    }
+    if (activeFilters.cameras.size > 0) {
+      filtered = filtered.filter((p) =>
+        activeFilters.cameras.has(`${p.cameraMake ?? 'Unknown'}|${p.cameraModel ?? 'Unknown'}`)
+      );
+    }
+    return filtered;
+  }, [selectedDateRange, photos, activeFilters]); // photos dep ensures refresh after load
 
   /**
    * Count of photos visible in current map bounds (for UI display)
@@ -124,7 +160,7 @@ export function usePhotoData() {
   }, []);
 
   return {
-    mapPhotos, // Date-filtered photos for map display (no bounds filtering)
+    mapPhotos, // Date/format/camera-filtered photos for map display (no bounds filtering)
     allPhotos: allPhotosRef.current, // Expose for checking length/empty state
     visibleInBoundsCount, // Count of photos in current map view
     mapBounds,
@@ -135,6 +171,10 @@ export function usePhotoData() {
     filterByDateRange,
     trackMapBounds, // Renamed: just tracks bounds, doesn't filter map
     resetDateFilter,
+    activeFilters,
+    toggleMimeTypeFilter,
+    toggleCameraFilter,
+    clearAllFilters,
     selection,
     updateSelection,
     clearSelection,

@@ -1,25 +1,27 @@
 # Release Notes
 
-## Unreleased - Export (CSV / GeoJSON / GPX) + Concurrent Import + Fit Timeline to View (Mar 2026)
+## v0.9.0 - Stats & Filters UI Overhaul (Apr 2026)
 
 ### ✨ Added
 
-- **Blazing-fast concurrent import:** Local EXIF reads and OneDrive subfolder walks now run with up to 8 parallel tasks (semaphore pool, not batch chunking). On typical hardware, a 10,000-photo library that previously took minutes now imports in seconds. OneDrive page size increased from 200 → 1,000 items per request — flat Camera Roll folders (common case) now require ~5× fewer API round-trips.
-- **Auto-fit map after import:** When a scan or OneDrive import finishes, the map automatically fits to show all imported photos — no manual zoom required.
-- **"Fit timeline to view" button:** New button in the timeline controls bar. Snaps both timeline thumbs to the oldest and youngest photo currently visible in the map viewport. Makes the timeline immediately useful after panning to a specific location.
-- **Export filename from oldest photo:** The suggested filename in the export save dialog now uses the date of the oldest photo being exported (e.g. `placemark-export-2019-06-14.geojson`) rather than today's date.
-
-- **Export to CSV / GeoJSON / GPX:** New **Export** button in the toolbar (Tools group). Opens a popover with three format options; default is GeoJSON. Only photos with GPS coordinates are exported.
-- **Selection-aware export scope:** If photos are selected (lasso), only those are exported. Otherwise all photos in the current map view are exported. Scope is shown in the popover header ("47 selected photos" / "152 photos in view").
-- **Native save dialog:** Exports are written as local files via the OS save dialog — no data leaves the device.
-- **Core export formatters (`@placemark/core`):** Pure TypeScript `toCsv()`, `toGeoJson()`, `toGpx()` functions with 21 unit tests. CSVs use CRLF line endings and RFC-4180 quoting; GeoJSON follows RFC 7946 `[longitude, latitude]` coordinate order; GPX 1.1 waypoints sorted chronologically.
+- **Interactive format & camera filters:** Format and camera rows in the Stats panel are now clickable filters. Click a row to filter the map to only those photos; click again to remove. Multiple filters stack (OR logic within a dimension). Active filters take effect instantly on the map.
+- **Non-blocking Stats panel:** The Stats panel is no longer a full-height modal overlay. It is now a floating glass panel anchored below the floating header on the right side — identical in behaviour to the Placemarks panel. The map, timeline, and all other controls remain fully accessible while the panel is open.
+- **Filter chip strip below the header:** Active format/camera filter chips moved out of the header bar into a dedicated strip positioned just below it. Chips wrap onto additional lines if many are active, and the strip respects the Stats panel width so nothing overlaps.
+- **Stats button toggles the panel:** The button in the header now lights up blue when the panel is open and dismisses it on a second click — consistent with the Placemarks and Timeline toggles.
+- **Map controls shift when Stats panel is open:** The zoom +/− and fit-to-content buttons shift left to stay fully visible whenever the Stats panel is open.
+- **Map controls permanently below the header:** The right-side map controls now always start vertically below the floating header, ensuring they never clip under it.
+- **Blazing-fast concurrent import:** Local EXIF reads and OneDrive subfolder walks now run with up to 8 parallel tasks (semaphore pool). OneDrive page size increased from 200 → 1,000 items per request.
+- **Auto-fit map after import:** When a scan or OneDrive import finishes, the map automatically fits to show all imported photos.
+- **"Fit timeline to view" button:** New button in the timeline controls bar. Snaps both timeline thumbs to the oldest and youngest photo currently visible in the map viewport.
+- **Export to CSV / GeoJSON / GPX:** New **Export** button in the toolbar. Selection-aware scope. Native save dialog — no data leaves the device. Core formatters in `@placemark/core` with 21 unit tests.
+- **Export filename from oldest photo:** The suggested filename uses the date of the oldest photo being exported.
 
 ### 🛠️ Internal
 
-- **`packages/core/src/export/formatters.ts`:** New module — pure functions, no I/O, no platform dependencies, fully unit-tested.
-- **`packages/desktop/src/main/ipc/export.ts`:** `registerExportHandlers()` IPC module — queries DB by photo IDs, formats content, writes file.
-- **`preload/index.ts`:** Exposes `window.api.export.saveFile(photoIds, format)`.
-- **`mapPhotoUtils.ts`:** Fixed missing `cloudWebUrl` / `cloudFolderWebUrl` fields (pre-existing type error).
+- `LibraryStatsPanel` refactored: stripped `position: fixed` overlay, adopts `getGlassStyle` + parent-fill pattern. Added `glassBlur` / `glassSurfaceOpacity` props.
+- `MapView`: new `rightPanelWidth` and `rightPanelTopPx` props drive CSS injected for `.maplibregl-ctrl-top-right` margin; only the first control group receives the full top offset.
+- `FloatingHeader`: `onStatsOpen` renamed `onStatsToggle`; `showStats` prop added; filter chip rendering removed (chips now in `App.tsx`).
+- `LAYOUT` constants: `STATS_PANEL_WIDTH: '320px'` / `STATS_PANEL_WIDTH_PX: 320` added.
 
 ---
 
@@ -33,7 +35,7 @@
 - **Renderer `console.error` sweep:** Removed all redundant `console.error` calls across renderer files (`OperationsPanel`, `useHistogram`, `useMapHover`, `StorageSettings`, `DryRunPreview`, `PhotoPreviewModal`, `useLibraryStats`). Errors that are user-visible via toast remain; non-critical failures now degrade silently.
 - **Unused function parameter removed:** `_folderPath` parameter dropped from `DryRunPreview.handleShowInFolder`.
 
-## Unreleased - OneDrive Import + Library Health (Mar 2026)
+## v0.8.1 - OneDrive Import + Library Health (Mar 2026)
 
 ### ✨ Added
 

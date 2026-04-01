@@ -363,8 +363,7 @@ export function getLibraryStats(): LibraryStats {
        FROM photos
        WHERE camera_make IS NOT NULL OR camera_model IS NOT NULL
        GROUP BY camera_make, camera_model
-       ORDER BY count DESC
-       LIMIT 20`
+       ORDER BY count DESC`
     )
     .all() as Array<{ make: string; model: string; count: number }>;
 

@@ -103,6 +103,10 @@ interface MapViewProps {
   targetBounds?: { north: number; south: number; east: number; west: number } | null;
   // Increment to trigger a programmatic fit-to-content (e.g. after import completes)
   fitSignal?: number;
+  // Extra right offset for map controls — accounts for a right-side floating panel
+  rightPanelWidth?: number;
+  // Top offset for right-side controls when a panel is open below the header
+  rightPanelTopPx?: number;
 }
 
 export function MapView({
@@ -130,6 +134,8 @@ export function MapView({
   fitPadding,
   targetBounds,
   fitSignal = 0,
+  rightPanelWidth = 0,
+  rightPanelTopPx = LAYOUT.PANEL_INSET_PX + LAYOUT.HEADER_HEIGHT_PX + LAYOUT.PANEL_GAP_PX,
 }: MapViewProps) {
   // ========== STATE ==========
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -301,10 +307,13 @@ export function MapView({
     const linkColor = isDark ? '#3b82f6' : '#2563eb';
 
     const inset = `${LAYOUT.PANEL_INSET_PX}px`;
+    const rightInset = `${LAYOUT.PANEL_INSET_PX + rightPanelWidth}px`;
+    const rightTopInset = `${rightPanelTopPx}px`;
 
     const css = `
       /* Align map controls with the floating panel inset */
-      .maplibregl-ctrl-top-right .maplibregl-ctrl { margin: ${inset} ${inset} 0 0 !important; }
+      .maplibregl-ctrl-top-right .maplibregl-ctrl { margin: 8px ${rightInset} 0 0 !important; }
+      .maplibregl-ctrl-top-right .maplibregl-ctrl:first-child { margin-top: ${rightTopInset} !important; }
       .maplibregl-ctrl-bottom-right .maplibregl-ctrl { margin: 0 ${inset} ${inset} 0 !important; }
 
       .maplibregl-ctrl-group {
@@ -369,7 +378,7 @@ export function MapView({
     return () => {
       document.getElementById(styleId)?.remove();
     };
-  }, [glassBlur, glassSurfaceOpacity, theme]);
+  }, [glassBlur, glassSurfaceOpacity, theme, rightPanelWidth, rightPanelTopPx]);
 
   // ========== FIT TO CONTENT ==========
   // A ref holds the fit function so the MapLibre control can always call the latest version.
