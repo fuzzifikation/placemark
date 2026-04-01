@@ -4,9 +4,13 @@ Implementation status lives in [docs/plan.md](docs/plan.md). This document stays
 
 ## 1. Purpose
 
-Placemark is a privacy-first, local-first photo organizer that helps users rediscover their photo collections by visualizing where and when their photos were taken.
+Placemark is a privacy-first, local-first photo rediscovery app that helps users re-experience a lifetime of photos by visualizing where and when they were taken.
 
 It reads GPS coordinates and timestamps already embedded in photo files, stores derived metadata locally, and gives users a map-first way to browse, filter, export, and organize their libraries without uploading personal photos to Placemark-controlled infrastructure.
+
+Its primary job is rediscovery, not file cleanup: helping users see a place, click, and remember. Organization is the next step after that.
+
+Local folders are the preferred source because they unlock the fullest workflow. But OneDrive support is part of the core product: cloud-stored photo libraries should still be rediscoverable on the map, especially for Windows users whose archives are not kept on disk.
 
 ---
 
@@ -15,6 +19,10 @@ It reads GPS coordinates and timestamps already embedded in photo files, stores 
 People accumulate thousands of photos across phones, cameras, folders, drives, and cloud storage. Finding photos from a specific trip, location, or time period is tedious when the primary tools are filenames, folders, and memory.
 
 Many mainstream solutions solve this by requiring cloud uploads, subscriptions, or opaque AI inference on private images. Users who care about privacy, ownership, or calm software need a tool that helps them explore their photo history spatially and temporally without handing their library to a platform.
+
+Placemark is especially valuable for users with a whole lifetime of geotagged photos. The map becomes a rediscovery surface: a way to stumble back into places, trips, and forgotten moments by location rather than by filing discipline.
+
+This is especially relevant on Windows, where users often keep large phone-photo archives in OneDrive and have few desktop options for seeing those cloud libraries arranged on a map.
 
 **Placemark exists so users can answer questions like:**
 
@@ -43,6 +51,8 @@ Many mainstream solutions solve this by requiring cloud uploads, subscriptions, 
 - Users are comfortable selecting folders on their computer.
 - Users expect a desktop application that works without account creation.
 - Users want explicit control over scans, filters, and file operations.
+
+The rediscovery experience depends on GPS data being present. Photos without embedded coordinates can be indexed and counted, but they cannot appear on the map until they have location metadata.
 
 ---
 

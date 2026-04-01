@@ -12,12 +12,18 @@ Implementation status lives in [plan.md](plan.md). Public listing copy lives in 
 
 ## 1. Product Summary
 
-**Placemark** is a privacy-first, local-first photo organizer that visualizes your photo collection on an interactive map by reading EXIF GPS and timestamp data. No cloud uploads, no accounts, no telemetry. Your photos stay on your device.
+**Placemark** is a privacy-first, local-first photo rediscovery app that turns a geotagged photo library into an interactive map of places and memories. No cloud uploads, no accounts, no telemetry. Your photos stay on your device.
 
-Placemark is designed for photographers, travelers, archivists, and privacy-conscious users who want to explore their photo history spatially — without subscriptions or cloud lock-in.
+Placemark is designed for photographers, travelers, archivists, and privacy-conscious users who want to rediscover their photo history spatially — without subscriptions or cloud lock-in.
+
+Its first value is not file organization. It is the feeling of reopening a lifetime of photos by location and time, then realizing what you had forgotten was there.
+
+This value depends on embedded GPS data. Placemark is strongest when the user's photos already include location metadata from a phone or GPS-capable camera.
+
+Local folders remain the preferred source because they unlock the fullest workflow. But OneDrive support is strategically important on Windows: many users keep years of phone photos in OneDrive and have few desktop options for seeing that cloud library arranged on a map. Placemark's metadata-first OneDrive import is designed to make large cloud libraries practical for rediscovery without downloading every original first.
 
 **Tagline:**  
-_See your life on a map. Privately._
+_Rediscover your life on a map. Privately._
 
 **Category:** Photo & video › Photo viewer  
 **Platform:** Windows 10/11 (x64)
@@ -52,9 +58,11 @@ The free version is fully functional for exploration and evaluation. Users can:
 | Feature                                       | Included |
 | --------------------------------------------- | -------- |
 | Scan local and network folders                | ✅       |
+| OneDrive photo-map import                     | ✅       |
 | Interactive map with clustered markers        | ✅       |
 | Hover thumbnails and photo detail modal       | ✅       |
 | Open photos in system viewer / show in folder | ✅       |
+| Export to CSV, GeoJSON, and GPX               | ✅       |
 | Heatmap mode                                  | ✅       |
 | Timeline histogram and playback               | ✅       |
 | Light and dark mode                           | ✅       |
@@ -64,6 +72,10 @@ The free version is fully functional for exploration and evaluation. Users can:
 
 **Rationale:**  
 1,000 photos are enough to experience the full map-based workflow with multiple trips or a modest collection. Users naturally reach the limit when they want to explore their entire library — at which point Pro becomes an obvious upgrade.
+
+Basic export stays free. Data portability is part of the trust model, not a premium upsell.
+
+OneDrive import also stays free. On Windows, map-based rediscovery of a cloud photo library is core product value, not an upsell.
 
 The free tier is never degraded, watermarked, or slowed.
 
@@ -117,6 +129,8 @@ Placemark Pro is a lifetime unlock. Buyers get the launch Pro feature set immedi
 
 **UX principle:**  
 Never punish free users. Pro is an expansion, not a ransom.
+
+Basic export is intentionally outside the Pro boundary. Placemark should never feel like it is charging users for the exit door.
 
 #### Suggested launch upgrade modal copy
 
@@ -199,11 +213,12 @@ At 1% conversion and $12.99, Placemark needs roughly 900 monthly downloads to co
 ### Core Differentiators
 
 1. **Local-first, no cloud** — photos never leave the device
-2. **Map-first UX** — spatial exploration is the primary interface
+2. **Map-first rediscovery UX** — reopening memories by location is the primary interface
 3. **Fast import for large libraries** — parallel EXIF reads and concurrent OneDrive folder walks keep large libraries practical.
-4. **One-time lifetime Pro unlock** — no subscription fatigue, no paid upgrade path for future Pro features
-5. **Auditable code** — source is public for transparency and trust, but not advertised in the Store listing
-6. **Portable mode** — rare for Store apps
+4. **OneDrive-on-map support for Windows users** — a rare desktop way to rediscover cloud-stored photos spatially without downloading every original first
+5. **One-time lifetime Pro unlock** — no subscription fatigue, no paid upgrade path for future Pro features
+6. **Auditable code** — source is public for transparency and trust, but not advertised in the Store listing
+7. **Portable mode** — rare for Store apps
 
 Placemark is not a social app, not a gallery clone, and not a cloud service.
 

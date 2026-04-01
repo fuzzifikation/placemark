@@ -432,6 +432,8 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 **Pricing decision:** **$12.99 one-time**. Pro is a lifetime unlock: existing owners receive all future Pro features at no extra cost. GPS editing is the flagship future Pro capability to communicate in upgrade flows.
 
+**Non-gated principle:** Basic export remains free. Data portability is part of the trust story and should not be treated as a Pro-only escape hatch.
+
 **Tasks:**
 
 1. Implement free tier photo limit (1,000 photos as defined in [business_model.md](business_model.md))

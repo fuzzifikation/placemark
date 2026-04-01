@@ -1,6 +1,8 @@
 # Placemark User Guide
 
-Placemark helps you explore your photo collection by place and time while keeping your data local.
+Placemark helps you rediscover a lifetime of photos by place and time while keeping your data local.
+
+Its best experience depends on photos that already contain GPS data. If a photo has embedded coordinates, Placemark can put it on the map. If it does not, the app can still scan and count it, but it cannot show that photo by location.
 
 ---
 
@@ -14,13 +16,17 @@ When you open Placemark, start by adding a source.
 2. Choose a folder on your PC, external drive, or network share.
 3. Placemark scans supported image files and reads embedded EXIF metadata such as GPS coordinates, timestamps, and camera data.
 
+Local folders are the preferred source because they unlock the fullest Placemark workflow.
+
 ### OneDrive
 
 1. Click **Add Source** and choose **OneDrive**.
 2. Sign in with your Microsoft account.
 3. Pick the folder you want to scan.
 
-Placemark imports metadata into its local database. Photos without GPS data are still counted, but they do not appear on the map until they have location data.
+Placemark imports metadata into its local database without downloading every original first. This makes large OneDrive libraries practical for map-based rediscovery even when the photos are not stored on disk.
+
+Photos without GPS data are still counted, but they do not appear on the map until they have location data.
 
 ---
 

@@ -1,6 +1,8 @@
 # Placemark
 
-**Privacy-first, local-first photo organizer for exploring your photo library by place and time.**
+**Privacy-first, local-first app for rediscovering a lifetime of photos by place and time.**
+
+Placemark turns your geotagged photo library into a map you can explore. Its first purpose is rediscovery: revisiting the trips, walks, weekends, and ordinary places you forgot you photographed. Organization comes after that.
 
 Placemark reads GPS coordinates and timestamps already embedded in your photo files and visualizes them on an interactive map. It is built to stay calm, predictable, and local: no Placemark cloud, no tracking, no AI inference, and no background syncing.
 
@@ -8,13 +10,32 @@ Placemark reads GPS coordinates and timestamps already embedded in your photo fi
 
 ## What Placemark Does
 
-- Browse geotagged photos on an interactive map
+- Rediscover a lifetime of geotagged photos on an interactive map
+- Jump from place to place and reopen forgotten memories one photo at a time
+- Stay usable from small libraries to very large lifetime archives
 - Narrow results with the timeline, format filters, and camera filters
 - Save recurring places and views as Placemarks
 - Import from local folders, network shares, and OneDrive
+- Bring large OneDrive libraries onto the map quickly, even when originals are not stored on disk
 - Export visible or selected photos as CSV, GeoJSON, or GPX
-- Organize files with preview, rollback safety, and undo
-- Stay usable from small libraries to very large archives
+- Organize files with preview, rollback safety, and undo after you find what matters
+
+## GPS Requirement
+
+Placemark's core rediscovery experience depends on photos that already contain embedded GPS data.
+
+- Photos with GPS data can be placed on the map and rediscovered by location.
+- Photos without GPS data can still be scanned and counted, but they cannot appear on the map until location data exists.
+- The app is strongest for phone libraries and camera libraries that already recorded location metadata.
+
+## Local Preferred, OneDrive Supported
+
+Placemark prefers photos on disk whenever possible.
+
+- Local folders unlock the fullest workflow and the fewest limitations.
+- If your library lives in OneDrive instead, Placemark can still import metadata quickly and place those photos on the map without downloading every original first.
+- This makes large cloud libraries practical too: tens of thousands of OneDrive photos can still be rediscovered by location and time.
+- For Windows users whose photo history mostly lives in OneDrive, Placemark provides a rare desktop way to see those pictures arranged on a map.
 
 ## Privacy Model
 
@@ -29,13 +50,15 @@ Placemark is currently at **v0.9.0** and in pre-store polish for the first Windo
 
 Already working in the desktop app:
 
-- Interactive map with clustering, spidering, and hover previews
+- Interactive map built for rediscovering large geotagged libraries
+- Clustering, spidering, and hover previews for dense lifetime archives
 - Timeline filtering and chronological playback
 - Placemarks and saved views
 - Stats & Filters panel with clickable format and camera filters
-- Local-folder and OneDrive import
+- Local-folder import for the fullest workflow
+- Fast metadata-first OneDrive import for cloud libraries that are not on disk
 - Export to CSV, GeoJSON, and GPX
-- Safe copy/move operations with undo
+- Safe copy/move operations with undo for the organization step after discovery
 
 See [docs/plan.md](docs/plan.md) for the live roadmap and release status.
 
@@ -58,6 +81,8 @@ Placemark reads EXIF metadata (GPS, timestamps, and available camera data) from:
 CR2, CR3, NEF, NRW, ARW, DNG, RAF, ORF, RW2, PEF, SRW, RWL
 
 RAW support is experimental and varies by format. TIFF-based RAW formats generally behave well; Canon CR3 GPS and thumbnail extraction remain less reliable.
+
+No matter the format, the map-based rediscovery flow requires usable embedded GPS coordinates.
 
 ## User Guide
 

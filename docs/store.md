@@ -28,40 +28,51 @@
 
 ## Short Description (≤ 100 chars)
 
-> Explore your photos by place and time. Private, local, and OneDrive-ready.
+> Rediscover your geotagged photos by place and time. Private, local, and OneDrive-ready.
 
 ---
 
 ## Full Store Description
 
-PLACEMARK - Find Your Photos by Place and Time
+PLACEMARK - Rediscover Your Life on a Map
 
-Remember the place, but not the folder? Placemark turns your photo library into a map you can explore.
+Placemark is built for rediscovery.
 
-Zoom to a city, scrub the timeline, and find the trip, walk, holiday, or family weekend you want in seconds. Browse photos from local folders and Microsoft OneDrive in one calm, map-first workspace.
+Open the map, zoom to a place, and start clicking. A forgotten trip. A street you have not thought about in years. A weekend you barely remembered until the photo appears. Placemark helps you re-experience a lifetime of pictures by where and when they were taken.
 
-Placemark is built for real libraries: a few hundred photos, a lifetime archive, or hundreds of thousands of shots across multiple devices and cameras.
+It is built for real libraries: a few hundred photos, a lifetime archive, or hundreds of thousands of shots across multiple devices and cameras.
+
+Placemark works best with photos that already contain GPS data. If your phone or camera recorded location when the photo was taken, Placemark can put it on the map. Photos without GPS data can still be scanned, but they cannot be rediscovered by location until they have coordinates.
+
+Local folders are still the preferred source because they unlock the fullest Placemark workflow. But if your archive lives in Microsoft OneDrive, Placemark can still bring it onto the map fast. It imports metadata without downloading every original first, which makes tens of thousands of cloud photos practical for rediscovery.
+
+For Windows users, that matters. There are not many desktop tools that let you see a OneDrive photo library arranged on a map. Placemark is built to close that gap.
 
 Use Placemark to:
 
-- Explore geotagged photos on an interactive map
+- Rediscover geotagged photos one place at a time
+- Revisit a whole lifetime of locations, trips, and ordinary days
 - Narrow results by date, camera, and file format
 - Save favorite places and time windows as reusable Placemarks
-- Combine local folders and OneDrive in one view
+- Bring local folders and OneDrive photo libraries into one map view
+- Map large OneDrive libraries without downloading every original first
 - Export the current result set to CSV, GeoJSON, or GPX
 
 Placemark stays private by design. There is no Placemark cloud, no account, no tracking, and no AI scanning your pictures. Your metadata stays on your PC.
 
-Placemark Pro adds unlimited photos, safe file operations with preview and undo, lasso selection, and advanced settings. It is a one-time purchase, not a subscription. Existing Pro owners receive future Pro features at no extra cost, including GPS editing when it ships.
+Placemark Pro adds unlimited photos, safe file operations with preview and undo, lasso selection, and advanced settings. That is the organization layer after discovery. It is a one-time purchase, not a subscription. Existing Pro owners receive future Pro features at no extra cost, including GPS editing when it ships.
 
 ---
 
 ## Feature List (Store Bullet Points)
 
-- Explore geotagged photos on an interactive world map
+- Rediscover geotagged photos on an interactive world map
+- Revisit a lifetime of places, trips, and forgotten moments
 - Narrow your library by time with the built-in timeline
 - Built for libraries from hundreds to hundreds of thousands of photos
 - Browse local folders and Microsoft OneDrive together
+- Fast OneDrive photo-map import without downloading every original first
+- Works best with photos that already include GPS location data
 - Save favorite trips and places as reusable Placemarks
 - Filter by file type and camera to find exactly what you want
 - Export visible or selected results to CSV, GeoJSON, and GPX
@@ -81,7 +92,7 @@ photo map
 gps photos
 photo organizer
 exif viewer
-onedrive photo viewer
+onedrive photo map
 local photo viewer
 privacy photo app
 ```
@@ -98,6 +109,8 @@ privacy photo app
 Microsoft Store commission: 15% (first $1M — standard small publisher rate).
 
 **No subscription. No trial expiry. Free tier is never degraded or watermarked.**
+
+**Basic export stays free. CSV, GeoJSON, and GPX export are part of Placemark's local-first, user-control promise.**
 
 **Pro is a lifetime unlock. Existing Pro owners get future Pro features at no extra cost, including GPS editing when it ships.**
 
