@@ -7,6 +7,7 @@ import { LibraryStatsPanel, formatMimeLabel } from './components/LibraryStatsPan
 import { PlacemarksPanel } from './components/PlacemarksPanel';
 import { FloatingHeader, type FilterChip } from './components/FloatingHeader';
 import { HelpModal } from './components/HelpModal';
+import { ProUpgradeModal } from './components/ProUpgradeModal';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { ScanOverlay } from './components/ScanOverlay';
 import { ExportSheet } from './components/ExportSheet';
@@ -72,6 +73,8 @@ function App() {
     setIsTimelinePlaying,
     showSettings,
     setShowSettings,
+    showUpgrade,
+    setShowUpgrade,
     showStats,
     setShowStats,
     showOperations,
@@ -628,6 +631,7 @@ function App() {
       {!showScanOverlay && showSettings && (
         <Settings
           onClose={() => setShowSettings(false)}
+          onUpgradeOpen={() => setShowUpgrade(true)}
           settings={settings}
           onSettingsChange={setSettings}
           theme={theme}
@@ -722,6 +726,17 @@ function App() {
 
       {/* Help Modal */}
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} theme={theme} />}
+
+      {/* Pro Upgrade Modal */}
+      {!showScanOverlay && showUpgrade && (
+        <ProUpgradeModal
+          onClose={() => setShowUpgrade(false)}
+          onUpgrade={() =>
+            toast.info('Microsoft Store purchasing is not enabled in this build yet.')
+          }
+          theme={theme}
+        />
+      )}
 
       {/* Export Sheet */}
       {showExport && (

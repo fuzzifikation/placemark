@@ -14,9 +14,10 @@ const getAppVersion = async (): Promise<string> => {
 
 interface AboutSectionProps {
   theme: Theme;
+  onOpenUpgrade: () => void;
 }
 
-export function AboutSection({ theme }: AboutSectionProps) {
+export function AboutSection({ theme, onOpenUpgrade }: AboutSectionProps) {
   const colors = useThemeColors(theme);
   const [appVersion, setAppVersion] = useState<string>('unknown');
 
@@ -77,9 +78,82 @@ export function AboutSection({ theme }: AboutSectionProps) {
             lineHeight: 1.5,
           }}
         >
-          Privacy-first, local-first photo organizer. Visualize your photos by where and when they
-          were taken, without uploading to the cloud.
+          Privacy-first, local-first photo organizer. Explore your photos by place and time without
+          a Placemark cloud, account, or subscription.
         </p>
+
+        <div
+          style={{
+            backgroundColor: colors.surfaceHover,
+            padding: '0.9rem',
+            borderRadius: '6px',
+            marginBottom: '1rem',
+            border: `1px solid ${colors.border}`,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: '0.75rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: '220px' }}>
+              <p
+                style={{
+                  margin: '0 0 0.25rem 0',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  color: colors.primary,
+                }}
+              >
+                Placemark Pro
+              </p>
+              <p
+                style={{
+                  margin: '0 0 0.35rem 0',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  color: colors.textPrimary,
+                }}
+              >
+                One-time purchase. Includes all future Pro features.
+              </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: '0.8rem',
+                  lineHeight: 1.5,
+                  color: colors.textSecondary,
+                }}
+              >
+                Unlimited photos, safe file operations with undo, lasso selection, advanced
+                settings, and GPS editing when it ships.
+              </p>
+            </div>
+
+            <button
+              onClick={onOpenUpgrade}
+              style={{
+                backgroundColor: colors.primary,
+                color: colors.buttonText,
+                border: 'none',
+                borderRadius: '6px',
+                padding: '0.6rem 0.85rem',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              View Upgrade
+            </button>
+          </div>
+        </div>
 
         {/* Privacy Guarantees */}
         <div
@@ -121,7 +195,7 @@ export function AboutSection({ theme }: AboutSectionProps) {
             }}
           >
             <strong>Map Tiles Only:</strong> Map tiles are loaded from the internet (OpenStreetMap),
-            but no photo data or location information is transmitted.
+            and reverse geocoding stays optional. Photo data is not transmitted.
           </p>
         </div>
 

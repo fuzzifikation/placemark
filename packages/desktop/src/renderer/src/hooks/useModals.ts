@@ -12,6 +12,7 @@ export interface ModalState {
   showTimeline: boolean;
   isTimelinePlaying: boolean;
   showSettings: boolean;
+  showUpgrade: boolean;
   showStats: boolean;
   showOperations: boolean;
   showHelp: boolean;
@@ -23,6 +24,7 @@ export interface ModalActions {
   setShowTimeline: (v: boolean) => void;
   setIsTimelinePlaying: (v: boolean) => void;
   setShowSettings: (v: boolean) => void;
+  setShowUpgrade: (v: boolean) => void;
   setShowStats: (v: boolean) => void;
   setShowOperations: (v: boolean) => void;
   setShowHelp: (v: boolean) => void;
@@ -35,6 +37,7 @@ export function useModals(): ModalState & ModalActions {
   const [showTimeline, setShowTimeline] = useState(false);
   const [isTimelinePlaying, setIsTimelinePlaying] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showOperations, setShowOperations] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -48,6 +51,8 @@ export function useModals(): ModalState & ModalActions {
     setIsTimelinePlaying,
     showSettings,
     setShowSettings,
+    showUpgrade,
+    setShowUpgrade,
     showStats,
     setShowStats,
     showOperations,

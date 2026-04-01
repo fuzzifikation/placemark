@@ -1,24 +1,26 @@
 # Placemark — Product Requirements Document
 
+Implementation status lives in [docs/plan.md](docs/plan.md). This document stays product-focused: what Placemark must do for users, what it must not do, and what quality bar it must meet.
+
 ## 1. Purpose
 
-This document defines what Placemark must do from the user's perspective. It describes the problems the product solves, who it serves, and the functional and non-functional requirements it must satisfy.
+Placemark is a privacy-first, local-first photo organizer that helps users rediscover their photo collections by visualizing where and when their photos were taken.
 
-Placemark is a **privacy-first, local-first photo organizer** that lets users rediscover their photo collections by visualizing _where_ and _when_ their photos were taken — by reading the GPS coordinates already embedded in the photo files by their camera or smartphone, without ever uploading personal photos to the cloud or estimating location from image content.
+It reads GPS coordinates and timestamps already embedded in photo files, stores derived metadata locally, and gives users a map-first way to browse, filter, export, and organize their libraries without uploading personal photos to Placemark-controlled infrastructure.
 
 ---
 
 ## 2. Problem Statement
 
-People accumulate thousands of photos across devices, folders, and cloud services. Finding photos from a specific trip, location, or time period is tedious. Existing solutions (Google Photos, Apple Photos, Adobe Lightroom) require cloud uploads, impose subscriptions, or run opaque AI inference on personal images.
+People accumulate thousands of photos across phones, cameras, folders, drives, and cloud storage. Finding photos from a specific trip, location, or time period is tedious when the primary tools are filenames, folders, and memory.
 
-Users who care about privacy, or who simply want to stay in control of their own files, have no good tool for exploring photos by geography and time.
+Many mainstream solutions solve this by requiring cloud uploads, subscriptions, or opaque AI inference on private images. Users who care about privacy, ownership, or calm software need a tool that helps them explore their photo history spatially and temporally without handing their library to a platform.
 
 **Placemark exists so users can answer questions like:**
 
-- "Show me all photos I took in Paris."
-- "What did I photograph in summer 2019?"
-- "I want to organize my vacation photos by location into folders."
+- "Show me everything I photographed in Lisbon."
+- "What did I shoot in summer 2019?"
+- "Which photos from this trip belong in separate folders by city?"
 
 ---
 
@@ -33,106 +35,133 @@ Users who care about privacy, or who simply want to stay in control of their own
 ### Secondary
 
 - **Families** managing shared photo libraries on a home NAS.
-- **Professionals** (real estate, journalism, fieldwork) who need to review location-tagged images.
+- **Professionals** such as real-estate photographers, journalists, and field workers who review location-tagged images.
 
-### User Assumptions
+### Assumptions
 
-- Users have photos with GPS coordinates embedded in EXIF metadata. Most modern smartphones record and embed GPS location automatically when a photo is taken. Dedicated cameras can also record GPS if they have a built-in receiver or are paired with a GPS-enabled device. Placemark reads this pre-existing data — it does not assign or infer coordinates for photos that lack them.
+- Many users already have photos with GPS coordinates embedded in EXIF metadata.
 - Users are comfortable selecting folders on their computer.
-- Users expect a desktop application that works offline (no account creation or login required).
+- Users expect a desktop application that works without account creation.
+- Users want explicit control over scans, filters, and file operations.
 
 ---
 
 ## 4. Product Principles
 
-These principles guide all requirements and trade-off decisions.
+These principles guide all product decisions.
 
-| Principle                    | Meaning                                                                                                        |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Privacy over convenience** | Never transmit photo data or metadata off-device. Accept reduced functionality rather than compromise privacy. |
-| **Explicit over automatic**  | The user initiates all actions. No background scanning, no inference, no surprises.                            |
-| **Transparency over magic**  | Always show users what will happen before it happens. Previews before file moves. Counts before scans.         |
-| **Safety over speed**        | File operations must be reversible or recoverable. Never overwrite or delete without confirmation.             |
-| **Simplicity over features** | A calm, focused interface. Do fewer things, but do them well.                                                  |
+| Principle                    | Meaning                                                                                                                             |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Privacy over convenience** | Never route photo data or metadata through Placemark-controlled infrastructure. Accept reduced convenience rather than break trust. |
+| **Explicit over automatic**  | The user initiates scans, imports, and file actions. No background polling, no hidden sync, no surprise behavior.                   |
+| **Transparency over magic**  | Show counts, previews, boundaries, and consequences before action.                                                                  |
+| **Safety over speed**        | File operations must be reversible or recoverable. Never overwrite or destroy silently.                                             |
+| **Simplicity over features** | The interface should feel calm, legible, and focused even as the library grows large.                                               |
 
 ---
 
 ## 5. Functional Requirements
 
-### 5.1 Photo Ingestion
+### 5.1 Sources and Ingestion
 
-| ID   | Requirement                                                                                                              | Priority     | Status      |
-| ---- | ------------------------------------------------------------------------------------------------------------------------ | ------------ | ----------- |
-| PI-1 | The user must be able to select one or more folders on their local filesystem as photo sources.                          | Must Have    | ✅ Done     |
-| PI-2 | The application must recursively scan selected folders for image files (JPEG, PNG, HEIC, TIFF, WebP).                    | Must Have    | ✅ Done     |
-| PI-3 | The application must extract GPS coordinates and timestamps from photo EXIF metadata.                                    | Must Have    | ✅ Done     |
-| PI-4 | The application must store extracted metadata in a local database on the user's device.                                  | Must Have    | ✅ Done     |
-| PI-5 | Re-scanning a previously scanned folder must update existing records without creating duplicates.                        | Must Have    | ✅ Done     |
-| PI-6 | The user must be told how many photos were found, how many have location data, and how many do not.                      | Must Have    | ✅ Done     |
-| PI-7 | The user should be able to connect a OneDrive account and scan cloud-stored photos without downloading full image files. | Nice to Have | ⬜ Not Done |
-| PI-8 | Photos without GPS data must not be silently hidden — the user must see a count of excluded photos.                      | Must Have    | ✅ Done     |
+| ID   | Requirement                                                                                                                  | Priority    |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| PI-1 | The user must be able to select one or more local folders or network-share folders as photo sources.                         | Must Have   |
+| PI-2 | The application must recursively scan supported image formats.                                                               | Must Have   |
+| PI-3 | The application must extract GPS coordinates, timestamps, and available camera metadata from photo EXIF data.                | Must Have   |
+| PI-4 | The application must store derived metadata locally in a rebuildable database on the user's device.                          | Must Have   |
+| PI-5 | Re-scanning an existing source must update existing records without creating duplicates.                                     | Must Have   |
+| PI-6 | The user must see clear counts for scanned files, imported photos, duplicates, and photos without GPS data.                  | Must Have   |
+| PI-7 | The user should be able to connect a OneDrive account and scan cloud-stored photos without downloading full originals first. | Should Have |
+| PI-8 | The user should be able to review connected cloud-account state and disconnect an account explicitly.                        | Should Have |
+| PI-9 | Photos without GPS data must never be silently hidden; the application must surface how many were excluded from the map.     | Must Have   |
 
-### 5.2 Map Visualization
+### 5.2 Map Exploration
 
-| ID    | Requirement                                                                                                                                    | Priority     | Status  |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------- |
-| MV-1  | The application must display geotagged photos as markers on an interactive map.                                                                | Must Have    | ✅ Done |
-| MV-2  | The user must be able to pan and zoom the map freely.                                                                                          | Must Have    | ✅ Done |
-| MV-3  | When many photos are close together, they must be grouped into clusters that show a count.                                                     | Must Have    | ✅ Done |
-| MV-4  | Clicking a cluster must zoom into the area to reveal individual markers.                                                                       | Must Have    | ✅ Done |
-| MV-5  | Hovering over an individual marker must show a thumbnail preview of the photo.                                                                 | Must Have    | ✅ Done |
-| MV-6  | Clicking a marker must select the photo and display its details (filename, date, coordinates).                                                 | Must Have    | ✅ Done |
-| MV-7  | When multiple photos share identical coordinates, the user must be able to distinguish and access each one (e.g., spread them apart visually). | Must Have    | ✅ Done |
-| MV-8  | Map tile data may be loaded from the internet, but no photo data or location information may be transmitted.                                   | Must Have    | ✅ Done |
-| MV-9  | The map should adapt its visual style to the selected appearance mode (e.g., dark tiles in dark mode).                                         | Should Have  | ✅ Done |
-| MV-10 | The map should offer an optional heatmap mode showing photo density.                                                                           | Nice to Have | ✅ Done |
+| ID    | Requirement                                                                                                  | Priority    |
+| ----- | ------------------------------------------------------------------------------------------------------------ | ----------- |
+| MV-1  | The application must display geotagged photos as markers on an interactive map.                              | Must Have   |
+| MV-2  | The user must be able to pan and zoom the map freely.                                                        | Must Have   |
+| MV-3  | When many photos are close together, they must be grouped into clusters that show a count.                   | Must Have   |
+| MV-4  | Clicking a cluster must zoom into the area to reveal individual markers.                                     | Must Have   |
+| MV-5  | Hovering over an individual marker must show a thumbnail preview of the photo.                               | Must Have   |
+| MV-6  | Clicking a marker must select the photo and show basic details such as filename, date, and coordinates.      | Must Have   |
+| MV-7  | When multiple photos share identical coordinates, the user must still be able to access each one distinctly. | Must Have   |
+| MV-8  | Map presentation must adapt to the chosen appearance mode.                                                   | Should Have |
+| MV-9  | The map should offer an optional heatmap mode for density exploration.                                       | Should Have |
+| MV-10 | Floating UI panels must not block core map interaction or hide essential map controls.                       | Must Have   |
 
-### 5.3 Temporal Filtering
+### 5.3 Time, Insights, and Filtering
 
-| ID   | Requirement                                                                                                      | Priority    | Status  |
-| ---- | ---------------------------------------------------------------------------------------------------------------- | ----------- | ------- |
-| TF-1 | The application must display a timeline showing the distribution of photos over time.                            | Must Have   | ✅ Done |
-| TF-2 | The user must be able to select a date range on the timeline to filter which photos appear on the map.           | Must Have   | ✅ Done |
-| TF-3 | Temporal and geographic filters must work independently and in combination.                                      | Must Have   | ✅ Done |
-| TF-4 | Filtering must update the map display in real time (perceived as instant for up to 10,000 photos).               | Must Have   | ✅ Done |
-| TF-5 | The user should be able to play back photos chronologically (slideshow/animation mode).                          | Should Have | ✅ Done |
-| TF-6 | During playback, the map should optionally auto-zoom to follow the current photos.                               | Should Have | ✅ Done |
-| TF-7 | The user must always see a summary of the current selection (e.g., "152 photos, Jan 2023–Mar 2023, Paris area"). | Must Have   | ✅ Done |
+| ID    | Requirement                                                                                                               | Priority    |
+| ----- | ------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| TF-1  | The application must display a timeline showing the distribution of photos over time.                                     | Must Have   |
+| TF-2  | The user must be able to select a date range on the timeline to filter which photos appear on the map.                    | Must Have   |
+| TF-3  | Geographic, temporal, format, and camera filters must work independently and in combination.                              | Must Have   |
+| TF-4  | Filtering must update the map in real time for typical libraries and feel instant at 10,000 photos.                       | Must Have   |
+| TF-5  | The user should be able to play back photos chronologically.                                                              | Should Have |
+| TF-6  | Playback should optionally auto-zoom the map to follow the active result set.                                             | Should Have |
+| TF-7  | The user must always see a summary of the current result set, including active filters and counts.                        | Must Have   |
+| TF-8  | The application should show library insights such as totals, coverage, file formats, camera breakdown, and storage usage. | Should Have |
+| TF-9  | Format and camera breakdown rows should be directly usable as filters.                                                    | Should Have |
+| TF-10 | Active filters must be visible and removable without reopening the stats panel.                                           | Must Have   |
+| TF-11 | The application should offer a quick way to fit the timeline to the currently visible map result set.                     | Should Have |
+| TF-12 | The stats and filters surface must remain usable while the rest of the app stays interactive.                             | Must Have   |
 
-### 5.4 Photo Selection
+### 5.4 Saved Views and Export
 
-| ID   | Requirement                                                                                     | Priority  | Status  |
-| ---- | ----------------------------------------------------------------------------------------------- | --------- | ------- |
-| PS-1 | The user must be able to select a single photo by clicking its marker.                          | Must Have | ✅ Done |
-| PS-2 | The user must be able to select multiple photos by drawing a freeform shape (lasso) on the map. | Must Have | ✅ Done |
-| PS-3 | The user must be able to clear the current selection.                                           | Must Have | ✅ Done |
-| PS-4 | The current number of selected photos must always be visible.                                   | Must Have | ✅ Done |
+| ID   | Requirement                                                                                                | Priority    |
+| ---- | ---------------------------------------------------------------------------------------------------------- | ----------- |
+| SV-1 | The user must be able to save the current map, time, and filter state as a Placemark.                      | Must Have   |
+| SV-2 | The user must be able to reopen a saved Placemark with one action.                                         | Must Have   |
+| SV-3 | The user must be able to rename and delete saved Placemarks.                                               | Must Have   |
+| SV-4 | The application should provide a small set of smart Placemarks for common recent time windows.             | Should Have |
+| EX-1 | The user must be able to export the current result set to CSV.                                             | Must Have   |
+| EX-2 | The user must be able to export the current result set to GeoJSON.                                         | Must Have   |
+| EX-3 | The user must be able to export the current result set to GPX.                                             | Must Have   |
+| EX-4 | When a selection is active, export must use the selection instead of the broader viewport result set.      | Must Have   |
+| EX-5 | Export must only write to user-chosen local files and must never transmit photo data to external services. | Must Have   |
 
-### 5.5 File Operations
+### 5.5 Selection and Organization
 
-| ID    | Requirement                                                                                                                       | Priority    | Status  |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------- |
-| FO-1  | The user must be able to copy selected photos to a destination folder.                                                            | Must Have   | ✅ Done |
-| FO-2  | The user must be able to move selected photos to a destination folder.                                                            | Must Have   | ✅ Done |
-| FO-3  | Before any file operation executes, the user must see a preview of what will happen (source → destination for each file).         | Must Have   | ✅ Done |
-| FO-4  | The application must never overwrite an existing file at the destination without explicit user action.                            | Must Have   | ✅ Done |
-| FO-5  | If a file operation fails partway through a batch, all completed files in that batch must be rolled back to their original state. | Must Have   | ✅ Done |
-| FO-6  | The user must see real-time progress during file operations (which file, how many remaining).                                     | Must Have   | ✅ Done |
-| FO-7  | The user must be able to undo a completed copy or move operation.                                                                 | Must Have   | ✅ Done |
-| FO-8  | Undo of a copy operation should send copied files to the OS trash (recoverable).                                                  | Should Have | ✅ Done |
-| FO-9  | Undo of a move operation must restore files to their original location.                                                           | Must Have   | ✅ Done |
-| FO-10 | After a move operation, the application's database must reflect the new file locations.                                           | Must Have   | ✅ Done |
+| ID    | Requirement                                                                                                            | Priority    |
+| ----- | ---------------------------------------------------------------------------------------------------------------------- | ----------- |
+| SO-1  | The user must be able to select a single photo by clicking its marker.                                                 | Must Have   |
+| SO-2  | The user must be able to select multiple photos by drawing a freeform lasso on the map.                                | Must Have   |
+| SO-3  | The user must be able to clear the current selection explicitly.                                                       | Must Have   |
+| SO-4  | The current selected-photo count must always be visible.                                                               | Must Have   |
+| SO-5  | The user must be able to copy selected photos to a destination folder.                                                 | Must Have   |
+| SO-6  | The user must be able to move selected photos to a destination folder.                                                 | Must Have   |
+| SO-7  | Before any file operation executes, the user must see a preview of what will happen.                                   | Must Have   |
+| SO-8  | The application must never overwrite an existing destination file without explicit user confirmation.                  | Must Have   |
+| SO-9  | If a file operation fails partway through a batch, completed files in that batch must roll back to a consistent state. | Must Have   |
+| SO-10 | The user must see real-time file-operation progress.                                                                   | Must Have   |
+| SO-11 | The user must be able to undo a completed copy or move operation.                                                      | Must Have   |
+| SO-12 | Undo of a copy operation should use the OS trash or recycle bin when appropriate.                                      | Should Have |
+| SO-13 | After a move operation, the application's database must reflect the new file locations.                                | Must Have   |
 
-### 5.6 Settings and Customization
+### 5.6 Settings, Accounts, and Customization
 
-| ID   | Requirement                                                                           | Priority    | Status  |
-| ---- | ------------------------------------------------------------------------------------- | ----------- | ------- |
-| SC-1 | The user must be able to switch between light and dark appearance modes.              | Must Have   | ✅ Done |
-| SC-2 | The user must be able to manage storage (view database size, clear thumbnail cache).  | Must Have   | ✅ Done |
-| SC-3 | The user must be able to see the current application version and project information. | Must Have   | ✅ Done |
-| SC-4 | Map display settings (clustering behavior, map style) should be configurable.         | Should Have | ✅ Done |
-| SC-5 | Timeline playback settings (speed, auto-zoom) should be configurable.                 | Should Have | ✅ Done |
-| SC-6 | All user settings must persist across application sessions.                           | Must Have   | ✅ Done |
+| ID   | Requirement                                                                                            | Priority    |
+| ---- | ------------------------------------------------------------------------------------------------------ | ----------- |
+| SC-1 | The user must be able to switch between light and dark appearance modes.                               | Must Have   |
+| SC-2 | The user must be able to manage storage, including viewing database size and clearing thumbnail cache. | Must Have   |
+| SC-3 | The user must be able to see the current application version and project information.                  | Must Have   |
+| SC-4 | Map display settings should be configurable.                                                           | Should Have |
+| SC-5 | Timeline playback behavior should be configurable.                                                     | Should Have |
+| SC-6 | All user settings must persist across sessions.                                                        | Must Have   |
+| SC-7 | The user should be able to review connected cloud accounts and disconnect them intentionally.          | Should Have |
+| SC-8 | The user should be able to disable optional external services for maximum privacy or offline use.      | Should Have |
+
+### 5.7 Licensing and Store Behavior
+
+| ID   | Requirement                                                                                        | Priority  |
+| ---- | -------------------------------------------------------------------------------------------------- | --------- |
+| LC-1 | The free tier must remain fully usable for exploration up to the configured photo limit.           | Must Have |
+| LC-2 | The Pro unlock must remove the photo cap and enable the designated paid feature set.               | Must Have |
+| LC-3 | Upgrade prompts must appear only at clear gated boundaries and must always include a dismiss path. | Must Have |
+| LC-4 | Upgrade UX must avoid dark patterns such as countdowns, fake urgency, or degraded free usage.      | Must Have |
+| LC-5 | Store entitlement must survive reinstalls and temporary offline conditions gracefully.             | Must Have |
 
 ---
 
@@ -140,66 +169,68 @@ These principles guide all requirements and trade-off decisions.
 
 ### 6.1 Privacy
 
-| ID    | Requirement                                                                                                                                                 |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NF-P1 | The application must not transmit any photo data, metadata, or user information to any server. The only permitted network traffic is downloading map tiles. |
-| NF-P2 | All indexed metadata and cached thumbnails must be stored locally on the user's device.                                                                     |
-| NF-P3 | The application must not include telemetry, analytics, crash reporting, or any form of usage tracking.                                                      |
-| NF-P4 | If cloud storage integration (e.g., OneDrive) is used, authentication tokens must be stored securely using OS-level secure storage.                         |
+| ID    | Requirement                                                                                                                                                                                              |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NF-P1 | The application must not transmit photo data or metadata to Placemark-controlled servers. Permitted network traffic is limited to user-directed cloud access, map tiles, and optional reverse geocoding. |
+| NF-P2 | All indexed metadata, thumbnails, saved views, and settings must be stored locally on the user's device.                                                                                                 |
+| NF-P3 | The application must not include telemetry, analytics, crash reporting, or usage tracking.                                                                                                               |
+| NF-P4 | If cloud storage integration is used, authentication tokens must be stored using OS-level secure storage.                                                                                                |
+| NF-P5 | External network-backed features must be optional and clearly explained to the user.                                                                                                                     |
 
 ### 6.2 Performance
 
-| ID    | Requirement                                                                                  |
-| ----- | -------------------------------------------------------------------------------------------- |
-| NF-E1 | The application must launch in under 3 seconds on a standard machine.                        |
-| NF-E2 | Scanning 10,000 local photos must complete in under 30 seconds.                              |
-| NF-E3 | The map must render 10,000 markers with clustering without perceptible lag.                  |
-| NF-E4 | Filtering 10,000 photos by geographic bounds and/or date range must complete in under 100ms. |
-| NF-E5 | The application must handle libraries of 100,000+ photos without degrading usability.        |
-| NF-E6 | Memory usage should stay under 500MB even with large datasets.                               |
+| ID    | Requirement                                                                         |
+| ----- | ----------------------------------------------------------------------------------- |
+| NF-E1 | The application should launch in under 3 seconds on a typical machine.              |
+| NF-E2 | Scanning 10,000 local photos should complete in under 30 seconds.                   |
+| NF-E3 | The map must render 10,000 markers with clustering without perceptible lag.         |
+| NF-E4 | Filtering 10,000 photos by bounds and/or date range should complete in under 100ms. |
+| NF-E5 | The application must remain usable with libraries of 100,000+ photos.               |
+| NF-E6 | Memory usage should stay under 500MB even with large datasets.                      |
 
 ### 6.3 Reliability
 
-| ID    | Requirement                                                                                                                    |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------ |
-| NF-R1 | File operations must be atomic at the batch level — partial completion must not leave the filesystem in an inconsistent state. |
-| NF-R2 | The application must handle missing, moved, or inaccessible source folders gracefully with clear error messages.               |
-| NF-R3 | Network disconnection during network-share access must not crash the application or corrupt the database.                      |
-| NF-R4 | The local database must be rebuildable at any time by re-scanning source folders (no single point of data loss).               |
+| ID    | Requirement                                                                                                          |
+| ----- | -------------------------------------------------------------------------------------------------------------------- |
+| NF-R1 | File operations must be atomic at the batch level. Partial completion must not leave the filesystem inconsistent.    |
+| NF-R2 | The application must handle missing, moved, or inaccessible source folders gracefully with clear user-facing errors. |
+| NF-R3 | Network interruptions during network-share or cloud access must not crash the application or corrupt the database.   |
+| NF-R4 | The local database must be rebuildable at any time by re-scanning sources.                                           |
 
 ### 6.4 Usability
 
-| ID    | Requirement                                                                                                                  |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------- |
-| NF-U1 | The application must be usable immediately without account creation, login, or configuration.                                |
-| NF-U2 | Error messages must be written for end users, not developers (e.g., "Cannot access folder: permission denied" not "EACCES"). |
-| NF-U3 | All destructive or irreversible actions must require explicit user confirmation.                                             |
-| NF-U4 | The interface must feel calm and uncluttered — prioritize focus over feature density.                                        |
+| ID    | Requirement                                                                        |
+| ----- | ---------------------------------------------------------------------------------- |
+| NF-U1 | The application must be usable without account creation for local-only workflows.  |
+| NF-U2 | Error messages must be written for end users, not developers.                      |
+| NF-U3 | Destructive or irreversible actions must require explicit confirmation.            |
+| NF-U4 | The interface must feel calm and uncluttered even on large libraries.              |
+| NF-U5 | Layouts must preserve access to essential controls at normal desktop window sizes. |
 
 ### 6.5 Portability
 
-| ID    | Requirement                                                                                                                 |
-| ----- | --------------------------------------------------------------------------------------------------------------------------- |
-| NF-T1 | The application must run on Windows 10/11 (64-bit).                                                                         |
-| NF-T2 | The application should run on macOS (Intel and Apple Silicon).                                                              |
-| NF-T3 | The application must be available as a portable executable (no installation required).                                      |
-| NF-T4 | Application data (database, cache) must be stored alongside the executable in portable mode, not in a system-wide location. |
-| NF-T5 | The architecture should allow future mobile ports (iOS/Android) to reuse core logic.                                        |
+| ID    | Requirement                                                                                                                         |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| NF-T1 | The application must run on Windows 10/11 (64-bit).                                                                                 |
+| NF-T2 | The architecture should keep macOS support practical.                                                                               |
+| NF-T3 | Direct-download builds should remain available as portable executables where feasible, even if the Store build uses MSIX packaging. |
+| NF-T4 | Portable-mode application data must live alongside the executable rather than in a system-wide location.                            |
+| NF-T5 | Core business logic should remain portable enough for future mobile reuse.                                                          |
 
 ---
 
 ## 7. Out of Scope
 
-The following are explicitly **not** requirements for Placemark:
+The following are explicitly not requirements for Placemark:
 
-- **Photo editing** (cropping, rotating, color adjustment)
-- **AI-powered tagging or recognition** (face detection, object classification)
-- **Cloud sync** between devices
-- **Social or sharing features** (galleries, links, exports to social media)
-- **Photo format conversion**
-- **Automatic background scanning** or scheduled processing
-- **Multi-user or collaboration** features
-- **Server-side components** of any kind (Placemark is a standalone desktop application)
+- Traditional photo editing such as crop, rotate, or color correction
+- AI-powered tagging, recognition, or inferred metadata
+- Placemark-hosted cloud sync between devices
+- Social feeds, sharing links, or collaboration features
+- Photo format conversion
+- Automatic background scanning or scheduled processing
+- Multi-user account systems
+- Server-side Placemark infrastructure
 
 ---
 
@@ -207,19 +238,19 @@ The following are explicitly **not** requirements for Placemark:
 
 ### Scenario A: "Where was that restaurant?"
 
-A user remembers dining at a great restaurant during a trip to Lisbon but can't recall the name. They open Placemark, scan their photos folder, zoom into Lisbon on the map, and filter to the dates of their trip. A cluster of photos appears near a street corner — hovering over them reveals the restaurant's exterior. The user opens the photo in their system viewer and zooms into the sign.
+A user remembers dining at a great restaurant during a trip to Lisbon but cannot recall the name. They open Placemark, zoom into Lisbon, narrow the timeline to the dates of their trip, and inspect a cluster near the right street. Hover preview and photo details quickly confirm the spot.
 
 ### Scenario B: "Organize vacation photos"
 
-A user has 800 photos from a road trip scattered across one large folder. They want to sort them by city visited. They open Placemark, scan the folder, and zoom into the first city on the map. Using the lasso tool, they select photos within that city, then use the copy operation to place them in a "Barcelona" folder. They repeat for each city. At all times, they see exactly which files will be copied and where.
+A user has 800 road-trip photos in one large folder. They zoom into the first city on the map, lasso the relevant photos, preview a copy operation, and sort them into a destination folder with confidence that nothing will be overwritten silently.
 
 ### Scenario C: "What did we do last summer?"
 
-A user scans their entire Pictures directory (50,000 photos). They drag the timeline slider to June–August of last year. The map lights up with clusters in three locations — their hometown, a beach vacation, and a weekend trip they'd forgotten about. They click through the clusters to relive each location's photos.
+A user scans their entire Pictures directory. They drag the timeline to June through August of the previous year, then use format and camera filters to narrow the set further. The map reveals a beach vacation, their hometown, and a forgotten weekend trip.
 
-### Scenario D: "Move photos off the NAS"
+### Scenario D: "Bring OneDrive and local photos together"
 
-A user has photos on a network-attached storage device. They add the NAS share as a source, scan it, and use the move operation to bring selected photos to their local drive. The preview shows each file's source and destination. After confirming, progress updates show each file being transferred. If the network drops mid-operation, completed transfers roll back and the user receives a clear error message.
+A user keeps newer phone photos in OneDrive and older travel photos on an external drive. They connect OneDrive, scan a local folder, and explore both sources in one map-centered interface without uploading anything to Placemark.
 
 ---
 
@@ -227,22 +258,23 @@ A user has photos on a network-attached storage device. They add the NAS share a
 
 Placemark is successful when a user can:
 
-1. **Discover** — Point it at a folder and immediately see their photos on a map.
-2. **Explore** — Pan, zoom, and filter by time to find photos from a specific place or period.
-3. **Act** — Select photos and copy or move them to organized folders, with full confidence that nothing will be lost or overwritten.
-4. **Trust** — Know that their photos and metadata never leave their device.
+1. **Discover** — Point it at a source and quickly see photos on a map.
+2. **Explore** — Pan, zoom, filter, and recall saved places to find a specific memory faster than folder browsing.
+3. **Act** — Export, copy, or move the right photos with confidence.
+4. **Trust** — Understand that their photos and metadata stay under their control.
 
 ---
 
 ## 10. Glossary
 
-| Term                  | Definition                                                                                                   |
-| --------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **EXIF**              | Exchangeable Image File Format — metadata embedded in photo files, including GPS coordinates and timestamps. |
-| **Geotagged**         | A photo that contains GPS latitude and longitude in its EXIF metadata.                                       |
-| **Source**            | A folder (local or network) that the user has registered for scanning.                                       |
-| **Cluster**           | A visual grouping of nearby photo markers on the map, showing a count instead of individual pins.            |
-| **Lasso selection**   | A freeform drawing tool that selects all photos within the drawn shape.                                      |
-| **Dry run / Preview** | Showing the user what a file operation would do before actually executing it.                                |
-| **Atomic batch**      | A group of file operations that either all succeed or all fail — no partial completion.                      |
-| **Portable mode**     | Running the application without installation, with all data stored next to the executable.                   |
+| Term                | Definition                                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **EXIF**            | Exchangeable Image File Format: metadata embedded in photo files, including GPS coordinates and timestamps. |
+| **Geotagged**       | A photo that contains GPS latitude and longitude in EXIF metadata.                                          |
+| **Source**          | A local folder, network share, or connected cloud location registered for scanning.                         |
+| **Cluster**         | A visual grouping of nearby photo markers on the map.                                                       |
+| **Lasso selection** | A freeform drawing tool that selects all photos within the drawn shape.                                     |
+| **Placemark**       | A saved map/time/filter view that can be reopened later.                                                    |
+| **Preview**         | A user-visible summary of what a file operation will do before it runs.                                     |
+| **Atomic batch**    | A group of file operations that either succeeds completely or rolls back to a consistent state.             |
+| **Portable mode**   | Running the application without installation, with its data stored next to the executable.                  |

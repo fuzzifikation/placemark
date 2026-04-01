@@ -1,8 +1,12 @@
 # Placemark — Microsoft Store Business Model
 
-> **Status:** Launch-ready proposal (post-beta)
-> **Last updated:** 2026-02-13
-> **Current version:** 0.6.1 (alpha/beta, portable `.exe`)
+> **Status:** v1.0 store-prep pricing model
+> **Last updated:** 2026-04-01
+> **Scope:** pricing, gating, positioning, and launch economics
+
+---
+
+Implementation status lives in [plan.md](plan.md). Public listing copy lives in [store.md](store.md). This document should stay focused on pricing decisions, upgrade behavior, positioning, and launch economics.
 
 ---
 
@@ -67,28 +71,36 @@ The free tier is never degraded, watermarked, or slowed.
 
 ### 3.2 Pro Tier (One-Time Purchase)
 
-**Price:** **$7.99 USD** (launch price — may increase after establishing reviews)
+**Price:** **$12.99 USD**
 
-| Feature                                                  | Pro |
-| -------------------------------------------------------- | --- |
-| **Unlimited photos** — no database cap                   | ✅  |
-| **File operations** — copy & move with dry-run preview   | ✅  |
-| **Atomic safety** — rollback on failure                  | ✅  |
-| **Undo system** — full undo for file operations          | ✅  |
-| **Lasso selection** — freeform selection on the map      | ✅  |
-| **GPS editing** — drag photos to change location         | ✅  |
-| **Address geotagging** — set location by address/place   | ✅  |
-| **Tag unlocated photos** — place photos without GPS data | ✅  |
-| **Advanced settings** — clustering, cache, visual tuning | ✅  |
+**Launch Pro features**
+
+| Feature                                                  | Included |
+| -------------------------------------------------------- | -------- |
+| **Unlimited photos** — no database cap                   | ✅       |
+| **File operations** — copy & move with dry-run preview   | ✅       |
+| **Atomic safety** — rollback on failure                  | ✅       |
+| **Undo system** — full undo for file operations          | ✅       |
+| **Lasso selection** — freeform selection on the map      | ✅       |
+| **Advanced settings** — clustering, cache, visual tuning | ✅       |
+
+**Future Pro features included at no extra cost**
+
+| Feature                                                  | Status  |
+| -------------------------------------------------------- | ------- |
+| **GPS editing** — drag photos to change location         | Planned |
+| **Address geotagging** — set location by address/place   | Planned |
+| **Tag unlocated photos** — place photos without GPS data | Planned |
 
 **Rationale:**
 
 - File operations and undo are high-trust, high-value features.
 - Lasso selection is unique to Placemark and strongly differentiating.
-- GPS editing is a power-user feature with clear value — correcting, adding, or moving photo locations directly on the map. Few tools offer this, and none with Placemark's map-first UX.
-- One-time pricing reinforces ownership and long-term trust.
+- GPS editing is the flagship future Pro feature — correcting, adding, or moving photo locations directly on the map is a rare and valuable capability.
+- **$12.99** positions Placemark as a serious specialist tool without pushing it into premium-software territory.
+- One-time pricing plus included future Pro features reinforces ownership and long-term trust.
 
-No features are sold on promises. Pro unlocks what exists today.
+Placemark Pro is a lifetime unlock. Buyers get the launch Pro feature set immediately and every future Pro feature at no extra charge.
 
 ---
 
@@ -97,7 +109,8 @@ No features are sold on promises. Pro unlocks what exists today.
 1. User reaches a Pro boundary (photo cap, lasso tool, file operations).
 2. A respectful modal appears:
    - Clear list of Pro benefits
-   - "Unlock Pro — $7.99 (one-time)" button
+   - "Includes all future Pro features" line
+   - "Unlock Pro — $12.99 (one-time)" button
    - “Not now” option — no pressure, no countdowns
 3. Purchase uses Microsoft Store durable add-on licensing.
 4. Pro unlock activates instantly and persists across reinstalls.
@@ -105,13 +118,33 @@ No features are sold on promises. Pro unlocks what exists today.
 **UX principle:**  
 Never punish free users. Pro is an expansion, not a ransom.
 
+#### Suggested launch upgrade modal copy
+
+**Title:** Unlock Placemark Pro
+
+**Subtitle:** One-time purchase. Includes all future Pro features.
+
+**Benefit bullets:**
+
+- Unlimited photos
+- Copy, move, and undo with confidence
+- Select photos directly on the map
+- GPS editing included when it ships
+
+**Primary button:** Unlock Pro — $12.99
+
+**Secondary button:** Not now
+
+**Support line:** No subscription. Pay once. Keep Pro forever.
+
 ### 3.4 Refund Policy
 
 Microsoft Store allows refunds within 14 days. On refund:
 
 - Pro features are disabled; the app reverts to the free tier.
 - No user data is deleted — photos, database, and thumbnails remain intact.
-- GPS edits made during the Pro period are preserved in the photo files (EXIF writes are permanent).
+- Launch scope note: the initial Pro tier does not include metadata editing, so refunds do not need to reverse changes written into photo files.
+- If GPS editing ships later, refund messaging must stay explicit that license changes do not undo completed file edits.
 - The app checks the Store license periodically and adjusts the feature set accordingly.
 
 ---
@@ -135,52 +168,14 @@ Microsoft Store allows refunds within 14 days. On refund:
 
 ### 4.2 Store Description
 
-#### Short Description (≤100 chars)
+Canonical Microsoft Store copy now lives in [store.md](store.md).
 
-> Explore your photo collection on a map. No cloud, no accounts, complete privacy.
+This business-model document should stay focused on pricing and positioning. The public listing must stay consistent with these points:
 
-#### Full Description
-
-PLACEMARK — See Your Life on a Map
-
-Your photos already know where they were taken. Placemark puts them on
-a map — no cloud, no account, no uploads. Ever.
-
-🗺️ MAP-FIRST
-Full-screen interactive map with clustered markers, hover previews,
-and heatmap mode. Zoom into a city and see every photo you took there.
-
-⚡ FAST — SERIOUSLY FAST
-Imports 10,000 photos in seconds. Parallel EXIF reads and concurrent
-cloud folder walks mean even huge libraries are ready in moments, not
-minutes. The fastest local photo indexer in its class.
-
-⏱️ TIMELINE
-Scrub through years of photos with an interactive date histogram.
-Animated playback lets you watch your travels unfold.
-
-📁 ORGANIZE (Pro)
-Draw on the map to select photos. Copy or move them with a dry-run
-preview, atomic rollback, and full undo.
-
-� GPS EDITING (Pro)
-Drag photos to correct their location. Set a place by address. Tag
-photos that have no GPS data at all.
-
-📷 SUPPORTED FORMATS
-JPEG, PNG, HEIC/HEIF, TIFF, WebP — plus 12 professional RAW formats:
-Canon (CR2, CR3), Nikon (NEF, NRW), Sony (ARW), Adobe DNG,
-Fujifilm (RAF), Olympus (ORF), Panasonic (RW2), Pentax (PEF),
-Samsung (SRW), and Leica (RWL).
-
-🔒 PRIVATE BY DESIGN
-No cloud. No telemetry. No AI. All data stays on your device.
-
-FREE — full map exploration and timeline for up to 1,000 photos.
-PRO — $7.99 one-time. Unlimited photos, file operations, lasso
-selection, GPS editing, and advanced settings.
-
-No subscription. Pay once. Own it forever.
+- **Pro price:** $12.99 one-time
+- **Model:** lifetime unlock, no subscription
+- **Promise:** future Pro features are included for existing Pro owners at no extra cost
+- **Flagship future Pro feature:** GPS editing
 
 ---
 
@@ -188,14 +183,14 @@ No subscription. Pay once. Own it forever.
 
 | Scenario          | Monthly Downloads | Conversion | Pro Sales | Monthly Revenue (after 15% Store cut) |
 | ----------------- | ----------------- | ---------- | --------- | ------------------------------------- |
-| Quiet launch      | 100               | 1%         | 1         | $6.79                                 |
-| Moderate traction | 500               | 1%         | 5         | $33.96                                |
-| Good traction     | 2,000             | 1%         | 20        | $135.83                               |
-| Featured / viral  | 10,000            | 1%         | 100       | $679.15                               |
+| Quiet launch      | 100               | 1%         | 1         | $11.04                                |
+| Moderate traction | 500               | 1%         | 5         | $55.21                                |
+| Good traction     | 2,000             | 1%         | 20        | $220.83                               |
+| Featured / viral  | 10,000            | 1%         | 100       | $1,104.15                             |
 
 Microsoft Store commission: **15%**
 
-At 1% conversion and $7.99, Placemark needs ~1,500 monthly downloads to cover a $100/month hosting or tooling cost. Revenue is not the primary goal — sustainability is. The app must be good enough that conversion rises naturally over time.
+At 1% conversion and $12.99, Placemark needs roughly 900 monthly downloads to cover a $100/month tooling cost. Revenue is not the primary goal — sustainability is. The app must be good enough that conversion rises naturally over time.
 
 ---
 
@@ -205,8 +200,8 @@ At 1% conversion and $7.99, Placemark needs ~1,500 monthly downloads to cover a 
 
 1. **Local-first, no cloud** — photos never leave the device
 2. **Map-first UX** — spatial exploration is the primary interface
-3. **Blazing-fast import** — parallel EXIF reads + concurrent OneDrive folder walks; 10,000-photo libraries import in seconds. Fastest local photo indexer in its class.
-4. **One-time purchase** — no subscription fatigue
+3. **Fast import for large libraries** — parallel EXIF reads and concurrent OneDrive folder walks keep large libraries practical.
+4. **One-time lifetime Pro unlock** — no subscription fatigue, no paid upgrade path for future Pro features
 5. **Auditable code** — source is public for transparency and trust, but not advertised in the Store listing
 6. **Portable mode** — rare for Store apps
 

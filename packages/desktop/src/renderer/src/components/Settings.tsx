@@ -23,6 +23,7 @@ import type { SpiderSettings } from './MapView';
 
 interface SettingsProps {
   onClose: () => void;
+  onUpgradeOpen: () => void;
   settings: AppSettings;
   onSettingsChange: (settings: AppSettings) => void;
   theme: Theme;
@@ -121,6 +122,7 @@ export const getDefaultSpiderSettings = (): SpiderSettings => ({
 
 export function Settings({
   onClose,
+  onUpgradeOpen,
   settings,
   onSettingsChange,
   theme,
@@ -409,7 +411,9 @@ export function Settings({
 
           {activeSection === 'accounts' && <AccountsSettings theme={theme} toast={toast} />}
 
-          {activeSection === 'about' && <AboutSection theme={theme} />}
+          {activeSection === 'about' && (
+            <AboutSection theme={theme} onOpenUpgrade={onUpgradeOpen} />
+          )}
         </div>
       </div>
     </div>

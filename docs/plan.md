@@ -18,7 +18,7 @@ All items below must ship before Microsoft Store submission. Ordered by implemen
 | 2   | **Concurrent import** (`runWithConcurrency`)               | 8.1   | ✅ Complete                | 8-task semaphore pool; local EXIF reads + OneDrive subfolder walks in parallel. Page size 200→1000.                                                                                    |
 | 3   | **Stats → Filters** (clickable format/camera rows + chips) | 7     | ⚠️ Implemented, not tested | Stats panel is now a floating glass panel (non-blocking). Format/camera rows are clickable filters. Active chips shown in strip below the header. Map controls shift to avoid overlap. |
 | 4   | **"Fit timeline to view" button**                          | 7     | ✅ Complete                | Button in timeline controls bar; snaps thumbs to oldest/youngest photo in viewport                                                                                                     |
-| 5   | **Freemium gating** (1 000-photo free tier + Pro unlock)   | 8.2   | ❌ Not started             | ~2 days. Needs monetization decision first                                                                                                                                             |
+| 5   | **Freemium gating** (1 000-photo free tier + Pro unlock)   | 8.2   | ❌ Not started             | ~2 days. Pricing chosen: **$12.99 one-time**. Pro is a lifetime unlock that includes all future Pro features, with GPS editing positioned as a flagship future addition.               |
 | 6   | **MSIX packaging + Store assets**                          | 8.3   | ❌ Not started             | ~2 days. Screenshots, icons, signing cert                                                                                                                                              |
 | 7   | **Privacy policy page**                                    | 8.3   | ❌ Not started             | ~1 hour. Required URL for Store submission                                                                                                                                             |
 
@@ -327,8 +327,6 @@ This approach is fast (no RAW decode), requires zero new dependencies, and produ
 
 **Goal:** Give users persistent geo+time filter shortcuts and let them export data in standard formats. Placemarks make the app feel polished; export reinforces the trust promise ("your data, your control"). Both provide immediate value for the Store listing.
 
-See [collections_plan.md](collections_plan.md) for the full UX design of Placemarks.
-
 #### 6.1 Placemarks ✅ COMPLETE
 
 **Completed:**
@@ -390,10 +388,14 @@ See [collections_plan.md](collections_plan.md) for the full UX design of Placema
 6. ✅ Storage card: total file size, avg photo size, DB sizes, cached thumbnail count
 7. ✅ Last Scanned timestamp
 8. ✅ **Photos per year** — satisfied by the timeline histogram (GPS + non-GPS bars over time)
+9. ✅ Format and camera rows are clickable live filters
+10. ✅ Active filter chips are shown in a dedicated strip below the header
+11. ✅ Stats panel uses a floating, non-blocking glass layout; map controls avoid overlap
 
-#### Remaining Tasks
+#### Remaining Work
 
-1. **Stats & Filters** — make format and camera rows clickable; active filter chips in `FloatingHeader`; SQL filter params in `getPhotosWithLocation`; "No GPS" stub row (entry point for Phase 10) — see SUGGESTIONS.md for full spec (~2–3 days)
+1. Validate format and camera filters against a real library and edge cases
+2. Add a future "No GPS" filter row as the entry point for metadata-correction workflows
 
 **Deferred:** Top locations (reverse-geocode top cluster centres) — deferred to Phase 9 trip finder.
 
@@ -402,12 +404,12 @@ See [collections_plan.md](collections_plan.md) for the full UX design of Placema
 - [x] Statistics dashboard loads in <1 second for 50,000 photos
 - [x] Camera breakdown shows correct make/model from EXIF
 - [x] Photos-per-year distribution — covered by the timeline histogram (GPS vs non-GPS bars)
-- [ ] Clicking a format or camera row filters the map
-- [ ] Active filter chips appear in FloatingHeader and can be cleared
+- [ ] Format and camera filters validated on a real library
+- [ ] Filter chips clear correctly under repeated add/remove combinations
 
-**Estimated Effort (remaining):** ~2–3 days
+**Estimated Effort (remaining):** <1 day for validation and minor fixes
 
-**Deliverable:** ✅ Stats panel with overview, formats, cameras, storage, date range, photos-per-year. Remaining: interactive Stats & Filters.
+**Deliverable:** ✅ Floating Stats & Filters panel with overview, formats, cameras, storage, date range, health cards, and interactive filtering.
 
 ---
 
@@ -428,11 +430,13 @@ See [collections_plan.md](collections_plan.md) for the full UX design of Placema
 
 #### 8.2 Freemium Gating
 
+**Pricing decision:** **$12.99 one-time**. Pro is a lifetime unlock: existing owners receive all future Pro features at no extra cost. GPS editing is the flagship future Pro capability to communicate in upgrade flows.
+
 **Tasks:**
 
 1. Implement free tier photo limit (1,000 photos as defined in [business_model.md](business_model.md))
-2. Gate Pro features: file operations, lasso selection, GPS editing, advanced settings
-3. Implement respectful upgrade modal (no dark patterns, "Not now" always available)
+2. Gate launch Pro features: file operations, lasso selection, and advanced settings
+3. Implement respectful upgrade modal (no dark patterns, "Not now" always available) using the copy in [business_model.md](business_model.md) §3.3, including: **"Unlock Pro — $12.99"**, **"Includes all future Pro features"**, and **GPS editing included when it ships**
 4. Microsoft Store durable add-on licensing integration
 5. License check: periodic Store API query, cache locally, degrade gracefully if Store unavailable
 
@@ -446,7 +450,7 @@ See [collections_plan.md](collections_plan.md) for the full UX design of Placema
    - 5 screenshots (map view, timeline, hover preview, settings, file operations)
    - 1 hero image (1920×1080)
    - App icon at required sizes
-   - Store description (see [business_model.md](business_model.md) §4.2)
+   - Store description (see [store.md](store.md))
 4. Privacy policy page (GitHub Pages or similar)
 5. App signing certificate
 6. User documentation / in-app help screen
