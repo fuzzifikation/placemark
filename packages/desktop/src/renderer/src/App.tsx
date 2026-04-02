@@ -466,7 +466,7 @@ function App() {
           onExportOpen={() => setShowExport(true)}
           onSettingsOpen={() => setShowSettings(true)}
           showStats={showStats}
-          onStatsToggle={() => setShowStats((v) => !v)}
+          onStatsToggle={() => setShowStats(!showStats)}
           onTimelineToggle={handleTimelineToggle}
           onPlacemarksToggle={togglePlacemarks}
           onScanFolder={() => setShowScanOverlay(true)}

@@ -38,7 +38,7 @@ export function useTimelineDrag({
     end: number;
     clientX: number;
   } | null>(null);
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounced update to parent
   const notifyRangeChange = useCallback(

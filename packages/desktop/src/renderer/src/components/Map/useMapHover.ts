@@ -47,7 +47,7 @@ export function useMapHover(): UseMapHoverReturn {
     loading: false,
   });
 
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeHoverIdRef = useRef<number | null>(null);
   const thumbnailCacheRef = useRef<ThumbnailCache>(new ThumbnailCache(THUMBNAIL_CACHE_SIZE));
 
@@ -104,7 +104,7 @@ export function useMapHover(): UseMapHoverReturn {
       hoverTimeoutRef.current = setTimeout(() => {
         window.api.thumbnails
           .get(photo.id)
-          .then((thumbnailBuffer: Buffer | null) => {
+          .then((thumbnailBuffer: Uint8Array | null) => {
             // Race condition check
             if (activeHoverIdRef.current !== photo.id) return;
 
