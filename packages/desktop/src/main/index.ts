@@ -61,12 +61,19 @@ function createWindow() {
 }
 
 app.on('window-all-closed', () => {
-  if (closeStorage) closeStorage();
-  if (closeThumbnailService) closeThumbnailService();
   if (process.platform !== 'darwin') {
+    // On non-macOS, clean up and quit
+    if (closeStorage) closeStorage();
+    if (closeThumbnailService) closeThumbnailService();
     app.quit();
     win = null;
   }
+  // On macOS, keep services alive — user may reopen via dock icon
+});
+
+app.on('before-quit', () => {
+  if (closeStorage) closeStorage();
+  if (closeThumbnailService) closeThumbnailService();
 });
 
 app.on('activate', () => {

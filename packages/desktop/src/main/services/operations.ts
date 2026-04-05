@@ -52,7 +52,7 @@ export function requestCancel(): { ok: boolean; message: string } {
 // Types
 // ============================================================================
 
-export interface ExecutionProgress {
+interface ExecutionProgress {
   totalFiles: number;
   completedFiles: number;
   currentFile: string;
@@ -60,7 +60,7 @@ export interface ExecutionProgress {
   phase: 'executing' | 'complete';
 }
 
-export interface ExecutionResult {
+interface ExecutionResult {
   success: boolean;
   completedCount: number;
   skippedCount: number;

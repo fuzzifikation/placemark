@@ -1,5 +1,45 @@
 # Release Notes
 
+## v0.9.1 - Correctness & Safety Fixes (Apr 2026)
+
+### 🐛 Fixed
+
+- **Schema CHECK constraint for `gps_nan`:** Photos with NaN GPS coordinates now record the issue correctly instead of crashing the INSERT.
+- **NaN GPS detection in scan pipeline:** `normalizeGps()` now rejects `NaN`/`Infinity` coordinates as a `gps_nan` issue (tracked in `photo_issues`). Export formatters (CSV, GeoJSON, GPX) use `Number.isFinite()` as defense-in-depth.
+- **Placemark rename preserves geo-label:** Renaming a placemark no longer wipes its reverse-geocoded label. `geo_label` is only cleared when bounds actually change.
+- **Scan progress double-counting:** Skipped-large-files are no longer counted in both `processedFiles` and `errors`.
+- **"1 years" → "1 year":** `formatSpan` now uses singular form correctly.
+- **Issue list stale after scan:** The expanded issue list in LibraryStatsPanel now resets and refetches when a scan completes.
+- **Nominatim rate limit race condition:** Concurrent IPC geocode calls are now serialized via a promise chain — no more bypassing the 1 req/sec policy.
+- **macOS `before-quit` cleanup:** Databases now close cleanly on Cmd+Q (not just on window close).
+- **macOS dock reopen crash:** Closing all windows on macOS no longer shuts down DB services; reopening from the dock works correctly.
+- **`useExportData` null deref:** Removed unsafe `visiblePhotos!` non-null assertions; uses `(visiblePhotos ?? [])` fallback.
+- **WAL files deleted on wipe:** `wipeAndRestart` now deletes `-wal` and `-shm` journal files alongside `.db` files.
+- **`clearAllPhotos` transaction safety:** The 3 DELETE statements (plus `photo_issues`) are now wrapped in a single transaction.
+- **Histogram negative bucket:** SQL now clamps to `MAX(..., 0)` to prevent negative bucket indices from edge-case timestamps.
+- **Placemark input validation:** IPC handlers now validate bounds geometry, name, and date ordering before writing to DB.
+- **Toast ID collision:** Uses incrementing counter instead of `Date.now()`.
+- **`useReverseGeocoding` stale closure:** `onLabelPersisted` callback stored in a ref to avoid stale captures.
+- **`useCallback` unstable deps:** `usePlacemarkActions` and `useTimelineActions` now list specific stable refs instead of whole objects.
+
+### 🛠️ Internal
+
+- **`BoundingBox` → `PlacemarkBounds`:** Unified duplicate interfaces; `BoundingBox` is now a re-export alias.
+- **Shared `getBasename`:** Extracted to `core/src/utils.ts`; used by all three export formatters and the operation planner (was duplicated 4×).
+- **`temporal.test.ts`:** 12 new tests for `getDateRange` and `isPhotoInDateRange` (empty array, all-null, single photo, boundaries, negatives). Core tests: 46 → 58.
+- **Test helper completeness:** All core test helpers now include all required `Photo` fields (cloud, camera).
+- **Dead code removed:** `AdvancedSettings.tsx`, `TimelineSettings.tsx` (never imported), `updateSetting` (never used), dead exports (`ExportFormat`, `ExecutionProgress`, `ExecutionResult`, `isSupportedImageFile` re-export).
+- **`locationLabelCache`** capped at 500 entries (was unbounded).
+- **Refactored `storage.ts`:** Split into `storageConnection`, `photoQueries`, `batchQueries`, `libraryStats` with barrel re-export.
+- **`App.tsx` complexity:** Extracted hooks (`useScanActions`, `useTimelineActions`, `usePlacemarkActions`, `useExportData`) and `FilterChipStrip` component.
+- **Version mismatch detection:** New `VersionMismatchModal` warns users when DB was created by a different version.
+
+### ⚠️ Database Rebuild Required
+
+Schema changed (`photo_issues` CHECK constraint). Delete `placemark.db` and re-scan your sources.
+
+---
+
 ## v0.9.0 - Stats & Filters UI Overhaul (Apr 2026)
 
 ### ✨ Added

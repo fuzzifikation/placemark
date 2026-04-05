@@ -10,7 +10,6 @@ import { useState } from 'react';
 
 export interface ModalState {
   showTimeline: boolean;
-  isTimelinePlaying: boolean;
   showSettings: boolean;
   showUpgrade: boolean;
   showStats: boolean;
@@ -22,7 +21,6 @@ export interface ModalState {
 
 export interface ModalActions {
   setShowTimeline: (v: boolean) => void;
-  setIsTimelinePlaying: (v: boolean) => void;
   setShowSettings: (v: boolean) => void;
   setShowUpgrade: (v: boolean) => void;
   setShowStats: (v: boolean) => void;
@@ -35,7 +33,6 @@ export interface ModalActions {
 
 export function useModals(): ModalState & ModalActions {
   const [showTimeline, setShowTimeline] = useState(false);
-  const [isTimelinePlaying, setIsTimelinePlaying] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -47,8 +44,6 @@ export function useModals(): ModalState & ModalActions {
   return {
     showTimeline,
     setShowTimeline,
-    isTimelinePlaying,
-    setIsTimelinePlaying,
     showSettings,
     setShowSettings,
     showUpgrade,

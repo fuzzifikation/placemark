@@ -19,6 +19,13 @@ function photo(
     scannedAt: Date.now(),
     fileSize: 1000,
     mimeType: 'image/jpeg',
+    cameraMake: null,
+    cameraModel: null,
+    cloudItemId: null,
+    cloudFolderPath: null,
+    cloudSha256: null,
+    cloudWebUrl: null,
+    cloudFolderWebUrl: null,
   };
 }
 

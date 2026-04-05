@@ -4,6 +4,7 @@
  */
 
 import type { Photo } from '../models/Photo';
+import { getBasename } from '../utils';
 
 // ---------------------------------------------------------------------------
 // CSV
@@ -30,9 +31,9 @@ const CSV_HEADER = 'filename,date_iso,latitude,longitude,camera_make,camera_mode
 export function toCsv(photos: Photo[]): string {
   const rows = [CSV_HEADER];
   for (const photo of photos) {
-    if (photo.latitude === null || photo.longitude === null) continue;
+    if (!Number.isFinite(photo.latitude) || !Number.isFinite(photo.longitude)) continue;
 
-    const filename = photo.path.split(/[\\/]/).pop() ?? photo.path;
+    const filename = getBasename(photo.path);
     const folderPath = photo.path.substring(0, photo.path.length - filename.length - 1);
     const dateIso = photo.timestamp ? new Date(photo.timestamp).toISOString() : '';
 
@@ -62,9 +63,9 @@ export function toCsv(photos: Photo[]): string {
  */
 export function toGeoJson(photos: Photo[]): string {
   const features = photos
-    .filter((p) => p.latitude !== null && p.longitude !== null)
+    .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
     .map((photo) => {
-      const filename = photo.path.split(/[\\/]/).pop() ?? photo.path;
+      const filename = getBasename(photo.path);
       return {
         type: 'Feature',
         geometry: {
@@ -112,7 +113,7 @@ function xmlEscape(value: string): string {
  */
 export function toGpx(photos: Photo[]): string {
   const withGps = photos
-    .filter((p) => p.latitude !== null && p.longitude !== null)
+    .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
     .slice()
     .sort((a, b) => {
       if (a.timestamp === null && b.timestamp === null) return 0;
@@ -123,7 +124,7 @@ export function toGpx(photos: Photo[]): string {
 
   const waypoints = withGps
     .map((photo) => {
-      const filename = photo.path.split(/[\\/]/).pop() ?? photo.path;
+      const filename = getBasename(photo.path);
       const timeTag = photo.timestamp
         ? `\n    <time>${new Date(photo.timestamp).toISOString()}</time>`
         : '';

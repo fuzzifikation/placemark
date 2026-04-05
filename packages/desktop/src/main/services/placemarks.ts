@@ -79,11 +79,15 @@ export function updatePlacemark(input: UpdatePlacemarkInput): PlacemarkWithGeoLa
   const dateStart = input.dateStart !== undefined ? input.dateStart : existing.date_start;
   const dateEnd = input.dateEnd !== undefined ? input.dateEnd : existing.date_end;
 
+  // Only clear geo_label when bounds actually change — renaming shouldn't wipe it
+  const boundsChanged = input.bounds !== undefined;
+  const geoLabel = boundsChanged ? null : (existing.geo_label ?? null);
+
   const row = db
     .prepare(
       `UPDATE placemarks
        SET name = ?, bounds_north = ?, bounds_south = ?, bounds_east = ?, bounds_west = ?,
-           date_start = ?, date_end = ?, geo_label = NULL, updated_at = datetime('now')
+           date_start = ?, date_end = ?, geo_label = ?, updated_at = datetime('now')
        WHERE id = ?
        RETURNING *`
     )
@@ -95,6 +99,7 @@ export function updatePlacemark(input: UpdatePlacemarkInput): PlacemarkWithGeoLa
       bounds?.west ?? null,
       dateStart,
       dateEnd,
+      geoLabel,
       input.id
     );
   return rowToPlacemark(row);

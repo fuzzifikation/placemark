@@ -10,7 +10,7 @@ import { getPhotosByIds } from '../services/storage';
 import { toCsv, toGeoJson, toGpx, getDateRange } from '@placemark/core';
 import { logger } from '../services/logger';
 
-export type ExportFormat = 'csv' | 'geojson' | 'gpx';
+type ExportFormat = 'csv' | 'geojson' | 'gpx';
 
 interface ExportRequest {
   photoIds: number[];

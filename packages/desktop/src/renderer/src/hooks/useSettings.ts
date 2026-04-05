@@ -27,9 +27,5 @@ export function useSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   }, [settings]);
 
-  const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
-
-  return { settings, setSettings, updateSetting };
+  return { settings, setSettings };
 }

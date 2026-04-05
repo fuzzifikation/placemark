@@ -113,8 +113,30 @@ export interface OperationsAPI {
   }>;
   cancel: () => Promise<{ ok: boolean; message: string }>;
   undo: () => Promise<{ success: boolean; message: string; undoneCount?: number }>;
-  canUndo: () => Promise<{ canUndo: boolean; batchInfo?: any }>;
-  onProgress: (callback: (progress: any) => void) => () => void;
+  canUndo: () => Promise<{
+    canUndo: boolean;
+    batchInfo?: {
+      id: number;
+      operation: import('@placemark/core').OperationType;
+      fileCount: number;
+      timestamp: number;
+    };
+  }>;
+  onProgress: (
+    callback: (progress: {
+      totalFiles: number;
+      completedFiles: number;
+      currentFile: string;
+      percentage: number;
+      phase: 'executing' | 'complete';
+    }) => void
+  ) => () => void;
+}
+
+export interface VersionStampResult {
+  current: string;
+  stored: string | null;
+  mismatch: boolean;
 }
 
 export interface SystemAPI {
@@ -123,6 +145,9 @@ export interface SystemAPI {
   getSystemLocale: () => Promise<string>;
   openExternal: (url: string) => Promise<void>;
   reverseGeocode: (lat: number, lng: number) => Promise<string | null>;
+  checkVersionStamp: () => Promise<VersionStampResult>;
+  acceptVersionStamp: () => Promise<void>;
+  wipeAndRestart: () => Promise<void>;
 }
 
 export interface PlacemarkWithCount extends Placemark {

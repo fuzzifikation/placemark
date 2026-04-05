@@ -299,9 +299,9 @@ sequenceDiagram
 
 - `AppearanceSettings` - Theme toggle
 - `MapDisplaySettings` - Clustering, zoom, padding
-- `TimelineSettings` - Playback speed, auto-fit
-- `AdvancedSettings` - Developer settings (spider, tiles)
 - `StorageSettings` - Database and cache management
+- `PlacemarksSettings` - Placemark management settings
+- `AccountsSettings` - Cloud service connections
 - `AboutSection` - App info and version
 
 **Key Pattern:**

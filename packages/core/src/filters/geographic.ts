@@ -4,13 +4,10 @@
  */
 
 import { Photo } from '../models/Photo';
+import { PlacemarkBounds } from '../models/Placemark';
 
-export interface BoundingBox {
-  north: number;
-  south: number;
-  east: number;
-  west: number;
-}
+/** @deprecated Use PlacemarkBounds directly. Kept for backward compatibility. */
+export type BoundingBox = PlacemarkBounds;
 
 /**
  * Check if a photo is within a geographic bounding box

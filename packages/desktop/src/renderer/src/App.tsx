@@ -1,19 +1,19 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { MapView, SelectionMode } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { Settings } from './components/Settings';
 import { OperationsPanel } from './components/Operations/OperationsPanel';
-import { LibraryStatsPanel, formatMimeLabel } from './components/LibraryStatsPanel';
+import { LibraryStatsPanel } from './components/LibraryStatsPanel';
 import { PlacemarksPanel } from './components/PlacemarksPanel';
-import { FloatingHeader, type FilterChip } from './components/FloatingHeader';
+import { FloatingHeader } from './components/FloatingHeader';
+import { FilterChipStrip } from './components/FilterChipStrip';
 import { HelpModal } from './components/HelpModal';
 import { ProUpgradeModal } from './components/ProUpgradeModal';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { ScanOverlay } from './components/ScanOverlay';
 import { ExportSheet } from './components/ExportSheet';
+import { VersionMismatchModal } from './components/VersionMismatchModal';
 import type { Photo } from '@placemark/core';
-import { filterPhotos, getDateRange } from '@placemark/core';
-import type { OneDriveFolderItem } from './types/preload';
 import { usePhotoData } from './hooks/usePhotoData';
 import { useTheme } from './hooks/useTheme';
 import { useFolderScan } from './hooks/useFolderScan';
@@ -21,31 +21,22 @@ import { useToast } from './hooks/useToast';
 import { usePlacemarks } from './hooks/usePlacemarks';
 import { useSettings } from './hooks/useSettings';
 import { useModals } from './hooks/useModals';
+import { useScanActions } from './hooks/useScanActions';
+import { useTimelineActions } from './hooks/useTimelineActions';
+import { usePlacemarkActions } from './hooks/usePlacemarkActions';
+import { useExportData } from './hooks/useExportData';
 import { ToastContainer } from './components/Toast/ToastContainer';
 import { initSystemLocale } from './utils/formatLocale';
-import {
-  LAYOUT,
-  Z_INDEX,
-  TRANSITIONS,
-  getGlassStyle,
-  SPACING,
-  BORDER_RADIUS,
-  FONT_SIZE,
-  FONT_FAMILY,
-} from './constants/ui';
-import './types/preload.d'; // Import type definitions
+import { LAYOUT, Z_INDEX, TRANSITIONS, getGlassStyle } from './constants/ui';
+import './types/preload.d';
 
 function App() {
-  // Global styles to remove default margins and scrollbars
+  // --- One-time setup effects ---
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
       html, body, #root {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
       }
     `;
     document.head.appendChild(style);
@@ -54,80 +45,84 @@ function App() {
     };
   }, []);
 
-  // Resolve OS regional-format locale for date/number formatting
   useEffect(() => {
     initSystemLocale();
   }, []);
 
-  // Custom hooks
+  // --- Version mismatch check ---
+  const [versionMismatch, setVersionMismatch] = useState<{
+    previous: string;
+    current: string;
+  } | null>(null);
+
+  useEffect(() => {
+    window.api.system.checkVersionStamp().then((result) => {
+      if (result.mismatch && result.stored) {
+        setVersionMismatch({ previous: result.stored, current: result.current });
+      }
+    });
+  }, []);
+
+  // --- Core hooks ---
   const photoData = usePhotoData();
   const { theme, colors, toggleTheme } = useTheme();
   const folderScan = useFolderScan();
   const toast = useToast();
   const placemarks = usePlacemarks();
-
-  // Component state
-  const {
-    showTimeline,
-    setShowTimeline,
-    setIsTimelinePlaying,
-    showSettings,
-    setShowSettings,
-    showUpgrade,
-    setShowUpgrade,
-    showStats,
-    setShowStats,
-    showOperations,
-    setShowOperations,
-    showHelp,
-    setShowHelp,
-    showPlacemarks,
-    setShowPlacemarks,
-    togglePlacemarks,
-    showScanOverlay,
-    setShowScanOverlay,
-  } = useModals();
-  // Suppresses the first onViewChange after a programmatic fly-to (placemark activation)
-  const suppressNextViewChangeRef = useRef(false);
-  const [targetMapBounds, setTargetMapBounds] = useState<{
-    north: number;
-    south: number;
-    east: number;
-    west: number;
-  } | null>(null);
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
-  const [lastSelectedDateRange, setLastSelectedDateRange] = useState<{
-    start: number;
-    end: number;
-  } | null>(null);
   const { settings, setSettings } = useSettings();
-  // Incremented after a successful import to trigger map fit-to-content
+  const modals = useModals();
   const [fitSignal, setFitSignal] = useState(0);
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>('pan');
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
 
-  // Auto-show scan overlay when library is empty after init
+  // --- Composed action hooks ---
+  const scanActions = useScanActions({
+    folderScan,
+    photoData,
+    settings,
+    toast,
+    setShowScanOverlay: modals.setShowScanOverlay,
+    setFitSignal,
+  });
+
+  const timelineActions = useTimelineActions({
+    photoData,
+    placemarks,
+    showTimeline: modals.showTimeline,
+    setShowTimeline: modals.setShowTimeline,
+  });
+
+  const placemarkActions = usePlacemarkActions({
+    photoData,
+    placemarks,
+    setShowTimeline: modals.setShowTimeline,
+    setLastSelectedDateRange: timelineActions.setLastSelectedDateRange,
+  });
+
+  const exportData = useExportData({ photoData });
+
+  // --- Side effects ---
   useEffect(() => {
     if (photoData.isInitialized && photoData.allPhotos.length === 0) {
-      setShowScanOverlay(true);
+      modals.setShowScanOverlay(true);
     }
   }, [photoData.isInitialized, photoData.allPhotos.length]);
 
-  // Auto-open stats panel when scanning starts
   useEffect(() => {
     if (folderScan.scanning) {
-      setShowStats(true);
+      modals.setShowStats(true);
     }
   }, [folderScan.scanning]);
 
-  const [selectionMode, setSelectionMode] = useState<SelectionMode>('pan');
-
-  const handleSelectionModeToggle = () => {
+  // --- Local handlers ---
+  const handleSelectionModeToggle = useCallback(() => {
     if (selectionMode === 'lasso') {
       setSelectionMode('pan');
       photoData.clearSelection();
     } else {
       setSelectionMode('lasso');
     }
-  };
+  }, [selectionMode, photoData.clearSelection]);
 
   const photosForOperations = useMemo(() => {
     if (photoData.selection.size > 0) {
@@ -136,229 +131,8 @@ function App() {
     return photoData.mapPhotos;
   }, [photoData.selection, photoData.allPhotos, photoData.mapPhotos]);
 
-  const [showExport, setShowExport] = useState(false);
-
-  const exportPhotoIds = useMemo(() => {
-    if (photoData.selection.size > 0) {
-      return [...photoData.selection];
-    }
-    const visiblePhotos = photoData.mapBounds
-      ? filterPhotos(photoData.mapPhotos, { bounds: photoData.mapBounds })
-      : photoData.mapPhotos;
-    return visiblePhotos.map((p) => p.id);
-  }, [photoData.selection, photoData.mapPhotos, photoData.mapBounds]);
-
-  const exportScopeLabel = useMemo(() => {
-    if (photoData.selection.size > 0) {
-      return `${photoData.selection.size} selected photo${photoData.selection.size !== 1 ? 's' : ''}`;
-    }
-    const count = photoData.mapBounds
-      ? filterPhotos(photoData.mapPhotos, { bounds: photoData.mapBounds }).length
-      : photoData.mapPhotos.length;
-    return `${count} photo${count !== 1 ? 's' : ''} in view`;
-  }, [photoData.selection, photoData.mapPhotos, photoData.mapBounds]);
-
-  // Date range of GPS photos currently visible in the map viewport (ignores active date filter).
-  // Used by the "Fit timeline to view" button to snap the timeline thumbs.
-  const fitToViewRange = useMemo(() => {
-    if (!photoData.mapBounds) return null;
-    const inBounds = filterPhotos(photoData.allPhotos, { bounds: photoData.mapBounds });
-    return getDateRange(inBounds);
-  }, [photoData.allPhotos, photoData.mapBounds]);
-
-  // Filter chips for the floating header (active format and camera filters)
-  const filterChips = useMemo<FilterChip[]>(() => {
-    const chips: FilterChip[] = [];
-    for (const mimeType of photoData.activeFilters.mimeTypes) {
-      chips.push({ key: mimeType, label: formatMimeLabel(mimeType), type: 'mimeType' });
-    }
-    for (const cameraKey of photoData.activeFilters.cameras) {
-      const [make, model] = cameraKey.split('|');
-      const label = make === model || make === 'Unknown' ? model : `${make} ${model}`;
-      chips.push({ key: cameraKey, label, type: 'camera' });
-    }
-    return chips;
-  }, [photoData.activeFilters]);
-
-  const handleRemoveFilter = useCallback(
-    (chip: FilterChip) => {
-      if (chip.type === 'mimeType') {
-        photoData.toggleMimeTypeFilter(chip.key);
-      } else {
-        photoData.toggleCameraFilter(chip.key);
-      }
-    },
-    [photoData.toggleMimeTypeFilter, photoData.toggleCameraFilter]
-  );
-
-  const handleFitTimelineToView = () => {
-    if (!fitToViewRange) return;
-    handleDateRangeChange(fitToViewRange.start, fitToViewRange.end);
-  };
-
-  const handleScanFolder = async () => {
-    try {
-      const result = await folderScan.scanFolder(photoData.loadPhotos, settings.maxFileSizeMB);
-
-      if (!result || result.canceled) {
-        // OS folder dialog was cancelled — close overlay only if photos already exist
-        if (photoData.allPhotos.length > 0) {
-          setShowScanOverlay(false);
-        }
-        return;
-      }
-
-      // Scan completed (or was aborted after partial processing) — close overlay
-      setShowScanOverlay(false);
-
-      if (result.errors && result.errors.length > 0) {
-        toast.error(
-          `Scan completed with ${result.errors.length} error(s). Some files could not be processed.`
-        );
-      } else if (result.photosWithLocation === 0) {
-        toast.info('No photos with location data found in this folder.');
-      } else {
-        setFitSignal((n) => n + 1);
-        toast.success(
-          `Found ${result.photosWithLocation} photo${result.photosWithLocation !== 1 ? 's' : ''} with location data.`
-        );
-      }
-    } catch (error) {
-      toast.error(`Failed to scan folder: ${error}`);
-    }
-  };
-
-  const handleClearLibrary = async () => {
-    if (
-      !window.confirm(
-        'Remove all photos from the library?\n\nThumbnail cache will also be cleared. Your actual photo files will not be deleted.'
-      )
-    ) {
-      return;
-    }
-    // Clear both DB and thumbnail cache — thumbnails are keyed to photo IDs that no longer exist
-    await window.api.photos.clearDatabase();
-    await window.api.thumbnails.clearCache();
-    photoData.clearAllFilters();
-    await photoData.loadPhotos();
-    // useEffect will auto-show scan overlay since photos.length becomes 0
-  };
-
-  const handleSelectOneDriveFolder = async (folder: OneDriveFolderItem) => {
-    // Keep overlay mounted so it can show the scanning progress UI.
-    // Close it after import completes (or fails).
-    await folderScan.importOneDriveFolder(folder.id, photoData.loadPhotos);
-    setFitSignal((n) => n + 1);
-    setShowScanOverlay(false);
-  };
-
-  const handleViewChange = useCallback(
-    (bounds: { north: number; south: number; east: number; west: number }) => {
-      if (suppressNextViewChangeRef.current) {
-        // Ignore the moveend from the programmatic fly-to that placemark activation triggers
-        suppressNextViewChangeRef.current = false;
-      } else if (placemarks.activePlacemarkId !== null) {
-        // User panned/zoomed away — the view no longer matches the saved placemark
-        placemarks.setActivePlacemarkId(null);
-      }
-      photoData.trackMapBounds(bounds);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [placemarks.activePlacemarkId]
-  );
-
-  const handleActivatePlacemark = (id: number | 'thisYear' | 'last3Months' | null) => {
-    placemarks.setActivePlacemarkId(id);
-
-    if (id === null) {
-      // Only clear the map target; leave the timeline filter as-is
-      setTargetMapBounds(null);
-      return;
-    }
-
-    if (id === 'thisYear') {
-      const now = new Date();
-      const rangeMin = photoData.dateRange?.min;
-      const rangeMax = photoData.dateRange?.max;
-      const start = Math.max(new Date(now.getFullYear(), 0, 1).getTime(), rangeMin ?? 0);
-      const end = Math.min(now.getTime(), rangeMax ?? now.getTime());
-      photoData.filterByDateRange(start, end);
-      setLastSelectedDateRange({ start, end });
-      setShowTimeline(true);
-      setTargetMapBounds(null);
-      return;
-    }
-
-    if (id === 'last3Months') {
-      const now = Date.now();
-      const rangeMin = photoData.dateRange?.min;
-      const rangeMax = photoData.dateRange?.max;
-      const start = Math.max(now - 90 * 24 * 60 * 60 * 1000, rangeMin ?? 0);
-      const end = Math.min(now, rangeMax ?? now);
-      photoData.filterByDateRange(start, end);
-      setLastSelectedDateRange({ start, end });
-      setShowTimeline(true);
-      setTargetMapBounds(null);
-      return;
-    }
-
-    // User-saved placemark
-    const p = placemarks.placemarks.find((x) => x.id === id);
-    if (!p) return;
-
-    if (p.bounds) {
-      suppressNextViewChangeRef.current = true;
-      setTargetMapBounds({ ...p.bounds });
-    } else {
-      setTargetMapBounds(null);
-    }
-
-    if (p.dateStart || p.dateEnd) {
-      const start = p.dateStart
-        ? new Date(p.dateStart).getTime()
-        : (photoData.dateRange?.min ?? Date.now());
-      const end = p.dateEnd
-        ? new Date(p.dateEnd).getTime()
-        : (photoData.dateRange?.max ?? Date.now());
-      photoData.filterByDateRange(start, end);
-      setLastSelectedDateRange({ start, end });
-      setShowTimeline(true);
-    }
-  };
-
-  const handleTimelineToggle = () => {
-    const newShowTimeline = !showTimeline;
-    setShowTimeline(newShowTimeline);
-    if (newShowTimeline) {
-      // When opening timeline, restore last selection if it exists
-      if (lastSelectedDateRange) {
-        photoData.filterByDateRange(lastSelectedDateRange.start, lastSelectedDateRange.end);
-      }
-    } else {
-      // When closing timeline, reset to show all photos
-      photoData.resetDateFilter();
-    }
-  };
-
-  const handleDateRangeChange = (start: number, end: number) => {
-    // User dragged the timeline — no longer viewing the saved placemark
-    if (placemarks.activePlacemarkId !== null) {
-      placemarks.setActivePlacemarkId(null);
-    }
-    photoData.filterByDateRange(start, end);
-    // Remember this selection for when timeline is reopened
-    setLastSelectedDateRange({ start, end });
-  };
-
-  const handleTimelineClose = () => {
-    setShowTimeline(false);
-    photoData.resetDateFilter();
-  };
-
-  // Prevent flash during initialization
-  if (!photoData.isInitialized) {
-    return null;
-  }
+  // --- Render ---
+  if (!photoData.isInitialized) return null;
 
   const hasPhotos = photoData.allPhotos.length > 0;
 
@@ -374,7 +148,7 @@ function App() {
         transition: 'background-color 0.2s ease, color 0.2s ease',
       }}
     >
-      {/* Map - always rendered as backdrop */}
+      {/* Map */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
         <MapView
           photos={photoData.mapPhotos}
@@ -385,7 +159,7 @@ function App() {
               setSelectedPhoto(photo);
             }
           }}
-          onViewChange={handleViewChange}
+          onViewChange={placemarkActions.handleViewChange}
           clusteringEnabled={settings.clusteringEnabled}
           clusterRadius={settings.clusterRadius}
           clusterMaxZoom={settings.clusterMaxZoom}
@@ -393,7 +167,9 @@ function App() {
           tileMaxZoom={settings.tileMaxZoom}
           padding={settings.mapPadding}
           autoFit={
-            showTimeline && settings.autoZoomDuringPlay ? photoData.filterSource !== 'map' : false
+            modals.showTimeline && settings.autoZoomDuringPlay
+              ? photoData.filterSource !== 'map'
+              : false
           }
           theme={theme}
           showHeatmap={settings.showHeatmap}
@@ -413,20 +189,18 @@ function App() {
           clusterOpacity={settings.clusterOpacity}
           unclusteredPointOpacity={settings.unclusteredPointOpacity}
           fitPadding={{
-            // Clear the floating header: inset + header height + gap below it
             top:
               settings.mapPadding +
               LAYOUT.PANEL_INSET_PX +
               LAYOUT.HEADER_HEIGHT_PX +
               LAYOUT.PANEL_GAP_PX,
-            right: showStats
+            right: modals.showStats
               ? settings.mapPadding +
                 LAYOUT.PANEL_INSET_PX +
                 LAYOUT.STATS_PANEL_WIDTH_PX +
                 LAYOUT.PANEL_GAP_PX
               : settings.mapPadding,
-            // Clear the timeline panel when visible: inset + timeline height + gap above it
-            bottom: showTimeline
+            bottom: modals.showTimeline
               ? settings.mapPadding +
                 LAYOUT.PANEL_INSET_PX +
                 LAYOUT.TIMELINE_HEIGHT_PX +
@@ -434,14 +208,14 @@ function App() {
               : settings.mapPadding,
             left: settings.mapPadding,
           }}
-          targetBounds={targetMapBounds}
+          targetBounds={placemarkActions.targetMapBounds}
           fitSignal={fitSignal}
-          rightPanelWidth={showStats ? LAYOUT.STATS_PANEL_WIDTH_PX + LAYOUT.PANEL_GAP_PX : 0}
+          rightPanelWidth={modals.showStats ? LAYOUT.STATS_PANEL_WIDTH_PX + LAYOUT.PANEL_GAP_PX : 0}
           rightPanelTopPx={LAYOUT.PANEL_INSET_PX + LAYOUT.HEADER_HEIGHT_PX + LAYOUT.PANEL_GAP_PX}
         />
       </div>
 
-      {/* Floating Header - always visible once app is initialized */}
+      {/* Floating Header */}
       <div
         style={{
           position: 'absolute',
@@ -455,127 +229,59 @@ function App() {
           selectionCount={photoData.selection.size}
           selectionMode={selectionMode}
           dateRangeAvailable={!!photoData.dateRange}
-          showTimeline={showTimeline}
-          showPlacemarks={showPlacemarks}
+          showTimeline={modals.showTimeline}
+          showPlacemarks={modals.showPlacemarks}
           scanning={folderScan.scanning}
           colors={colors}
           glassBlur={settings.glassBlur}
           glassSurfaceOpacity={settings.glassSurfaceOpacity}
           onSelectionModeToggle={handleSelectionModeToggle}
-          onOperationsOpen={() => setShowOperations(true)}
-          onExportOpen={() => setShowExport(true)}
-          onSettingsOpen={() => setShowSettings(true)}
-          showStats={showStats}
-          onStatsToggle={() => setShowStats(!showStats)}
-          onTimelineToggle={handleTimelineToggle}
-          onPlacemarksToggle={togglePlacemarks}
-          onScanFolder={() => setShowScanOverlay(true)}
-          onClearLibrary={handleClearLibrary}
-          onHelpOpen={() => setShowHelp(true)}
+          onOperationsOpen={() => modals.setShowOperations(true)}
+          onExportOpen={() => exportData.setShowExport(true)}
+          onSettingsOpen={() => modals.setShowSettings(true)}
+          showStats={modals.showStats}
+          onStatsToggle={() => modals.setShowStats(!modals.showStats)}
+          onTimelineToggle={timelineActions.handleTimelineToggle}
+          onPlacemarksToggle={modals.togglePlacemarks}
+          onScanFolder={() => modals.setShowScanOverlay(true)}
+          onClearLibrary={scanActions.handleClearLibrary}
+          onHelpOpen={() => modals.setShowHelp(true)}
         />
       </div>
 
-      {/* Filter chip strip — appears below the header when format/camera filters are active */}
-      {!showScanOverlay && filterChips.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.HEADER_HEIGHT} + ${LAYOUT.PANEL_GAP})`,
-            left: LAYOUT.PANEL_INSET,
-            right: showStats
-              ? `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.STATS_PANEL_WIDTH} + ${LAYOUT.PANEL_GAP})`
-              : LAYOUT.PANEL_INSET,
-            zIndex: Z_INDEX.HEADER,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: SPACING.XS,
-            alignItems: 'center',
-          }}
-        >
-          {filterChips.map((chip) => (
-            <div
-              key={`${chip.type}:${chip.key}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: `3px ${SPACING.SM} 3px ${SPACING.SM}`,
-                borderRadius: BORDER_RADIUS.LG,
-                backgroundColor: `${colors.primary}22`,
-                border: `1px solid ${colors.primary}66`,
-                fontSize: FONT_SIZE.XS,
-                fontWeight: 600,
-                color: colors.primary,
-                whiteSpace: 'nowrap',
-                fontFamily: FONT_FAMILY,
-                backdropFilter: `blur(${settings.glassBlur}px)`,
-                WebkitBackdropFilter: `blur(${settings.glassBlur}px)`,
-              }}
-            >
-              {chip.label}
-              <button
-                onClick={() => handleRemoveFilter(chip)}
-                title={`Remove filter: ${chip.label}`}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: colors.primary,
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  lineHeight: 1,
-                  fontSize: '14px',
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          {filterChips.length > 1 && (
-            <button
-              onClick={photoData.clearAllFilters}
-              title="Clear all filters"
-              style={{
-                background: 'none',
-                border: `1px solid ${colors.border}`,
-                cursor: 'pointer',
-                color: colors.textMuted,
-                padding: `3px ${SPACING.SM}`,
-                borderRadius: BORDER_RADIUS.LG,
-                fontSize: FONT_SIZE.XS,
-                fontFamily: FONT_FAMILY,
-                whiteSpace: 'nowrap',
-                backdropFilter: `blur(${settings.glassBlur}px)`,
-                WebkitBackdropFilter: `blur(${settings.glassBlur}px)`,
-              }}
-            >
-              Clear all
-            </button>
-          )}
-        </div>
+      {/* Filter Chips */}
+      {!modals.showScanOverlay && (
+        <FilterChipStrip
+          activeFilters={photoData.activeFilters}
+          showStats={modals.showStats}
+          colors={colors}
+          glassBlur={settings.glassBlur}
+          onToggleMimeType={photoData.toggleMimeTypeFilter}
+          onToggleCamera={photoData.toggleCameraFilter}
+          onClearAll={photoData.clearAllFilters}
+        />
       )}
 
-      {/* Scan Overlay - blocks map/header during scan or when library is empty */}
-      {showScanOverlay && (
+      {/* Scan Overlay */}
+      {modals.showScanOverlay && (
         <ScanOverlay
           hasPhotos={hasPhotos}
           scanning={folderScan.scanning}
           scanProgress={folderScan.scanProgress}
           includeSubdirectories={folderScan.includeSubdirectories}
           onIncludeSubdirectoriesChange={folderScan.setIncludeSubdirectories}
-          onScan={handleScanFolder}
-          onOneDriveSelect={handleSelectOneDriveFolder}
+          onScan={scanActions.handleScanFolder}
+          onOneDriveSelect={scanActions.handleSelectOneDriveFolder}
           onAbort={folderScan.abortScan}
-          onClose={() => setShowScanOverlay(false)}
+          onClose={() => modals.setShowScanOverlay(false)}
           colors={colors}
           glassBlur={settings.glassBlur}
           glassSurfaceOpacity={settings.glassSurfaceOpacity}
         />
       )}
 
-      {/* Floating Timeline - hidden during scan */}
-      {!showScanOverlay && showTimeline && photoData.dateRange && (
+      {/* Timeline */}
+      {!modals.showScanOverlay && modals.showTimeline && photoData.dateRange && (
         <div
           style={{
             position: 'absolute',
@@ -597,21 +303,21 @@ function App() {
             startDate={
               photoData.selectedDateRange
                 ? photoData.selectedDateRange.start
-                : lastSelectedDateRange
-                  ? lastSelectedDateRange.start
+                : timelineActions.lastSelectedDateRange
+                  ? timelineActions.lastSelectedDateRange.start
                   : photoData.dateRange.min
             }
             endDate={
               photoData.selectedDateRange
                 ? photoData.selectedDateRange.end
-                : lastSelectedDateRange
-                  ? lastSelectedDateRange.end
+                : timelineActions.lastSelectedDateRange
+                  ? timelineActions.lastSelectedDateRange.end
                   : photoData.dateRange.max
             }
             totalPhotos={photoData.allPhotos.length}
             filteredPhotos={photoData.mapPhotos.length}
-            onRangeChange={handleDateRangeChange}
-            onClose={handleTimelineClose}
+            onRangeChange={timelineActions.handleDateRangeChange}
+            onClose={timelineActions.handleTimelineClose}
             updateInterval={settings.timelineUpdateInterval}
             playSpeedSlowMs={settings.playSpeedSlowDays * 24 * 60 * 60 * 1000}
             playSpeedMediumMs={settings.playSpeedMediumDays * 24 * 60 * 60 * 1000}
@@ -621,17 +327,18 @@ function App() {
             onAutoZoomToggle={() =>
               setSettings((prev) => ({ ...prev, autoZoomDuringPlay: !prev.autoZoomDuringPlay }))
             }
-            onPlayingChange={setIsTimelinePlaying}
-            onFitToView={fitToViewRange ? handleFitTimelineToView : undefined}
+            onFitToView={
+              timelineActions.fitToViewRange ? timelineActions.handleFitTimelineToView : undefined
+            }
           />
         </div>
       )}
 
-      {/* Settings Modal - hidden during scan */}
-      {!showScanOverlay && showSettings && (
+      {/* Settings */}
+      {!modals.showScanOverlay && modals.showSettings && (
         <Settings
-          onClose={() => setShowSettings(false)}
-          onUpgradeOpen={() => setShowUpgrade(true)}
+          onClose={() => modals.setShowSettings(false)}
+          onUpgradeOpen={() => modals.setShowUpgrade(true)}
           settings={settings}
           onSettingsChange={setSettings}
           theme={theme}
@@ -640,14 +347,14 @@ function App() {
         />
       )}
 
-      {/* Placemarks Panel - left-side floating glass panel for saved geo+time filters */}
-      {!showScanOverlay && showPlacemarks && (
+      {/* Placemarks Panel */}
+      {!modals.showScanOverlay && modals.showPlacemarks && (
         <div
           style={{
             position: 'absolute',
             top: `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.HEADER_HEIGHT} + ${LAYOUT.PANEL_GAP})`,
             left: LAYOUT.PANEL_INSET,
-            bottom: showTimeline
+            bottom: modals.showTimeline
               ? `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.TIMELINE_HEIGHT} + ${LAYOUT.PANEL_GAP})`
               : LAYOUT.PANEL_INSET,
             width: LAYOUT.PLACEMARKS_WIDTH,
@@ -661,13 +368,13 @@ function App() {
             activePlacemarkId={placemarks.activePlacemarkId}
             currentBounds={photoData.mapBounds ?? null}
             currentDateRange={photoData.selectedDateRange}
-            onActivate={handleActivatePlacemark}
+            onActivate={placemarkActions.handleActivatePlacemark}
             onCreate={placemarks.createPlacemark}
             onUpdate={async (id, input) => {
               await placemarks.updatePlacemark({ id, ...input });
             }}
             onDelete={placemarks.deletePlacemark}
-            onClose={() => setShowPlacemarks(false)}
+            onClose={() => modals.setShowPlacemarks(false)}
             onRefreshPlacemarks={placemarks.refresh}
             theme={theme}
             glassBlur={settings.glassBlur}
@@ -677,14 +384,14 @@ function App() {
         </div>
       )}
 
-      {/* Library Stats Panel - floating glass panel, right side, below header */}
-      {showStats && (
+      {/* Library Stats Panel */}
+      {modals.showStats && (
         <div
           style={{
             position: 'absolute',
             top: `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.HEADER_HEIGHT} + ${LAYOUT.PANEL_GAP})`,
             right: LAYOUT.PANEL_INSET,
-            bottom: showTimeline
+            bottom: modals.showTimeline
               ? `calc(${LAYOUT.PANEL_INSET} + ${LAYOUT.TIMELINE_HEIGHT} + ${LAYOUT.PANEL_GAP})`
               : LAYOUT.PANEL_INSET,
             width: LAYOUT.STATS_PANEL_WIDTH,
@@ -693,7 +400,7 @@ function App() {
           }}
         >
           <LibraryStatsPanel
-            onClose={() => setShowStats(false)}
+            onClose={() => modals.setShowStats(false)}
             theme={theme}
             isScanning={folderScan.scanning}
             activeFilters={photoData.activeFilters}
@@ -705,18 +412,18 @@ function App() {
         </div>
       )}
 
-      {/* Operations Modal - hidden during scan */}
-      {!showScanOverlay && showOperations && (
+      {/* Operations */}
+      {!modals.showScanOverlay && modals.showOperations && (
         <OperationsPanel
           selectedPhotos={photosForOperations}
-          onClose={() => setShowOperations(false)}
+          onClose={() => modals.setShowOperations(false)}
           onRefreshPhotos={photoData.loadPhotos}
           toast={toast}
         />
       )}
 
-      {/* Photo Preview Modal - hidden during scan */}
-      {!showScanOverlay && selectedPhoto && (
+      {/* Photo Preview */}
+      {!modals.showScanOverlay && selectedPhoto && (
         <PhotoPreviewModal
           photo={selectedPhoto}
           onClose={() => setSelectedPhoto(null)}
@@ -725,13 +432,26 @@ function App() {
         />
       )}
 
-      {/* Help Modal */}
-      {showHelp && <HelpModal onClose={() => setShowHelp(false)} theme={theme} />}
+      {/* Version Mismatch */}
+      {versionMismatch && (
+        <VersionMismatchModal
+          previousVersion={versionMismatch.previous}
+          currentVersion={versionMismatch.current}
+          onKeep={async () => {
+            await window.api.system.acceptVersionStamp();
+            setVersionMismatch(null);
+          }}
+          theme={theme}
+        />
+      )}
 
-      {/* Pro Upgrade Modal */}
-      {!showScanOverlay && showUpgrade && (
+      {/* Help */}
+      {modals.showHelp && <HelpModal onClose={() => modals.setShowHelp(false)} theme={theme} />}
+
+      {/* Pro Upgrade */}
+      {!modals.showScanOverlay && modals.showUpgrade && (
         <ProUpgradeModal
-          onClose={() => setShowUpgrade(false)}
+          onClose={() => modals.setShowUpgrade(false)}
           onUpgrade={() =>
             toast.info('Microsoft Store purchasing is not enabled in this build yet.')
           }
@@ -739,12 +459,12 @@ function App() {
         />
       )}
 
-      {/* Export Sheet */}
-      {showExport && (
+      {/* Export */}
+      {exportData.showExport && (
         <ExportSheet
-          photoIds={exportPhotoIds}
-          scopeLabel={exportScopeLabel}
-          onClose={() => setShowExport(false)}
+          photoIds={exportData.exportPhotoIds}
+          scopeLabel={exportData.exportScopeLabel}
+          onClose={() => exportData.setShowExport(false)}
           theme={theme}
           glassBlur={settings.glassBlur}
           glassSurfaceOpacity={settings.glassSurfaceOpacity}

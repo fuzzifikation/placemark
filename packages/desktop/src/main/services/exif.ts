@@ -4,7 +4,6 @@
  */
 
 import exifr from 'exifr';
-import { isSupportedImageFile as checkSupportedImage } from './formats';
 import {
   normalizeGps,
   normalizeCameraMake,
@@ -21,9 +20,6 @@ export interface ExifData {
   /** Validation issues found in this photo's metadata. */
   issues?: ValidationIssue[];
 }
-
-// Re-export format helper for convenience
-export const isSupportedImageFile = checkSupportedImage;
 
 /**
  * Extract EXIF data from a photo file

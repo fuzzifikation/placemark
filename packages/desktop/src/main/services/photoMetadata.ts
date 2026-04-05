@@ -8,7 +8,7 @@
 
 // ── Issue types ───────────────────────────────────────────────────────────────
 
-export type PhotoIssueCode = 'gps_zero' | 'future_timestamp' | 'invalid_timestamp';
+export type PhotoIssueCode = 'gps_zero' | 'gps_nan' | 'future_timestamp' | 'invalid_timestamp';
 
 /** A validation problem found in a photo's raw metadata. */
 export interface ValidationIssue {
@@ -41,6 +41,11 @@ export function normalizeGps(
   longitude: number | undefined
 ): GpsResult {
   if (latitude === undefined || longitude === undefined) return {};
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return {
+      issue: { code: 'gps_nan', field: 'latitude/longitude', rawValue: `${latitude},${longitude}` },
+    };
+  }
   if (latitude === 0 && longitude === 0) {
     return {
       issue: { code: 'gps_zero', field: 'latitude/longitude', rawValue: '0,0' },

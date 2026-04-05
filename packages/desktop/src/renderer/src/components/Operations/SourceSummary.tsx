@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Photo } from '@placemark/core';
 import { useTheme } from '../../hooks/useTheme';
+import { SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../constants/ui';
 
 interface SourceSummaryProps {
   photos: Photo[];
@@ -74,34 +75,34 @@ export function SourceSummary({ photos }: SourceSummaryProps) {
     container: {
       backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#f3f4f6',
       borderRadius: '6px',
-      padding: '1rem',
+      padding: SPACING.LG,
       border: `1px solid ${colors.border}`,
     },
     header: {
-      fontWeight: 600,
-      marginBottom: '0.5rem',
+      fontWeight: FONT_WEIGHT.MEDIUM,
+      marginBottom: SPACING.SM,
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      fontSize: '0.95rem',
+      fontSize: FONT_SIZE.MD,
     },
     summaryText: {
       color: colors.textSecondary,
-      marginBottom: '0.75rem',
-      fontSize: '0.9rem',
+      marginBottom: SPACING.MD,
+      fontSize: FONT_SIZE.SM,
     },
     list: {
       listStyle: 'none',
       padding: 0,
       margin: 0,
-      fontSize: '0.85rem',
+      fontSize: FONT_SIZE.SM,
       fontFamily: 'monospace',
     },
     listItem: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '0.5rem 0',
+      padding: `${SPACING.SM} 0`,
       borderBottom: `1px dashed ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
     },
     path: {
@@ -109,22 +110,22 @@ export function SourceSummary({ photos }: SourceSummaryProps) {
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap' as const,
       flex: 1,
-      marginRight: '1rem',
+      marginRight: SPACING.LG,
     },
     count: {
-      fontWeight: 600,
+      fontWeight: FONT_WEIGHT.MEDIUM,
       color: colors.primary,
       flexShrink: 0,
-      marginRight: '0.75rem',
+      marginRight: SPACING.MD,
     },
     showBtn: {
-      padding: '0.2rem 0.5rem',
+      padding: `0.2rem ${SPACING.SM}`,
       backgroundColor: colors.primary,
       color: 'white',
       border: 'none',
-      borderRadius: '4px',
+      borderRadius: BORDER_RADIUS.SM,
       cursor: 'pointer',
-      fontSize: '0.75rem',
+      fontSize: FONT_SIZE.XS,
       opacity: 0.8,
     },
     toggleBtn: {
@@ -132,8 +133,8 @@ export function SourceSummary({ photos }: SourceSummaryProps) {
       border: 'none',
       color: colors.primary,
       cursor: 'pointer',
-      fontSize: '0.85rem',
-      marginTop: '0.5rem',
+      fontSize: FONT_SIZE.SM,
+      marginTop: SPACING.SM,
       padding: 0,
       textDecoration: 'underline',
     },
@@ -145,11 +146,11 @@ export function SourceSummary({ photos }: SourceSummaryProps) {
         <span>Selection Source</span>
         <span
           style={{
-            fontSize: '0.8rem',
-            backgroundColor: isMultipleFolders ? '#f59e0b' : '#10b981', // Orange or Green
+            fontSize: FONT_SIZE.XS,
+            backgroundColor: isMultipleFolders ? '#f59e0b' : '#10b981',
             color: 'white',
-            padding: '2px 8px',
-            borderRadius: '12px',
+            padding: `2px ${SPACING.SM}`,
+            borderRadius: BORDER_RADIUS.XL,
           }}
         >
           {folderCount} folder{folderCount !== 1 ? 's' : ''}
@@ -167,7 +168,7 @@ export function SourceSummary({ photos }: SourceSummaryProps) {
             <span style={styles.path} title={stat.path}>
               📂 {stat.path}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.SM }}>
               <span style={styles.count}>{stat.count}</span>
               <button
                 onClick={() => handleShowInFolder(stat.path)}

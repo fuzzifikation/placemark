@@ -1,5 +1,7 @@
 import type { DryRunResult, FileOperation } from '@placemark/core';
 import type { ThemeColors } from '../../theme';
+import { formatBytes } from '../../utils/formatLocale';
+import { SPACING, BORDER_RADIUS, FONT_SIZE } from '../../constants/ui';
 
 interface DryRunPreviewProps {
   result: DryRunResult;
@@ -9,7 +11,7 @@ interface DryRunPreviewProps {
 export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
   const { summary, operations } = result;
 
-  const totalMB = (summary.totalSize / (1024 * 1024)).toFixed(1);
+  const totalFormatted = formatBytes(summary.totalSize);
 
   // Group operations by source folder
   const groupByFolder = (ops: FileOperation[]) => {
@@ -36,12 +38,12 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.LG }}>
       <div
         style={{
-          padding: '1rem',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)', // Blue
-          borderRadius: '8px',
+          padding: SPACING.LG,
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderRadius: BORDER_RADIUS.MD,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -50,8 +52,8 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
         <div style={{ color: colors.textPrimary }}>
           <span style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>{summary.totalFiles}</span>{' '}
           files
-          <span style={{ margin: '0 0.5rem', color: colors.textMuted }}>|</span>
-          <span style={{ fontWeight: 'bold' }}>{totalMB} MB</span>
+          <span style={{ margin: `0 ${SPACING.SM}`, color: colors.textMuted }}>|</span>
+          <span style={{ fontWeight: 'bold' }}>{totalFormatted}</span>
         </div>
         {summary.warnings.length > 0 && (
           <div style={{ color: '#d97706', fontWeight: 500 }}>
@@ -72,7 +74,7 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
           <div
             key={folder}
             style={{
-              padding: '1rem',
+              padding: SPACING.LG,
               borderBottom: `1px solid ${colors.borderLight}`,
             }}
           >
@@ -81,7 +83,7 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '0.5rem',
+                marginBottom: SPACING.SM,
               }}
             >
               <div style={{ flex: 1 }}>
@@ -89,16 +91,15 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
                   style={{
                     fontWeight: 'bold',
                     color: colors.textPrimary,
-                    fontSize: '0.875rem',
-                    marginBottom: '0.25rem',
+                    fontSize: FONT_SIZE.SM,
+                    marginBottom: SPACING.XS,
                   }}
                 >
                   📁 {folder.split(/[/\\]/).pop() || folder}
                 </div>
                 <div
                   style={{
-                    color: colors.textMuted,
-                    fontSize: '0.75rem',
+                    fontSize: FONT_SIZE.XS,
                     fontFamily: 'monospace',
                   }}
                   title={folder}
@@ -106,11 +107,10 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
                   {folder.length > 50 ? '...' + folder.slice(-47) : folder}
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.SM }}>
                 <span
                   style={{
-                    color: colors.textSecondary,
-                    fontSize: '0.875rem',
+                    fontSize: FONT_SIZE.SM,
                   }}
                 >
                   {ops.length} file{ops.length !== 1 ? 's' : ''}
@@ -118,13 +118,13 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
                 <button
                   onClick={() => handleShowInFolder(ops.map((op) => op.sourcePath))}
                   style={{
-                    padding: '0.25rem 0.5rem',
+                    padding: `${SPACING.XS} ${SPACING.SM}`,
                     backgroundColor: colors.primary,
                     color: 'white',
                     border: 'none',
-                    borderRadius: '4px',
+                    borderRadius: BORDER_RADIUS.SM,
                     cursor: 'pointer',
-                    fontSize: '0.75rem',
+                    fontSize: FONT_SIZE.XS,
                     opacity: 0.8,
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
@@ -135,12 +135,12 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
                 </button>
               </div>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACING.XS }}>
               {ops.slice(0, 5).map((op) => (
                 <span
                   key={op.id}
                   style={{
-                    fontSize: '0.75rem',
+                    fontSize: FONT_SIZE.XS,
                     color: colors.textSecondary,
                     backgroundColor: colors.surfaceHover,
                     padding: '0.125rem 0.25rem',
@@ -158,7 +158,7 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
               {ops.length > 5 && (
                 <span
                   style={{
-                    fontSize: '0.75rem',
+                    fontSize: FONT_SIZE.XS,
                     color: colors.textMuted,
                     padding: '0.125rem 0.25rem',
                   }}
@@ -174,11 +174,11 @@ export function DryRunPreview({ result, colors }: DryRunPreviewProps) {
       {summary.warnings.length > 0 && (
         <div
           style={{
-            padding: '0.75rem',
+            padding: SPACING.MD,
             backgroundColor: `${colors.warning}18`,
             color: colors.warning,
-            borderRadius: '4px',
-            fontSize: '0.875rem',
+            borderRadius: BORDER_RADIUS.SM,
+            fontSize: FONT_SIZE.SM,
             border: `1px solid ${colors.warning}40`,
           }}
         >

@@ -18,8 +18,25 @@ contextBridge.exposeInMainWorld('api', {
     clearDatabase: () => ipcRenderer.invoke('photos:clearDatabase'),
     getHistogram: (minDate: number, maxDate: number, bucketCount: number, gpsOnly: boolean) =>
       ipcRenderer.invoke('photos:getHistogram', minDate, maxDate, bucketCount, gpsOnly),
-    onScanProgress: (callback: (progress: any) => void) => {
-      const listener = (_event: any, progress: any) => callback(progress);
+    onScanProgress: (
+      callback: (progress: {
+        currentFile: string;
+        processed: number;
+        total: number;
+        startTime?: number;
+        eta?: number;
+      }) => void
+    ) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        progress: {
+          currentFile: string;
+          processed: number;
+          total: number;
+          startTime?: number;
+          eta?: number;
+        }
+      ) => callback(progress);
       ipcRenderer.on('photos:scanProgress', listener);
       return () => ipcRenderer.removeListener('photos:scanProgress', listener);
     },
@@ -38,8 +55,25 @@ contextBridge.exposeInMainWorld('api', {
     cancel: () => ipcRenderer.invoke('ops:cancel'),
     undo: () => ipcRenderer.invoke('ops:undo'),
     canUndo: () => ipcRenderer.invoke('ops:canUndo'),
-    onProgress: (callback: (progress: any) => void) => {
-      const listener = (_event: any, progress: any) => callback(progress);
+    onProgress: (
+      callback: (progress: {
+        totalFiles: number;
+        completedFiles: number;
+        currentFile: string;
+        percentage: number;
+        phase: string;
+      }) => void
+    ) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        progress: {
+          totalFiles: number;
+          completedFiles: number;
+          currentFile: string;
+          percentage: number;
+          phase: string;
+        }
+      ) => callback(progress);
       ipcRenderer.on('ops:progress', listener);
       return () => ipcRenderer.removeListener('ops:progress', listener);
     },
@@ -51,6 +85,9 @@ contextBridge.exposeInMainWorld('api', {
     openExternal: (url: string) => ipcRenderer.invoke('system:openExternal', url),
     reverseGeocode: (lat: number, lng: number) =>
       ipcRenderer.invoke('system:reverseGeocode', lat, lng),
+    checkVersionStamp: () => ipcRenderer.invoke('system:checkVersionStamp'),
+    acceptVersionStamp: () => ipcRenderer.invoke('system:acceptVersionStamp'),
+    wipeAndRestart: () => ipcRenderer.invoke('system:wipeAndRestart'),
   },
   placemarks: {
     getAll: () => ipcRenderer.invoke('placemarks:getAll'),
@@ -70,8 +107,25 @@ contextBridge.exposeInMainWorld('api', {
     importFolder: (itemId: string, includeSubdirectories: boolean) =>
       ipcRenderer.invoke('onedrive:importFolder', itemId, includeSubdirectories),
     abortImport: () => ipcRenderer.invoke('onedrive:abortImport'),
-    onImportProgress: (callback: (progress: any) => void) => {
-      const listener = (_event: any, progress: any) => callback(progress);
+    onImportProgress: (
+      callback: (progress: {
+        scanned: number;
+        imported: number;
+        duplicates: number;
+        total: number;
+        currentFile: string;
+      }) => void
+    ) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        progress: {
+          scanned: number;
+          imported: number;
+          duplicates: number;
+          total: number;
+          currentFile: string;
+        }
+      ) => callback(progress);
       ipcRenderer.on('onedrive:importProgress', listener);
       return () => ipcRenderer.removeListener('onedrive:importProgress', listener);
     },

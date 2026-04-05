@@ -3,7 +3,8 @@ import type { Photo, DryRunResult, OperationType } from '@placemark/core';
 import { DryRunPreview } from './DryRunPreview';
 import { SourceSummary } from './SourceSummary';
 import { useTheme } from '../../hooks/useTheme';
-import { formatDateTime } from '../../utils/formatLocale';
+import { formatDateTime, formatBytes } from '../../utils/formatLocale';
+import { SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, Z_INDEX } from '../../constants/ui';
 
 interface ExecutionProgress {
   totalFiles: number;
@@ -130,7 +131,7 @@ export function OperationsPanel({
     setExecuting(true);
     try {
       const result = await window.api.ops.execute();
-      if ((result as any).cancelled) {
+      if (result.cancelled) {
         toast.info(result.message);
         // Rollback is complete — force a fresh preview so the UI reflects current filesystem state
         setPreviewVersion((v) => v + 1);
@@ -182,7 +183,7 @@ export function OperationsPanel({
   };
 
   const totalSize = selectedPhotos.reduce((acc, p) => acc + p.fileSize, 0);
-  const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1);
+  const totalSizeFormatted = formatBytes(totalSize);
 
   const executeDisabled =
     executing ||
@@ -198,14 +199,14 @@ export function OperationsPanel({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 50,
-      padding: '1rem',
+      zIndex: Z_INDEX.MODAL,
+      padding: SPACING.LG,
       cursor: 'default',
     },
     modal: {
       backgroundColor: colors.surface,
       color: colors.textPrimary,
-      borderRadius: '8px',
+      borderRadius: BORDER_RADIUS.MD,
       boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
       width: '100%',
       maxWidth: '56rem', // 4xl
@@ -215,7 +216,7 @@ export function OperationsPanel({
       overflow: 'hidden',
     },
     header: {
-      padding: '1rem',
+      padding: SPACING.LG,
       borderBottom: `1px solid ${colors.border}`,
       display: 'flex',
       justifyContent: 'space-between',
@@ -224,21 +225,21 @@ export function OperationsPanel({
     content: {
       flex: 1,
       overflow: 'auto',
-      padding: '1.5rem',
+      padding: SPACING.XL,
       display: 'flex',
       flexDirection: 'column' as const,
-      gap: '1.5rem',
+      gap: SPACING.XL,
     },
     button: {
-      padding: '0.5rem 1rem',
-      borderRadius: '4px',
+      padding: `${SPACING.SM} ${SPACING.LG}`,
+      borderRadius: BORDER_RADIUS.SM,
       cursor: 'pointer',
       border: 'none',
     },
     actionBtn: {
-      padding: '0.5rem 1.5rem',
-      borderRadius: '4px',
-      fontWeight: 500,
+      padding: `${SPACING.SM} ${SPACING.XL}`,
+      borderRadius: BORDER_RADIUS.SM,
+      fontWeight: FONT_WEIGHT.NORMAL,
       color: 'white',
       border: 'none',
       cursor: 'pointer',
@@ -250,8 +251,8 @@ export function OperationsPanel({
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div style={styles.header}>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>
-            File Operations ({selectedPhotos.length} items, {totalSizeMB} MB)
+          <h2 style={{ margin: 0, fontSize: FONT_SIZE.LG, fontWeight: FONT_WEIGHT.MEDIUM }}>
+            File Operations ({selectedPhotos.length} items, {totalSizeFormatted})
           </h2>
           <button
             onClick={!executing ? onClose : undefined}
@@ -259,7 +260,7 @@ export function OperationsPanel({
               ...styles.button,
               background: 'none',
               color: colors.textSecondary,
-              fontSize: '1.25rem',
+              fontSize: FONT_SIZE.LG,
               cursor: executing ? 'not-allowed' : 'pointer',
               opacity: executing ? 0.4 : 1,
             }}
@@ -274,14 +275,14 @@ export function OperationsPanel({
           <SourceSummary photos={selectedPhotos} />
 
           {/* Step 1: Configuration */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <label style={{ fontWeight: 500 }}>Operation:</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.LG }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.LG }}>
+              <label style={{ fontWeight: FONT_WEIGHT.NORMAL }}>Operation:</label>
               <label
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem',
+                  gap: SPACING.SM,
                   cursor: executing ? 'not-allowed' : 'pointer',
                 }}
               >
@@ -298,7 +299,7 @@ export function OperationsPanel({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem',
+                  gap: SPACING.SM,
                   cursor: executing ? 'not-allowed' : 'pointer',
                 }}
               >
@@ -313,7 +314,7 @@ export function OperationsPanel({
               </label>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.LG }}>
               <button
                 onClick={handleSelectDest}
                 disabled={executing}
@@ -330,11 +331,11 @@ export function OperationsPanel({
               <div
                 style={{
                   flex: 1,
-                  padding: '0.5rem',
+                  padding: SPACING.SM,
                   backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : '#f3f4f6',
-                  borderRadius: '4px',
+                  borderRadius: BORDER_RADIUS.SM,
                   fontFamily: 'monospace',
-                  fontSize: '0.875rem',
+                  fontSize: FONT_SIZE.SM,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -354,9 +355,9 @@ export function OperationsPanel({
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '1rem',
+              gap: SPACING.LG,
               borderTop: `1px solid ${colors.border}`,
-              paddingTop: '1rem',
+              paddingTop: SPACING.LG,
             }}
           >
             {!destPath && (
@@ -371,7 +372,7 @@ export function OperationsPanel({
               <DryRunPreview result={dryRunResult} colors={colors} />
             )}
             {destPath && !loading && !dryRunResult && (
-              <p style={{ color: '#ef4444', margin: 0, fontSize: '0.875rem' }}>
+              <p style={{ color: '#ef4444', margin: 0, fontSize: FONT_SIZE.SM }}>
                 Could not generate preview — check the error notification above.
               </p>
             )}
@@ -381,17 +382,17 @@ export function OperationsPanel({
           {executing && progress && (
             <div
               style={{
-                padding: '0.75rem',
+                padding: SPACING.MD,
                 border: `1px solid ${colors.border}`,
                 borderRadius: '6px',
                 backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.04)' : '#f9fafb',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.5rem',
+                gap: SPACING.SM,
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 600 }}>Executing…</span>
+                <span style={{ fontWeight: FONT_WEIGHT.MEDIUM }}>Executing…</span>
                 <span style={{ color: colors.textSecondary }}>
                   {progress.completedFiles}/{progress.totalFiles} ({progress.percentage}%)
                 </span>
@@ -402,7 +403,7 @@ export function OperationsPanel({
                   style={{
                     color: colors.textSecondary,
                     fontFamily: 'monospace',
-                    fontSize: '0.8rem',
+                    fontSize: FONT_SIZE.SM,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -452,8 +453,8 @@ export function OperationsPanel({
               display: 'flex',
               justifyContent: 'flex-end',
               alignItems: 'center',
-              gap: '1rem',
-              paddingTop: '1rem',
+              gap: SPACING.LG,
+              paddingTop: SPACING.LG,
               borderTop: `1px solid ${colors.border}`,
             }}
           >
@@ -488,8 +489,8 @@ export function OperationsPanel({
             <div
               style={{
                 borderTop: `1px solid ${colors.border}`,
-                paddingTop: '1rem',
-                marginTop: '0.5rem',
+                paddingTop: SPACING.LG,
+                marginTop: SPACING.SM,
               }}
             >
               <div
@@ -497,18 +498,18 @@ export function OperationsPanel({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '0.75rem',
+                  padding: SPACING.MD,
                   backgroundColor: theme === 'dark' ? 'rgba(255, 193, 7, 0.1)' : '#fef3c7',
                   borderRadius: '6px',
                   border: `1px solid ${theme === 'dark' ? 'rgba(255, 193, 7, 0.3)' : '#fcd34d'}`,
                 }}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.XS }}>
+                  <span style={{ fontWeight: FONT_WEIGHT.NORMAL, fontSize: FONT_SIZE.SM }}>
                     Last operation: {undoState.batchInfo.operation} ({undoState.batchInfo.fileCount}{' '}
                     files)
                   </span>
-                  <span style={{ fontSize: '0.75rem', color: colors.textSecondary }}>
+                  <span style={{ fontSize: FONT_SIZE.XS, color: colors.textSecondary }}>
                     {formatDateTime(undoState.batchInfo.timestamp)}
                   </span>
                 </div>
@@ -518,8 +519,8 @@ export function OperationsPanel({
                   style={{
                     ...styles.actionBtn,
                     backgroundColor: executing ? colors.textMuted : '#f59e0b',
-                    fontSize: '0.875rem',
-                    padding: '0.4rem 1rem',
+                    fontSize: FONT_SIZE.SM,
+                    padding: `${SPACING.XS} ${SPACING.LG}`,
                     cursor: executing ? 'not-allowed' : 'pointer',
                   }}
                 >

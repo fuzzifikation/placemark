@@ -87,8 +87,8 @@ export function ScanOverlay({
           position: 'relative',
         }}
       >
-        {/* Close button — only shown when not scanning and library has photos */}
-        {!scanning && hasPhotos && (
+        {/* Close button — shown when not scanning */}
+        {!scanning && (
           <button
             onClick={onClose}
             title="Cancel"

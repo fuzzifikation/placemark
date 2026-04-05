@@ -26,6 +26,8 @@ export function useReverseGeocoding(
   const [geoLabels, setGeoLabels] = useState<Map<number, string>>(new Map());
   const fetchedIdsRef = useRef<Set<number>>(new Set());
   const inFlightIdsRef = useRef<Set<number>>(new Set());
+  const onLabelPersistedRef = useRef(onLabelPersisted);
+  onLabelPersistedRef.current = onLabelPersisted;
 
   useEffect(() => {
     // Seed from persisted labels and mark as already fetched.
@@ -74,7 +76,7 @@ export function useReverseGeocoding(
               setGeoLabels((prev) => new Map(prev).set(p.id, label));
               resolved = true;
               fetchedIdsRef.current.add(p.id);
-              onLabelPersisted?.();
+              onLabelPersistedRef.current?.();
             }
 
             if (!resolved && attempt < 2) {

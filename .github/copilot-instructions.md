@@ -143,10 +143,12 @@ pnpm -C packages/core test              # Core unit tests (must pass)
 
 **Current test coverage (packages/core):**
 
-- `filters/geographic.test.ts` — bounding box filtering, IDL crossing, null coords, SQL generation
+- `filters/geographic.test.ts` — bounding box filtering, IDL crossing, null coords
 - `filters/combined.test.ts` — composed query delegation, NOT NULL clauses, empty filter
+- `filters/temporal.test.ts` — getDateRange (empty, all-null, single, negatives), isPhotoInDateRange boundaries
 - `operations/planner.test.ts` — batch filename collisions, path separators, empty input, size sums
-- `operations/validator.test.ts` — same-path rejection, dest-inside-source, mixed separators, root/empty paths
+- `operations/validator.test.ts` — empty paths, root paths
+- `export/formatters.test.ts` — CSV, GeoJSON, GPX output, NaN/null GPS filtering, special characters
 
 When modifying core logic, **add or update tests** for the changed behavior.
 

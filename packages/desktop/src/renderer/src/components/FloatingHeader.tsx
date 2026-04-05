@@ -28,12 +28,6 @@ import {
 } from 'lucide-react';
 import type { ThemeColors } from '../theme';
 
-export interface FilterChip {
-  key: string;
-  label: string;
-  type: 'mimeType' | 'camera';
-}
-
 interface FloatingHeaderProps {
   photoCount: number;
   selectionCount: number;
@@ -130,6 +124,24 @@ export function FloatingHeader({
     alignItems: 'center',
     gap: SPACING.SM,
   };
+
+  const groupLabel = (text: string) => (
+    <div
+      style={{
+        position: 'absolute',
+        bottom: '-12px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: FONT_SIZE.XS,
+        color: colors.textMuted,
+        fontWeight: 400,
+        fontFamily: FONT_FAMILY,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {text}
+    </div>
+  );
 
   const iconButtonHoverOn = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.currentTarget.style.backgroundColor = colors.surfaceHover;
@@ -243,21 +255,7 @@ export function FloatingHeader({
           </button>
         </div>
 
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-12px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: FONT_SIZE.XS,
-            color: colors.textMuted,
-            fontWeight: 400,
-            fontFamily: FONT_FAMILY,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Library
-        </div>
+        {groupLabel('Library')}
       </div>
 
       {divider}
@@ -392,21 +390,7 @@ export function FloatingHeader({
           </button>
         </div>
 
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-12px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: FONT_SIZE.XS,
-            color: colors.textMuted,
-            fontWeight: 400,
-            fontFamily: FONT_FAMILY,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Tools
-        </div>
+        {groupLabel('Tools')}
       </div>
 
       {divider}

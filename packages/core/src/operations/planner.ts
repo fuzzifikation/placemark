@@ -13,14 +13,7 @@
 
 import { Photo } from '../models/Photo';
 import { FileOperation, DryRunResult, OperationType } from '../models/Operation';
-
-/**
- * Extract filename from a path (platform-agnostic)
- */
-function getBasename(path: string): string {
-  const separator = path.includes('\\') ? '\\' : '/';
-  return path.split(separator).pop() || path;
-}
+import { getBasename } from '../utils';
 
 /**
  * Generate an operation plan for copying/moving photos

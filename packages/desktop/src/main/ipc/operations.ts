@@ -10,7 +10,6 @@ import {
   isValidDestination,
   FileOperation,
   DryRunResult,
-  Photo,
   OperationType,
 } from '@placemark/core';
 import * as path from 'path';

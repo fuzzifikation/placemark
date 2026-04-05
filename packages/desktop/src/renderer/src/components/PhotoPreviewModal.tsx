@@ -16,6 +16,7 @@ interface PhotoPreviewModalProps {
   theme?: Theme;
 }
 
+const LOCATION_CACHE_MAX = 500;
 const locationLabelCache = new Map<string, string>();
 
 function formatCoordinates(lat: number, lng: number): string {
@@ -105,6 +106,10 @@ export function PhotoPreviewModal({
       .then((label) => {
         if (canceled) return;
         if (label && label.trim()) {
+          if (locationLabelCache.size >= LOCATION_CACHE_MAX) {
+            const oldest = locationLabelCache.keys().next().value!;
+            locationLabelCache.delete(oldest);
+          }
           locationLabelCache.set(cacheKey, label);
           setLocationLabel(`${label} (${coordinates})`);
           return;

@@ -79,7 +79,7 @@ const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS photo_issues (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     photo_id     INTEGER NOT NULL,
-    issue_code   TEXT NOT NULL CHECK(issue_code IN ('gps_zero', 'future_timestamp', 'invalid_timestamp')),
+    issue_code   TEXT NOT NULL CHECK(issue_code IN ('gps_zero', 'gps_nan', 'future_timestamp', 'invalid_timestamp')),
     field        TEXT NOT NULL,
     raw_value    TEXT,
     detected_at  INTEGER NOT NULL,

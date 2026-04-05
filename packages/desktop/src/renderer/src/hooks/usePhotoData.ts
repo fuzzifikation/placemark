@@ -73,14 +73,6 @@ export function usePhotoData() {
     return filtered;
   }, [selectedDateRange, photos, activeFilters]); // photos dep ensures refresh after load
 
-  /**
-   * Count of photos visible in current map bounds (for UI display)
-   */
-  const visibleInBoundsCount = useMemo(() => {
-    if (!mapBounds) return mapPhotos.length;
-    return filterPhotos(mapPhotos, { bounds: mapBounds }).length;
-  }, [mapPhotos, mapBounds]);
-
   const updateSelection = useCallback(
     (ids: number[], mode: 'set' | 'add' | 'remove' | 'toggle') => {
       setSelection((prev) => {
@@ -162,7 +154,6 @@ export function usePhotoData() {
   return {
     mapPhotos, // Date/format/camera-filtered photos for map display (no bounds filtering)
     allPhotos: allPhotosRef.current, // Expose for checking length/empty state
-    visibleInBoundsCount, // Count of photos in current map view
     mapBounds,
     dateRange,
     selectedDateRange,

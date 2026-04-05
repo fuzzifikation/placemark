@@ -10,3 +10,4 @@ export * from './filters/geographic';
 export * from './filters/temporal';
 export * from './filters/combined';
 export * from './export/formatters';
+export * from './utils';

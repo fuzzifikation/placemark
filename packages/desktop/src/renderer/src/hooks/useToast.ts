@@ -10,11 +10,13 @@ interface ToastItem {
   type: 'success' | 'error' | 'info';
 }
 
+let nextToastId = 0;
+
 export function useToast() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    const id = Date.now().toString();
+    const id = String(++nextToastId);
     const toast: ToastItem = { id, message, type };
     setToasts((prev) => [...prev, toast]);
   }, []);

@@ -8,82 +8,16 @@ import { X, ChevronDown, ChevronRight, FolderOpen } from 'lucide-react';
 import type { PhotoIssueEntry } from '../types/preload';
 import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
-import { formatNumber, formatDateWithOptions } from '../utils/formatLocale';
+import {
+  formatNumber,
+  formatDateWithOptions,
+  formatMimeLabel,
+  formatBytes,
+  timeAgo,
+  formatSpan,
+} from '../utils/formatLocale';
 import { FONT_FAMILY, BORDER_RADIUS, SPACING, FONT_SIZE, getGlassStyle } from '../constants/ui';
 import { useLibraryStats } from '../hooks/useLibraryStats';
-
-/** Human-readable label for a MIME type */
-function formatMimeLabel(mimeType: string): string {
-  const labels: Record<string, string> = {
-    'image/jpeg': 'JPEG',
-    'image/png': 'PNG',
-    'image/webp': 'WebP',
-    'image/heic': 'HEIC',
-    'image/heif': 'HEIF',
-    'image/tiff': 'TIFF',
-    'image/gif': 'GIF',
-    'image/avif': 'AVIF',
-    'image/x-canon-cr2': 'CR2 (Canon)',
-    'image/x-canon-cr3': 'CR3 (Canon)',
-    'image/x-nikon-nef': 'NEF (Nikon)',
-    'image/x-nikon-nrw': 'NRW (Nikon)',
-    'image/x-sony-arw': 'ARW (Sony)',
-    'image/x-adobe-dng': 'DNG',
-    'image/x-fuji-raf': 'RAF (Fujifilm)',
-    'image/x-olympus-orf': 'ORF (Olympus)',
-    'image/x-panasonic-rw2': 'RW2 (Panasonic)',
-    'image/x-pentax-pef': 'PEF (Pentax)',
-    'image/x-samsung-srw': 'SRW (Samsung)',
-    'image/x-leica-rwl': 'RWL (Leica)',
-  };
-  return labels[mimeType] ?? mimeType;
-}
-
-/** Format bytes as KB / MB / GB */
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
-
-/** Human-readable relative time ("2 hours ago", "3 days ago") */
-function timeAgo(timestamp: number): string {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
-  if (seconds < 60) return 'just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} day${days !== 1 ? 's' : ''} ago`;
-  const months = Math.floor(days / 30);
-  return `${months} month${months !== 1 ? 's' : ''} ago`;
-}
-
-/** Format a duration in ms as a human-readable span (e.g. "2.3 years", "4 months", "12 days") */
-function formatSpan(ms: number): string {
-  if (!isFinite(ms) || ms < 0) return '—';
-  const days = ms / (1000 * 60 * 60 * 24);
-  if (days < 1) return 'same day';
-  if (days < 31) {
-    const d = Math.round(days);
-    return `${d} day${d !== 1 ? 's' : ''}`;
-  }
-  const months = days / 30.44; // average days per month
-  if (months < 12) {
-    const m = Math.round(months);
-    return `${m} month${m !== 1 ? 's' : ''}`;
-  }
-  const years = days / 365.25;
-  if (years < 10) {
-    return `${Math.round(years * 10) / 10} years`;
-  }
-  return `${Math.round(years)} years`;
-}
-
-/** Exported so callers can compute human-readable filter chip labels */
-export { formatMimeLabel };
 
 const CAMERAS_INITIAL_VISIBLE = 5;
 
@@ -114,6 +48,11 @@ export function LibraryStatsPanel({
   const [issuesExpanded, setIssuesExpanded] = useState(false);
   const [issuePhotos, setIssuePhotos] = useState<PhotoIssueEntry[] | null>(null);
   const [issuePhotosLoading, setIssuePhotosLoading] = useState(false);
+
+  // Reset issue list when scan completes so it refetches on next expand
+  useEffect(() => {
+    if (!isScanning) setIssuePhotos(null);
+  }, [isScanning]);
 
   // Load issue detail list when expanded
   useEffect(() => {
@@ -206,6 +145,90 @@ export function LibraryStatsPanel({
   // Build max counts for proportional bar widths
   const maxFormatCount = stats?.formatBreakdown[0]?.count ?? 1;
   const maxCameraCount = stats?.cameraBreakdown[0]?.count ?? 1;
+
+  // Shared row for format/camera breakdown bars
+  const breakdownRow = (
+    key: string,
+    label: string,
+    count: number,
+    maxCount: number,
+    isActive: boolean,
+    onClick: (() => void) | undefined,
+    labelWidth: string
+  ) => (
+    <div
+      key={key}
+      onClick={onClick}
+      title={onClick ? (isActive ? 'Remove filter' : 'Filter') : undefined}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: SPACING.SM,
+        padding: `${SPACING.XS} ${SPACING.SM}`,
+        borderRadius: BORDER_RADIUS.SM,
+        cursor: onClick ? 'pointer' : 'default',
+        backgroundColor: isActive ? `${colors.primary}22` : 'transparent',
+        outline: isActive ? `1px solid ${colors.primary}66` : 'none',
+        transition: 'background-color 0.15s ease',
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive)
+          (e.currentTarget as HTMLDivElement).style.backgroundColor = colors.borderLight;
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLDivElement).style.backgroundColor = isActive
+          ? `${colors.primary}22`
+          : 'transparent';
+      }}
+    >
+      <span
+        style={{
+          fontSize: FONT_SIZE.SM,
+          color: isActive ? colors.primary : colors.textSecondary,
+          width: labelWidth,
+          flexShrink: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          fontWeight: isActive ? 600 : 400,
+        }}
+        title={label}
+      >
+        {label}
+      </span>
+      <div
+        style={{
+          flex: 1,
+          height: '8px',
+          backgroundColor: colors.borderLight,
+          borderRadius: '4px',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            width: `${(count / maxCount) * 100}%`,
+            height: '100%',
+            backgroundColor: isActive ? colors.primary : colors.textMuted,
+            borderRadius: '4px',
+            transition: 'width 0.3s ease',
+            minWidth: '4px',
+          }}
+        />
+      </div>
+      <span
+        style={{
+          fontSize: FONT_SIZE.XS,
+          fontWeight: 600,
+          color: isActive ? colors.primary : colors.textPrimary,
+          minWidth: '40px',
+          textAlign: 'right',
+        }}
+      >
+        {formatNumber(count)}
+      </span>
+    </div>
+  );
 
   return (
     <div
@@ -368,6 +391,7 @@ export function LibraryStatsPanel({
                         entry.path.replace(/\\/g, '/').split('/').pop() ?? entry.path;
                       const issueLabels = entry.issueCodes.map((code) => {
                         if (code === 'gps_zero') return 'GPS (0,0)';
+                        if (code === 'gps_nan') return 'GPS invalid';
                         if (code === 'future_timestamp') return 'Future date';
                         if (code === 'invalid_timestamp') return 'Invalid date';
                         return code;
@@ -450,82 +474,14 @@ export function LibraryStatsPanel({
               <div style={labelStyle}>File Formats</div>
               {stats.formatBreakdown.map((fmt) => {
                 const isActive = activeFilters?.mimeTypes.has(fmt.mimeType) ?? false;
-                return (
-                  <div
-                    key={fmt.mimeType}
-                    onClick={() => onToggleMimeType?.(fmt.mimeType)}
-                    title={
-                      onToggleMimeType
-                        ? isActive
-                          ? 'Remove filter'
-                          : 'Filter by this format'
-                        : undefined
-                    }
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: SPACING.SM,
-                      padding: `${SPACING.XS} ${SPACING.SM}`,
-                      borderRadius: BORDER_RADIUS.SM,
-                      cursor: onToggleMimeType ? 'pointer' : 'default',
-                      backgroundColor: isActive ? `${colors.primary}22` : 'transparent',
-                      outline: isActive ? `1px solid ${colors.primary}66` : 'none',
-                      transition: 'background-color 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive)
-                        (e.currentTarget as HTMLDivElement).style.backgroundColor =
-                          colors.borderLight;
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.backgroundColor = isActive
-                        ? `${colors.primary}22`
-                        : 'transparent';
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: FONT_SIZE.SM,
-                        color: isActive ? colors.primary : colors.textSecondary,
-                        width: '120px',
-                        flexShrink: 0,
-                        fontWeight: isActive ? 600 : 400,
-                      }}
-                    >
-                      {formatMimeLabel(fmt.mimeType)}
-                    </span>
-                    <div
-                      style={{
-                        flex: 1,
-                        height: '8px',
-                        backgroundColor: colors.borderLight,
-                        borderRadius: '4px',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${(fmt.count / maxFormatCount) * 100}%`,
-                          height: '100%',
-                          backgroundColor: isActive ? colors.primary : colors.textMuted,
-                          borderRadius: '4px',
-                          transition: 'width 0.3s ease',
-                          minWidth: '4px',
-                        }}
-                      />
-                    </div>
-                    <span
-                      style={{
-                        fontSize: FONT_SIZE.XS,
-                        fontWeight: 600,
-                        color: isActive ? colors.primary : colors.textPrimary,
-                        minWidth: '40px',
-                        textAlign: 'right',
-                      }}
-                    >
-                      {formatNumber(fmt.count)}
-                    </span>
-                  </div>
+                return breakdownRow(
+                  fmt.mimeType,
+                  formatMimeLabel(fmt.mimeType),
+                  fmt.count,
+                  maxFormatCount,
+                  isActive,
+                  onToggleMimeType ? () => onToggleMimeType(fmt.mimeType) : undefined,
+                  '120px'
                 );
               })}
             </div>
@@ -544,86 +500,14 @@ export function LibraryStatsPanel({
                     cam.make === cam.model || cam.make === 'Unknown'
                       ? cam.model
                       : `${cam.make} ${cam.model}`;
-                  return (
-                    <div
-                      key={cameraKey}
-                      onClick={() => onToggleCamera?.(cameraKey)}
-                      title={
-                        onToggleCamera
-                          ? isActive
-                            ? 'Remove filter'
-                            : 'Filter by this camera'
-                          : undefined
-                      }
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: SPACING.SM,
-                        padding: `${SPACING.XS} ${SPACING.SM}`,
-                        borderRadius: BORDER_RADIUS.SM,
-                        cursor: onToggleCamera ? 'pointer' : 'default',
-                        backgroundColor: isActive ? `${colors.primary}22` : 'transparent',
-                        outline: isActive ? `1px solid ${colors.primary}66` : 'none',
-                        transition: 'background-color 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isActive)
-                          (e.currentTarget as HTMLDivElement).style.backgroundColor =
-                            colors.borderLight;
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLDivElement).style.backgroundColor = isActive
-                          ? `${colors.primary}22`
-                          : 'transparent';
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: FONT_SIZE.SM,
-                          color: isActive ? colors.primary : colors.textSecondary,
-                          width: '140px',
-                          flexShrink: 0,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          fontWeight: isActive ? 600 : 400,
-                        }}
-                        title={label}
-                      >
-                        {label}
-                      </span>
-                      <div
-                        style={{
-                          flex: 1,
-                          height: '8px',
-                          backgroundColor: colors.borderLight,
-                          borderRadius: '4px',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: `${(cam.count / maxCameraCount) * 100}%`,
-                            height: '100%',
-                            backgroundColor: isActive ? colors.primary : colors.textMuted,
-                            borderRadius: '4px',
-                            transition: 'width 0.3s ease',
-                            minWidth: '4px',
-                          }}
-                        />
-                      </div>
-                      <span
-                        style={{
-                          fontSize: FONT_SIZE.XS,
-                          fontWeight: 600,
-                          color: isActive ? colors.primary : colors.textPrimary,
-                          minWidth: '40px',
-                          textAlign: 'right',
-                        }}
-                      >
-                        {formatNumber(cam.count)}
-                      </span>
-                    </div>
+                  return breakdownRow(
+                    cameraKey,
+                    label,
+                    cam.count,
+                    maxCameraCount,
+                    isActive,
+                    () => onToggleCamera?.(cameraKey),
+                    '140px'
                   );
                 })}
                 {stats.cameraBreakdown.length > CAMERAS_INITIAL_VISIBLE && (

@@ -82,8 +82,8 @@ export async function scanDirectory(
         });
       }
 
-      await processImageFile(filePath, source, result, maxFileSizeMB);
-      result.processedFiles++;
+      const imported = await processImageFile(filePath, source, result, maxFileSizeMB);
+      if (imported) result.processedFiles++;
     } catch (error) {
       const errorMsg = `Error processing ${path.basename(filePath)}: ${error instanceof Error ? error.message : String(error)}`;
       result.errors.push(errorMsg);
@@ -220,7 +220,7 @@ async function processImageFile(
   source: PhotoSource,
   result: ScanResult,
   maxFileSizeMB: number
-): Promise<void> {
+): Promise<boolean> {
   const stats = await fs.stat(filePath);
 
   const maxFileSizeBytes = maxFileSizeMB * 1024 * 1024;
@@ -229,7 +229,7 @@ async function processImageFile(
     result.errors.push(
       `Skipped large file (${Math.round(stats.size / 1024 / 1024)}MB): ${path.basename(filePath)}`
     );
-    return;
+    return false;
   }
 
   const exifData = await extractExif(filePath);
@@ -254,4 +254,6 @@ async function processImageFile(
   if (exifData.latitude != null && exifData.longitude != null) {
     result.photosWithLocation++;
   }
+
+  return true;
 }
