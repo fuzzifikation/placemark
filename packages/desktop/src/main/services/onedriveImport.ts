@@ -14,6 +14,7 @@ import {
   ValidationIssue,
 } from './photoMetadata';
 import { runWithConcurrency, IMPORT_CONCURRENCY } from '../utils/concurrency';
+import { logger } from './logger';
 
 export interface OneDriveImportProgress {
   scanned: number;
@@ -191,7 +192,11 @@ export class OneDriveImportService {
     // (better-sqlite3) and cannot interleave in the JS event loop.
     await runWithConcurrency(subfolderIds, IMPORT_CONCURRENCY, async (subfolderId) => {
       if (abortRequested) return;
-      await this.importFolder(subfolderId, true, onProgress, counts, totals, false);
+      try {
+        await this.importFolder(subfolderId, true, onProgress, counts, totals, false);
+      } catch (err) {
+        logger.error(`OneDrive subfolder ${subfolderId} failed:`, err);
+      }
     });
 
     return counts;

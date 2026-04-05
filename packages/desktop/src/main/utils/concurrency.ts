@@ -23,10 +23,11 @@ export async function runWithConcurrency<T>(
   const iter = items[Symbol.iterator]();
   let active = 0;
   let done = false;
+  let rejected = false;
 
   return new Promise<void>((resolve, reject) => {
     function next(): void {
-      while (active < limit && !done) {
+      while (active < limit && !done && !rejected) {
         const { value, done: iterDone } = iter.next();
         if (iterDone) {
           done = true;
@@ -37,11 +38,15 @@ export async function runWithConcurrency<T>(
         fn(value as T).then(
           () => {
             active--;
+            if (rejected) return;
             next();
             if (done && active === 0) resolve();
           },
           (err) => {
-            reject(err);
+            if (!rejected) {
+              rejected = true;
+              reject(err);
+            }
           }
         );
       }

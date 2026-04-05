@@ -56,7 +56,6 @@ export class OneDriveAuthService {
 
   async login(): Promise<OneDriveConnectionStatus> {
     const verifier = base64UrlEncode(randomBytes(32));
-    const challenge = sha256Base64Url(verifier);
     const state = base64UrlEncode(randomBytes(24));
 
     const callback = await this.waitForCallback(state, verifier);
