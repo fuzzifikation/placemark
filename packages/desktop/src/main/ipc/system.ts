@@ -151,8 +151,8 @@ export function registerSystemHandlers() {
     } catch {
       // Non-fatal
     }
-    // Relaunch the app cleanly
+    // Relaunch the app cleanly — use quit() not exit() so Windows releases file handles
     app.relaunch();
-    app.exit(0);
+    app.quit();
   });
 }
