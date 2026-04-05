@@ -112,14 +112,17 @@ export function isDuplicateOneDrivePhoto(cloudSha256: string | null, cloudItemId
 export function recordPhotoIssues(photoId: number, issues: ValidationIssue[]): void {
   if (issues.length === 0) return;
   const db = getDb();
-  db.prepare('DELETE FROM photo_issues WHERE photo_id = ?').run(photoId);
-  const insert = db.prepare(
-    'INSERT INTO photo_issues (photo_id, issue_code, field, raw_value, detected_at) VALUES (?, ?, ?, ?, ?)'
-  );
-  const now = Date.now();
-  for (const issue of issues) {
-    insert.run(photoId, issue.code, issue.field, issue.rawValue, now);
-  }
+  const run = db.transaction(() => {
+    db.prepare('DELETE FROM photo_issues WHERE photo_id = ?').run(photoId);
+    const insert = db.prepare(
+      'INSERT INTO photo_issues (photo_id, issue_code, field, raw_value, detected_at) VALUES (?, ?, ?, ?, ?)'
+    );
+    const now = Date.now();
+    for (const issue of issues) {
+      insert.run(photoId, issue.code, issue.field, issue.rawValue, now);
+    }
+  });
+  run();
 }
 
 export interface PhotoIssueEntry {

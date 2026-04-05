@@ -229,9 +229,11 @@ export class ThumbnailService {
   }
 
   private evictLRU(bytesToFree: number): void {
+    // Estimate max rows needed: assume minimum ~1KB per thumbnail
+    const estimatedRows = Math.max(Math.ceil(bytesToFree / 1024), 100);
     const thumbnailsToEvict = this.db
-      .prepare('SELECT photo_id, size_bytes FROM thumbnails ORDER BY last_accessed_at ASC')
-      .all() as Array<{ photo_id: number; size_bytes: number }>;
+      .prepare('SELECT photo_id, size_bytes FROM thumbnails ORDER BY last_accessed_at ASC LIMIT ?')
+      .all(estimatedRows) as Array<{ photo_id: number; size_bytes: number }>;
 
     let freedSpace = 0;
     const idsToDelete: number[] = [];

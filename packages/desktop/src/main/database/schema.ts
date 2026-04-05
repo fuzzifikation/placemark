@@ -35,6 +35,8 @@ const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_photos_timestamp ON photos(timestamp);
   CREATE INDEX IF NOT EXISTS idx_photos_hash ON photos(file_hash);
   CREATE INDEX IF NOT EXISTS idx_photos_source ON photos(source);
+  CREATE INDEX IF NOT EXISTS idx_photos_cloud_sha256 ON photos(cloud_sha256);
+  CREATE INDEX IF NOT EXISTS idx_photos_cloud_lookup ON photos(source, cloud_item_id);
 
   CREATE TABLE IF NOT EXISTS operation_batch (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
