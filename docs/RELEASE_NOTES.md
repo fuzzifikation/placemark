@@ -16,7 +16,6 @@
 - **`useExportData` null deref:** Removed unsafe `visiblePhotos!` non-null assertions; uses `(visiblePhotos ?? [])` fallback.
 - **WAL files deleted on wipe:** `wipeAndRestart` now deletes `-wal` and `-shm` journal files alongside `.db` files.
 - **`clearAllPhotos` transaction safety:** The 3 DELETE statements (plus `photo_issues`) are now wrapped in a single transaction.
-- **Histogram negative bucket:** SQL now clamps to `MAX(..., 0)` to prevent negative bucket indices from edge-case timestamps.
 - **Placemark input validation:** IPC handlers now validate bounds geometry, name, and date ordering before writing to DB.
 - **Toast ID collision:** Uses incrementing counter instead of `Date.now()`.
 - **`useReverseGeocoding` stale closure:** `onLabelPersisted` callback stored in a ref to avoid stale captures.

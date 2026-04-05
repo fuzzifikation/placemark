@@ -30,14 +30,14 @@ export function useExportData(deps: ExportDataDeps) {
     if (photoData.selection.size > 0) {
       return [...photoData.selection];
     }
-    return (visiblePhotos ?? []).map((p) => p.id);
+    return visiblePhotos!.map((p) => p.id);
   }, [photoData.selection, visiblePhotos]);
 
   const exportScopeLabel = useMemo(() => {
     if (photoData.selection.size > 0) {
       return `${photoData.selection.size} selected photo${photoData.selection.size !== 1 ? 's' : ''}`;
     }
-    const count = (visiblePhotos ?? []).length;
+    const count = visiblePhotos!.length;
     return `${count} photo${count !== 1 ? 's' : ''} in view`;
   }, [photoData.selection, visiblePhotos]);
 

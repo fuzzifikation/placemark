@@ -219,7 +219,7 @@ export function getPhotoHistogram(
   return getDb()
     .prepare(
       `SELECT
-        MAX(MIN(CAST((timestamp - :min) / :width AS INTEGER), :n - 1), 0) AS bucket,
+        MIN(CAST((timestamp - :min) / :width AS INTEGER), :n - 1) AS bucket,
         COUNT(*) AS count
        FROM photos
        WHERE timestamp BETWEEN :min AND :max
