@@ -6,7 +6,7 @@
    - Download from: https://nodejs.org/
    - Verify: `node --version`
 
-2. **pnpm** (v8.0.0 or higher)
+2. **pnpm** (v10.0.0 or higher)
    - Install after Node.js: `npm install -g pnpm`
    - Configure pnpm: `pnpm setup` (adds to PATH)
    - **Important:** Restart your terminal after setup
@@ -27,38 +27,13 @@
 git clone https://github.com/fuzzifikation/placemark.git
 cd placemark
 
-# Install dependencies
+# Install dependencies (also rebuilds native modules via postinstall)
 pnpm install
 
 # Build core package (required first)
 pnpm -C packages/core build
 
-# Install Electron binary
-cd node_modules/.pnpm/electron@40.0.0/node_modules/electron
-node install.js
-cd ../../../../..
-
-# Rebuild native modules for Electron
-# This compiles better-sqlite3 and sharp for Electron compatibility
-$env:npm_config_target='40.0.0'
-$env:npm_config_arch='x64'
-$env:npm_config_target_arch='x64'
-$env:npm_config_disturl='https://electronjs.org/headers'
-$env:npm_config_runtime='electron'
-$env:npm_config_build_from_source='true'
-cd node_modules/.pnpm/better-sqlite3@12.6.2/node_modules/better-sqlite3
-npm run install
-cd ../../../../../..
-
 # Start development server
-pnpm dev
-```
-
-**Note for macOS/Linux:**
-
-```bash
-# After pnpm install and core build, use electron-rebuild instead:
-npx @electron/rebuild --version 40.0.0
 pnpm dev
 ```
 
@@ -101,14 +76,14 @@ pnpm test
 
 ```powershell
 # Windows (PowerShell)
-cd node_modules/.pnpm/electron@40.0.0/node_modules/electron
+cd node_modules/.pnpm/electron@41.1.1/node_modules/electron
 node install.js
 cd ../../../../..
 ```
 
 ```bash
 # macOS/Linux
-cd node_modules/.pnpm/electron@40.0.0/node_modules/electron
+cd node_modules/.pnpm/electron@41.1.1/node_modules/electron
 node install.js
 cd ../../../../..
 ```
@@ -120,18 +95,8 @@ cd ../../../../..
 **Solution (Windows):**
 
 ```powershell
-# Set environment variables for Electron build
-$env:npm_config_target='40.0.0'
-$env:npm_config_arch='x64'
-$env:npm_config_target_arch='x64'
-$env:npm_config_disturl='https://electronjs.org/headers'
-$env:npm_config_runtime='electron'
-$env:npm_config_build_from_source='true'
-
-# Navigate to better-sqlite3 and rebuild
-cd node_modules/.pnpm/better-sqlite3@12.6.2/node_modules/better-sqlite3
-npm run install
-cd ../../../../../..
+# Rebuild all native modules for the installed Electron version
+npx @electron/rebuild
 
 # Try dev again
 pnpm dev
@@ -140,7 +105,7 @@ pnpm dev
 **Solution (macOS/Linux):**
 
 ```bash
-npx @electron/rebuild --version 40.0.0
+npx @electron/rebuild
 ```
 
 ### Error: "Failed to resolve entry for package @placemark/core"

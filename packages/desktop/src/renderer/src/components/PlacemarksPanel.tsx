@@ -40,6 +40,7 @@ interface PlacemarksPanelProps {
   ) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   onClose: () => void;
+  onRefreshPlacemarks: () => Promise<void>;
   theme: Theme;
   glassBlur: number;
   glassSurfaceOpacity: number;
@@ -84,6 +85,7 @@ export function PlacemarksPanel({
   onUpdate,
   onDelete,
   onClose,
+  onRefreshPlacemarks,
   theme,
   glassBlur,
   glassSurfaceOpacity,
@@ -104,7 +106,7 @@ export function PlacemarksPanel({
   const editInputRef = useRef<HTMLInputElement>(null);
 
   // Reverse geocoding labels — lazily fetched from Nominatim, cached by placemark ID.
-  const geoLabels = useReverseGeocoding(placemarks, reverseGeocodeEnabled);
+  const geoLabels = useReverseGeocoding(placemarks, reverseGeocodeEnabled, onRefreshPlacemarks);
 
   // Set suggested name and focus input when form first opens.
   // currentDateRange is intentionally NOT in deps — we don't want to reset

@@ -145,6 +145,37 @@ export function recordPhotoIssues(photoId: number, issues: ValidationIssue[]): v
 }
 
 /**
+ * Get all photos that have at least one recorded metadata issue, with their issue codes.
+ * Used by the Library Health section in the stats panel.
+ */
+export interface PhotoIssueEntry {
+  photoId: number;
+  path: string;
+  source: string;
+  issueCodes: string[];
+}
+
+export function getPhotosWithIssues(): PhotoIssueEntry[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT p.id AS photoId, p.path, p.source,
+              GROUP_CONCAT(pi.issue_code) AS issueCodes
+       FROM photo_issues pi
+       JOIN photos p ON p.id = pi.photo_id
+       GROUP BY p.id
+       ORDER BY pi.detected_at DESC`
+    )
+    .all() as Array<{ photoId: number; path: string; source: string; issueCodes: string }>;
+
+  return rows.map((r) => ({
+    photoId: r.photoId,
+    path: r.path,
+    source: r.source,
+    issueCodes: r.issueCodes.split(','),
+  }));
+}
+
+/**
  * Get a single photo by ID
  */
 export function getPhotoById(id: number): Photo | null {

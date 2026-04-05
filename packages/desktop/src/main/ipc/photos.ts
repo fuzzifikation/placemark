@@ -13,6 +13,7 @@ import {
   closeStorage,
   getPhotoById,
   getLibraryStats,
+  getPhotosWithIssues,
 } from '../services/storage';
 import { ThumbnailService } from '../services/thumbnails';
 import { logger } from '../services/logger';
@@ -196,6 +197,11 @@ export function registerPhotoHandlers(): void {
   // Get library statistics (aggregated photo metadata)
   ipcMain.handle('photos:getLibraryStats', async () => {
     return getLibraryStats();
+  });
+
+  // Get photos with metadata issues (for Library Health detail list)
+  ipcMain.handle('photos:getPhotosWithIssues', async () => {
+    return getPhotosWithIssues();
   });
 
   // Histogram of photo counts per equi-temporal bucket

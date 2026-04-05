@@ -46,7 +46,7 @@ export function PlacemarksSettings({
           <SettingsToggle
             label="Location lookup for placemarks"
             value={settings.reverseGeocodeEnabled}
-            description="When enabled, the center coordinate of a saved placemark area is sent to OpenStreetMap Nominatim to display a human-readable place name. No photo data is sent."
+            description="When enabled, the center coordinate of a saved placemark area is sent to OpenStreetMap Nominatim to display a human-readable place name. No photo data is sent. Once a name is resolved it is stored locally — disabling this setting afterwards does not remove existing names, but no new lookups will be made."
             onChange={(val) => onSettingChange('reverseGeocodeEnabled', val)}
             theme={theme}
           />

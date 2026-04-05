@@ -57,6 +57,18 @@ export function isRawFile(filePath: string): boolean {
   return RAW_IMAGE_EXTENSIONS.includes(ext as any);
 }
 
+/**
+ * Check if a file path is a HEIC/HEIF image.
+ * Sharp on Windows does not support HEIC decoding (only AVIF), so these
+ * files must be handled via exifr embedded thumbnail extraction.
+ * @param filePath - Full path or filename
+ * @returns true if the extension is heic or heif (case-insensitive)
+ */
+export function isHeicFile(filePath: string): boolean {
+  const ext = filePath.toLowerCase().split('.').pop();
+  return ext === 'heic' || ext === 'heif';
+}
+
 /** MIME type lookup for all supported image extensions */
 const MIME_TYPES: Record<string, string> = {
   // Standard formats

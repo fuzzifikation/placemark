@@ -87,15 +87,17 @@ export function PhotoHoverPreview({
             borderRadius: BORDER_RADIUS.SM,
           }}
         >
-          {photo.mimeType.startsWith('image/x-') ? (
+          {photo.mimeType.startsWith('image/x-') ||
+          photo.mimeType === 'image/heic' ||
+          photo.mimeType === 'image/heif' ? (
             <>
               <span style={{ fontSize: FONT_SIZE.SM, fontWeight: 600, color: colors.textPrimary }}>
-                RAW File
+                {photo.mimeType.startsWith('image/x-') ? 'RAW File' : 'HEIC File'}
               </span>
               <span
                 style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted, textAlign: 'center' }}
               >
-                No preview available
+                No embedded preview found
               </span>
             </>
           ) : (

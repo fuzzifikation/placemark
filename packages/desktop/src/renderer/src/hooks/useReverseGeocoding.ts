@@ -14,10 +14,14 @@ import type { PlacemarkWithCount } from '../types/preload.d';
 /**
  * Returns a Map<placemarkId, geoLabel> for all placemarks with saved bounds.
  * Labels accumulate as network responses arrive.
+ *
+ * @param onLabelPersisted - called after each label is written to the DB so the
+ *   caller can refresh the placemarks list and keep in-memory state in sync.
  */
 export function useReverseGeocoding(
   placemarks: PlacemarkWithCount[],
-  enabled: boolean
+  enabled: boolean,
+  onLabelPersisted?: () => void
 ): Map<number, string> {
   const [geoLabels, setGeoLabels] = useState<Map<number, string>>(new Map());
   const fetchedIdsRef = useRef<Set<number>>(new Set());
@@ -70,6 +74,7 @@ export function useReverseGeocoding(
               setGeoLabels((prev) => new Map(prev).set(p.id, label));
               resolved = true;
               fetchedIdsRef.current.add(p.id);
+              onLabelPersisted?.();
             }
 
             if (!resolved && attempt < 2) {

@@ -214,7 +214,9 @@ export function PhotoPreviewModal({
               borderRadius: '4px',
             }}
           >
-            {photo.mimeType.startsWith('image/x-') ? (
+            {photo.mimeType.startsWith('image/x-') ||
+            photo.mimeType === 'image/heic' ||
+            photo.mimeType === 'image/heif' ? (
               <>
                 <p
                   style={{
@@ -224,10 +226,10 @@ export function PhotoPreviewModal({
                     color: colors.textPrimary,
                   }}
                 >
-                  RAW File
+                  {photo.mimeType.startsWith('image/x-') ? 'RAW File' : 'HEIC File'}
                 </p>
                 <p style={{ margin: 0, fontSize: '0.8125rem', color: colors.textMuted }}>
-                  Preview not supported for this format
+                  No embedded preview found
                 </p>
               </>
             ) : (

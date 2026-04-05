@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { app } from 'electron';
 import { logger } from './logger';
-import { isRawFile } from './formats';
+import { isRawFile, isHeicFile } from './formats';
 import type { OneDriveAuthService } from './onedriveAuth';
 import { ONEDRIVE_CONFIG } from '../config/onedrive';
 
@@ -82,26 +82,30 @@ export class ThumbnailService {
         throw new Error(`Photo file not accessible: ${photoPath} (${errorMessage})`);
       }
 
-      // For RAW files, extract embedded JPEG thumbnail first
+      // For RAW and HEIC/HEIF files, extract embedded JPEG thumbnail first.
+      // - RAW: sharp cannot decode sensor data at all.
+      // - HEIC/HEIF: sharp on Windows only supports AVIF, not H.265/HEIC.
       let inputForSharp: Buffer | string = photoPath;
 
-      if (isRawFile(photoPath)) {
+      if (isRawFile(photoPath) || isHeicFile(photoPath)) {
+        const formatLabel = isHeicFile(photoPath) ? 'HEIC' : 'RAW';
         try {
-          // exifr.thumbnail() extracts the embedded JPEG preview from RAW files
-          // This is fast (~10-50ms) because it only reads the thumbnail bytes, not the full sensor data
+          // exifr.thumbnail() extracts the embedded JPEG preview.
+          // Fast (~10-50ms) — reads only the thumbnail bytes, not pixel data.
           const embeddedThumbnail = await exifr.thumbnail(photoPath);
 
           if (embeddedThumbnail) {
             inputForSharp = embeddedThumbnail;
           } else {
-            // No embedded thumbnail found - return null and let UI show fallback
-            logger.warn(`RAW file has no embedded thumbnail: ${path.basename(photoPath)}`);
+            logger.warn(
+              `${formatLabel} file has no embedded thumbnail: ${path.basename(photoPath)}`
+            );
             return null;
           }
         } catch (error) {
-          // sharp cannot decode RAW sensor data (CR2, NEF, ARW, etc.) directly —
-          // the embedded JPEG preview via exifr is the only viable path
-          logger.warn(`Failed to extract RAW thumbnail: ${path.basename(photoPath)} — ${error}`);
+          logger.warn(
+            `Failed to extract ${formatLabel} thumbnail: ${path.basename(photoPath)} — ${error}`
+          );
           return null;
         }
       }

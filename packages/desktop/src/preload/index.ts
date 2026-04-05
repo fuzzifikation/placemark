@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke('photos:showMultipleInFolder', filePaths),
     getDatabaseStats: () => ipcRenderer.invoke('photos:getDatabaseStats'),
     getLibraryStats: () => ipcRenderer.invoke('photos:getLibraryStats'),
+    getPhotosWithIssues: () => ipcRenderer.invoke('photos:getPhotosWithIssues'),
     clearDatabase: () => ipcRenderer.invoke('photos:clearDatabase'),
     getHistogram: (minDate: number, maxDate: number, bucketCount: number, gpsOnly: boolean) =>
       ipcRenderer.invoke('photos:getHistogram', minDate, maxDate, bucketCount, gpsOnly),

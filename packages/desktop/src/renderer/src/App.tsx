@@ -668,6 +668,7 @@ function App() {
             }}
             onDelete={placemarks.deletePlacemark}
             onClose={() => setShowPlacemarks(false)}
+            onRefreshPlacemarks={placemarks.refresh}
             theme={theme}
             glassBlur={settings.glassBlur}
             glassSurfaceOpacity={settings.glassSurfaceOpacity}

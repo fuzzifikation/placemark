@@ -3,8 +3,9 @@
  * Mirrors the Settings panel pattern (right-side overlay, themed, glassmorphic).
  */
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, ChevronDown, ChevronRight, FolderOpen } from 'lucide-react';
+import type { PhotoIssueEntry } from '../types/preload';
 import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { formatNumber, formatDateWithOptions } from '../utils/formatLocale';
@@ -110,6 +111,19 @@ export function LibraryStatsPanel({
   const colors = useThemeColors(theme);
   const { stats, dbStats, thumbStats, loading } = useLibraryStats(isScanning);
   const [showAllCameras, setShowAllCameras] = useState(false);
+  const [issuesExpanded, setIssuesExpanded] = useState(false);
+  const [issuePhotos, setIssuePhotos] = useState<PhotoIssueEntry[] | null>(null);
+  const [issuePhotosLoading, setIssuePhotosLoading] = useState(false);
+
+  // Load issue detail list when expanded
+  useEffect(() => {
+    if (!issuesExpanded || issuePhotos !== null) return;
+    setIssuePhotosLoading(true);
+    window.api.photos
+      .getPhotosWithIssues()
+      .then(setIssuePhotos)
+      .finally(() => setIssuePhotosLoading(false));
+  }, [issuesExpanded, issuePhotos]);
 
   const cardStyle: React.CSSProperties = {
     backgroundColor: colors.surface,
@@ -312,23 +326,124 @@ export function LibraryStatsPanel({
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: `${SPACING.XS} 0`,
+                  cursor: stats.photosWithIssues > 0 ? 'pointer' : 'default',
                 }}
+                onClick={() => stats.photosWithIssues > 0 && setIssuesExpanded((v) => !v)}
               >
                 <span style={{ fontSize: FONT_SIZE.SM, color: colors.textSecondary }}>
                   Metadata issues
                 </span>
-                <span
-                  style={{
-                    fontSize: FONT_SIZE.SM,
-                    fontWeight: 600,
-                    color: stats.photosWithIssues > 0 ? '#f59e0b' : colors.textMuted,
-                  }}
-                >
-                  {stats.photosWithIssues > 0
-                    ? `${formatNumber(stats.photosWithIssues)} photo${stats.photosWithIssues !== 1 ? 's' : ''}`
-                    : 'None'}
+                <span style={{ display: 'flex', alignItems: 'center', gap: SPACING.XS }}>
+                  <span
+                    style={{
+                      fontSize: FONT_SIZE.SM,
+                      fontWeight: 600,
+                      color: stats.photosWithIssues > 0 ? '#f59e0b' : colors.textMuted,
+                    }}
+                  >
+                    {stats.photosWithIssues > 0
+                      ? `${formatNumber(stats.photosWithIssues)} photo${stats.photosWithIssues !== 1 ? 's' : ''}`
+                      : 'None'}
+                  </span>
+                  {stats.photosWithIssues > 0 &&
+                    (issuesExpanded ? (
+                      <ChevronDown size={14} color={colors.textMuted} />
+                    ) : (
+                      <ChevronRight size={14} color={colors.textMuted} />
+                    ))}
                 </span>
               </div>
+
+              {issuesExpanded && (
+                <div style={{ marginTop: SPACING.SM }}>
+                  {issuePhotosLoading && (
+                    <p style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted, margin: 0 }}>
+                      Loading…
+                    </p>
+                  )}
+                  {!issuePhotosLoading &&
+                    issuePhotos &&
+                    issuePhotos.map((entry) => {
+                      const filename =
+                        entry.path.replace(/\\/g, '/').split('/').pop() ?? entry.path;
+                      const issueLabels = entry.issueCodes.map((code) => {
+                        if (code === 'gps_zero') return 'GPS (0,0)';
+                        if (code === 'future_timestamp') return 'Future date';
+                        if (code === 'invalid_timestamp') return 'Invalid date';
+                        return code;
+                      });
+                      return (
+                        <div
+                          key={entry.photoId}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: `${SPACING.XS} 0`,
+                            borderTop: `1px solid ${colors.borderLight}`,
+                            gap: SPACING.SM,
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div
+                              style={{
+                                fontSize: FONT_SIZE.SM,
+                                color: colors.textPrimary,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                              title={entry.path}
+                            >
+                              {filename}
+                            </div>
+                            <div
+                              style={{
+                                display: 'flex',
+                                gap: SPACING.XS,
+                                marginTop: '2px',
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              {issueLabels.map((label) => (
+                                <span
+                                  key={label}
+                                  style={{
+                                    fontSize: FONT_SIZE.XS,
+                                    color: '#f59e0b',
+                                    backgroundColor: '#f59e0b18',
+                                    border: '1px solid #f59e0b40',
+                                    borderRadius: BORDER_RADIUS.SM,
+                                    padding: '1px 5px',
+                                  }}
+                                >
+                                  {label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => window.api.photos.showInFolder(entry.photoId)}
+                            title="Show in folder"
+                            style={{
+                              flexShrink: 0,
+                              background: 'none',
+                              border: `1px solid ${colors.border}`,
+                              borderRadius: BORDER_RADIUS.SM,
+                              cursor: 'pointer',
+                              padding: '3px 6px',
+                              color: colors.textSecondary,
+                              display: 'flex',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <FolderOpen size={13} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </div>
             {/* File Formats */}
             <div style={cardStyle}>

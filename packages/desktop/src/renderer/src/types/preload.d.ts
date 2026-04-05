@@ -62,6 +62,13 @@ export interface ThumbnailStats {
   usagePercent: number;
 }
 
+export interface PhotoIssueEntry {
+  photoId: number;
+  path: string;
+  source: string;
+  issueCodes: string[];
+}
+
 export interface PhotosAPI {
   scanFolder: (includeSubdirectories: boolean, maxFileSizeMB: number) => Promise<ScanResult>;
   abortScan: () => Promise<void>;
@@ -73,6 +80,7 @@ export interface PhotosAPI {
   showMultipleInFolder: (filePaths: string[]) => Promise<void>;
   getDatabaseStats: () => Promise<DatabaseStats>;
   getLibraryStats: () => Promise<LibraryStats>;
+  getPhotosWithIssues: () => Promise<PhotoIssueEntry[]>;
   clearDatabase: () => Promise<void>;
   getHistogram: (
     minDate: number,
