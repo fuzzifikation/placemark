@@ -391,6 +391,8 @@ function App() {
             onDelete={placemarks.deletePlacemark}
             onClose={() => modals.setShowPlacemarks(false)}
             onRefreshPlacemarks={placemarks.refresh}
+            onExport={() => window.api.placemarks.exportToFile()}
+            onImport={() => window.api.placemarks.importFromFile()}
             theme={theme}
             glassBlur={settings.glassBlur}
             glassSurfaceOpacity={settings.glassSurfaceOpacity}

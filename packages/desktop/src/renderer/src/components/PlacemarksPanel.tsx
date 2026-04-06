@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Bookmark, Plus, Trash2, Calendar, MapPin, Save } from 'lucide-react';
+import { X, Bookmark, Plus, Trash2, Calendar, MapPin, Save, Download, Upload } from 'lucide-react';
 import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useReverseGeocoding } from '../hooks/useReverseGeocoding';
@@ -41,6 +41,8 @@ interface PlacemarksPanelProps {
   onDelete: (id: number) => Promise<void>;
   onClose: () => void;
   onRefreshPlacemarks: () => Promise<void>;
+  onExport: () => Promise<{ exported: number; canceled: boolean }>;
+  onImport: () => Promise<{ imported: number; skipped: number; canceled: boolean }>;
   theme: Theme;
   glassBlur: number;
   glassSurfaceOpacity: number;
@@ -86,6 +88,8 @@ export function PlacemarksPanel({
   onDelete,
   onClose,
   onRefreshPlacemarks,
+  onExport,
+  onImport,
   theme,
   glassBlur,
   glassSurfaceOpacity,
@@ -102,6 +106,7 @@ export function PlacemarksPanel({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
+  const [transferMsg, setTransferMsg] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,6 +131,37 @@ export function PlacemarksPanel({
       editInputRef.current?.select();
     }
   }, [editingId]);
+
+  const handleExport = async () => {
+    try {
+      const result = await onExport();
+      if (!result.canceled) {
+        setTransferMsg(`Exported ${result.exported} placemark${result.exported !== 1 ? 's' : ''}`);
+        setTimeout(() => setTransferMsg(null), 3000);
+      }
+    } catch {
+      setTransferMsg('Export failed');
+      setTimeout(() => setTransferMsg(null), 3000);
+    }
+  };
+
+  const handleImport = async () => {
+    try {
+      const result = await onImport();
+      if (!result.canceled) {
+        await onRefreshPlacemarks();
+        const msg =
+          result.skipped > 0
+            ? `Imported ${result.imported}, skipped ${result.skipped} (duplicates)`
+            : `Imported ${result.imported} placemark${result.imported !== 1 ? 's' : ''}`;
+        setTransferMsg(msg);
+        setTimeout(() => setTransferMsg(null), 4000);
+      }
+    } catch (err) {
+      setTransferMsg(err instanceof Error ? err.message : 'Import failed');
+      setTimeout(() => setTransferMsg(null), 4000);
+    }
+  };
 
   const handleOpenNewForm = () => {
     setShowNewForm(true);
@@ -543,29 +579,94 @@ export function PlacemarksPanel({
             Placemarks
           </span>
         </div>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '2px',
-            color: colors.textMuted,
-            borderRadius: BORDER_RADIUS.SM,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = colors.textPrimary;
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = colors.textMuted;
-          }}
-          title="Close"
-        >
-          <X size={14} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.XS }}>
+          <button
+            onClick={handleExport}
+            disabled={placemarks.length === 0}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: placemarks.length === 0 ? 'not-allowed' : 'pointer',
+              padding: '2px',
+              color: placemarks.length === 0 ? colors.textMuted : colors.textSecondary,
+              borderRadius: BORDER_RADIUS.SM,
+              display: 'flex',
+              alignItems: 'center',
+              opacity: placemarks.length === 0 ? 0.4 : 1,
+            }}
+            onMouseEnter={(e) => {
+              if (placemarks.length > 0)
+                (e.currentTarget as HTMLButtonElement).style.color = colors.textPrimary;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = colors.textSecondary;
+            }}
+            title="Export placemarks to file"
+          >
+            <Download size={13} />
+          </button>
+          <button
+            onClick={handleImport}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px',
+              color: colors.textSecondary,
+              borderRadius: BORDER_RADIUS.SM,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = colors.textPrimary;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = colors.textSecondary;
+            }}
+            title="Import placemarks from file"
+          >
+            <Upload size={13} />
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px',
+              color: colors.textMuted,
+              borderRadius: BORDER_RADIUS.SM,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = colors.textPrimary;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = colors.textMuted;
+            }}
+            title="Close"
+          >
+            <X size={14} />
+          </button>
+        </div>
       </div>
+
+      {/* Transfer feedback message */}
+      {transferMsg && (
+        <div
+          style={{
+            padding: `${SPACING.XS} ${SPACING.LG}`,
+            fontSize: FONT_SIZE.XS,
+            color: colors.textSecondary,
+            backgroundColor: `${colors.primary}15`,
+            borderBottom: `1px solid ${colors.glassBorder}`,
+            flexShrink: 0,
+          }}
+        >
+          {transferMsg}
+        </div>
+      )}
 
       {/* Scrollable content */}
       <div

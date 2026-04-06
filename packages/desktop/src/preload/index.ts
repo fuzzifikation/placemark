@@ -98,6 +98,8 @@ contextBridge.exposeInMainWorld('api', {
     delete: (id: number) => ipcRenderer.invoke('placemarks:delete', id),
     setGeoLabel: (id: number, label: string) =>
       ipcRenderer.invoke('placemarks:setGeoLabel', id, label),
+    exportToFile: () => ipcRenderer.invoke('placemarks:exportToFile'),
+    importFromFile: () => ipcRenderer.invoke('placemarks:importFromFile'),
   },
   onedrive: {
     login: () => ipcRenderer.invoke('onedrive:login'),

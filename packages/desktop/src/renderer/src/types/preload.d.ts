@@ -167,12 +167,25 @@ export interface PlacemarksGetAllResult {
   smartCounts: PlacemarkSmartCounts;
 }
 
+export interface PlacemarkExportResult {
+  exported: number;
+  canceled: boolean;
+}
+
+export interface PlacemarkImportResult {
+  imported: number;
+  skipped: number;
+  canceled: boolean;
+}
+
 export interface PlacemarksAPI {
   getAll: () => Promise<PlacemarksGetAllResult>;
   create: (input: CreatePlacemarkInput) => Promise<PlacemarkWithCount>;
   update: (input: UpdatePlacemarkInput) => Promise<PlacemarkWithCount>;
   delete: (id: number) => Promise<void>;
   setGeoLabel: (id: number, label: string) => Promise<void>;
+  exportToFile: () => Promise<PlacemarkExportResult>;
+  importFromFile: () => Promise<PlacemarkImportResult>;
 }
 
 export interface OneDriveImportProgress {

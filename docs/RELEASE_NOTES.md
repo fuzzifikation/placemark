@@ -1,5 +1,21 @@
 # Release Notes
 
+## v0.9.3 - Placemark Export/Import & Timeline Fixes (Apr 2026)
+
+### ✨ New
+
+- **Placemark export/import:** Two new icon buttons (↓ / ↑) in the Placemarks panel header. Export saves all user placemarks to a versioned JSON file (native save dialog). Import reads a previously exported file, skips duplicates by name, and shows a feedback strip with the count of imported and skipped items. The format is `{ version: 1, exportedAt, placemarks: [{ name, bounds, dateStart, dateEnd }] }`.
+
+### 🐛 Fixed
+
+- **Timeline "fit to dates" no longer moves the map:** Clicking the `[ 📅 ]` button only snaps the timeline thumbs to the oldest → youngest dates of photos currently in the map viewport. It no longer triggers a map zoom. Auto Zoom during playback now only fires while the timeline is actively playing, not on any date range change.
+- **Wipe & restart white screen (Windows):** After choosing "Wipe data & restart" on the version mismatch dialog, the relaunched app no longer opened to a blank white screen. The fix uses `app.exit(0)` instead of `app.quit()` to avoid the Windows quit lifecycle double-firing and disrupting the scheduled relaunch.
+
+### 🛠️ Internal
+
+- **Timeline fit button redesigned:** Text label "Fit to view" replaced with a `[ CalendarRange ]` icon button. Tooltip reads "Fit timeline to full photo date range (oldest → youngest)".
+- **`isTimelinePlaying` state in App.tsx:** `autoFit` on the map is now gated on the timeline actively playing (via `onPlayingChange`), not just on the timeline being open.
+
 ## v0.9.2 - File Operations Safety & Hover UX (Apr 2026)
 
 ### 🐛 Fixed
