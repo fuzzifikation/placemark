@@ -21,6 +21,7 @@ interface HoverState {
   position: { x: number; y: number } | null;
   thumbnailUrl: string | null;
   loading: boolean;
+  fileMissing?: boolean;
 }
 
 interface HoverHandlers {
@@ -115,6 +116,17 @@ export function useMapHover(): UseMapHoverReturn {
 
               thumbnailCacheRef.current.set(photo.id, url);
               setHoverState((prev) => ({ ...prev, thumbnailUrl: url, loading: false }));
+            } else if (photo.source === 'local') {
+              // No thumbnail for a local photo — check if file still exists
+              window.api.photos
+                .checkFileExists(photo.id)
+                .then((exists) => {
+                  if (activeHoverIdRef.current !== photo.id) return;
+                  setHoverState((prev) => ({ ...prev, loading: false, fileMissing: !exists }));
+                })
+                .catch(() => {
+                  setHoverState((prev) => ({ ...prev, loading: false }));
+                });
             } else {
               setHoverState((prev) => ({ ...prev, loading: false }));
             }

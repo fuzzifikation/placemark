@@ -13,6 +13,7 @@ interface PhotoHoverPreviewProps {
   position: { x: number; y: number };
   thumbnailUrl: string | null;
   loading: boolean;
+  fileMissing?: boolean;
   theme: Theme;
   glassBlur?: number;
   glassSurfaceOpacity?: number;
@@ -23,6 +24,7 @@ export function PhotoHoverPreview({
   position,
   thumbnailUrl,
   loading,
+  fileMissing = false,
   theme,
   glassBlur = 12,
   glassSurfaceOpacity = 70,
@@ -87,9 +89,20 @@ export function PhotoHoverPreview({
             borderRadius: BORDER_RADIUS.SM,
           }}
         >
-          {photo.mimeType.startsWith('image/x-') ||
-          photo.mimeType === 'image/heic' ||
-          photo.mimeType === 'image/heif' ? (
+          {fileMissing ? (
+            <>
+              <span style={{ fontSize: FONT_SIZE.SM, fontWeight: 600, color: '#e56b6f' }}>
+                File not found
+              </span>
+              <span
+                style={{ fontSize: FONT_SIZE.XS, color: colors.textMuted, textAlign: 'center' }}
+              >
+                Re-scan to update
+              </span>
+            </>
+          ) : photo.mimeType.startsWith('image/x-') ||
+            photo.mimeType === 'image/heic' ||
+            photo.mimeType === 'image/heif' ? (
             <>
               <span style={{ fontSize: FONT_SIZE.SM, fontWeight: 600, color: colors.textPrimary }}>
                 {photo.mimeType.startsWith('image/x-') ? 'RAW File' : 'HEIC File'}

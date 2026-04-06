@@ -101,7 +101,10 @@ app.whenReady().then(async () => {
     closeThumbnailService = photosModule.closeThumbnailService;
 
     // Archive old operation batches (clear undo history from previous session)
-    storageModule.archiveCompletedBatches();
+    const archivedCount = storageModule.archiveCompletedBatches();
+    if (archivedCount > 0) {
+      opsModule.setStartupUndoCleared(true);
+    }
 
     // Initialize features
     photosModule.registerPhotoHandlers();

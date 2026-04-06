@@ -197,6 +197,7 @@ export async function executeOperations(
     updateBatchStatus(batchId, 'completed');
 
     // Update photo paths in database after move (keeps DB in sync with filesystem)
+    const pathUpdateFailures: string[] = [];
     if (opType === 'move') {
       for (const op of completedOps) {
         try {
@@ -204,7 +205,7 @@ export async function executeOperations(
           logger.info(`Updated photo ${op.photoId} path to ${op.destPath}`);
         } catch (err: any) {
           logger.error(`Failed to update photo path for ${op.photoId}: ${err.message}`);
-          // Continue - the file is moved, just log the db update failure
+          pathUpdateFailures.push(op.destPath);
         }
       }
     }
@@ -218,11 +219,15 @@ export async function executeOperations(
     });
 
     const skippedMsg = skippedCount > 0 ? ` (${skippedCount} already in destination)` : '';
+    const pathUpdateWarning =
+      pathUpdateFailures.length > 0
+        ? ` Warning: ${pathUpdateFailures.length} photo ${pathUpdateFailures.length === 1 ? 'path' : 'paths'} could not be updated in the database — the files are safe at the destination. Re-scan the destination folder to restore them.`
+        : '';
     return {
       success: true,
       completedCount: completedOps.length,
       skippedCount,
-      message: `Successfully ${opType === 'copy' ? 'copied' : 'moved'} ${completedOps.length} files.${skippedMsg}`,
+      message: `Successfully moved ${completedOps.length} files.${skippedMsg}${pathUpdateWarning}`,
       batchId,
     };
   } catch (error: any) {

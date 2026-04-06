@@ -214,6 +214,19 @@ export function registerPhotoHandlers(): void {
 
   // Get thumbnail for photo
   // The handler resolves the photo from the DB so the renderer never needs to pass a path.
+  ipcMain.handle('photos:checkFileExists', async (_event, photoId: number) => {
+    const photo = getPhotoById(photoId);
+    if (!photo || photo.source !== 'local') return true; // non-local always considered present
+    try {
+      await fs.access(photo.path, constants.R_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+
+  // Get thumbnail for photo
+  // The handler resolves the photo from the DB so the renderer never needs to pass a path.
   ipcMain.handle('thumbnails:get', async (_event, photoId: number) => {
     try {
       // Fast path: return from cache without touching the photos DB

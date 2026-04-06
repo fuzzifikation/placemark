@@ -1,6 +1,23 @@
 # Release Notes
 
-## v0.9.1 - Correctness & Safety Fixes (Apr 2026)
+## v0.9.2 - File Operations Safety & Hover UX (Apr 2026)
+
+### 🐛 Fixed
+
+- **Scan progress throttled:** Progress events now fire every 100 files (or on completion) instead of every single file. Reduces IPC overhead significantly for large libraries.
+- **Scan progress rate now accurate:** `rate` (photos/s) and ETA are computed after file processing completes, not before — `processed` count is now always accurate.
+- **Duplicate detection strengthened:** The "file already at destination" check now requires both byte size AND EXIF capture date to match before marking a file as skipped. Previously, two distinct photos with the same filename and coincidentally equal byte count would be silently skipped during a copy/move operation — one could be lost. Files with no EXIF date fall back to the previous size-only check with a warning added.
+- **Silent DB path update failure surfaced:** After a move operation, if any photo path could not be updated in the database (e.g. due to a DB lock or concurrent modification), this is now reported in the result message. Previously the error was logged only — photos would appear missing in the app with no explanation.
+- **Undo history cleared on restart — now notified:** When Placemark archives the previous session's undo history on startup, a toast is shown: "Undo history from your previous session has been cleared." Previously the Undo button simply vanished with no explanation.
+- **Missing local file detected on hover:** Hovering over a map marker for a local photo that no longer exists on disk now shows "File not found — Re-scan to update" in the hover tooltip instead of a generic "No preview" placeholder.
+
+### 🛠️ Internal
+
+- **`calcStats` replaces `calcEta`:** Single function returns both `eta` and `rate`; used by both the local scan and OneDrive import paths with no duplication.
+- **`archiveCompletedBatches` returns count:** Used at startup to conditionally set a one-shot IPC flag (`ops:wasUndoHistoryCleared`) consumed by the renderer on mount.
+- **`photos:checkFileExists` IPC handler:** Lightweight `fs.access` check, local photos only. OneDrive photos are skipped (network absence is indistinguishable from deletion).
+
+
 
 ### 🐛 Fixed
 

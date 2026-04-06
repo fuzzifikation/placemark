@@ -509,6 +509,7 @@ export function MapView({
           position={hoverState.position}
           thumbnailUrl={hoverState.thumbnailUrl}
           loading={hoverState.loading}
+          fileMissing={hoverState.fileMissing}
           theme={theme}
           glassBlur={glassBlur}
           glassSurfaceOpacity={glassSurfaceOpacity}

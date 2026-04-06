@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('api', {
     clearDatabase: () => ipcRenderer.invoke('photos:clearDatabase'),
     getHistogram: (minDate: number, maxDate: number, bucketCount: number, gpsOnly: boolean) =>
       ipcRenderer.invoke('photos:getHistogram', minDate, maxDate, bucketCount, gpsOnly),
+    checkFileExists: (photoId: number) => ipcRenderer.invoke('photos:checkFileExists', photoId),
     onScanProgress: (
       callback: (progress: {
         currentFile: string;
@@ -48,6 +49,7 @@ contextBridge.exposeInMainWorld('api', {
     setMaxSize: (sizeMB: number) => ipcRenderer.invoke('thumbnails:setMaxSize', sizeMB),
   },
   ops: {
+    wasUndoHistoryCleared: () => ipcRenderer.invoke('ops:wasUndoHistoryCleared'),
     selectDestination: () => ipcRenderer.invoke('ops:selectDestination'),
     generateDryRun: (photoIds: number[], destPath: string, opType: string) =>
       ipcRenderer.invoke('ops:generateDryRun', photoIds, destPath, opType),

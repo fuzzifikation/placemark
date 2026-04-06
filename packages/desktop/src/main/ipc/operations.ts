@@ -5,6 +5,7 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron';
 import * as fs from 'fs/promises';
 import { constants } from 'fs';
+import exifr from 'exifr';
 import {
   generateOperationPlan,
   isValidDestination,
@@ -26,6 +27,12 @@ import {
 let lastDryRunResult: DryRunResult | null = null;
 let lastOpType: OperationType | null = null;
 
+// Set to true at startup when completed batches were archived (undo history cleared)
+let startupUndoCleared = false;
+export function setStartupUndoCleared(value: boolean): void {
+  startupUndoCleared = value;
+}
+
 function normalizeForCompare(p: string): string {
   return path.resolve(p).replace(/\\/g, '/').toLowerCase();
 }
@@ -35,6 +42,13 @@ function isSamePath(a: string, b: string): boolean {
 }
 
 export function registerOperationHandlers(getMainWindow: () => BrowserWindow | null): void {
+  // One-shot query: was undo history cleared at startup?
+  ipcMain.handle('ops:wasUndoHistoryCleared', () => {
+    const result = startupUndoCleared;
+    startupUndoCleared = false; // consume once
+    return result;
+  });
+
   // Select destination folder
   ipcMain.handle('ops:selectDestination', async () => {
     const result = await dialog.showOpenDialog({
@@ -97,6 +111,11 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
       // 4. Generate plan (pure logic)
       const plan = generateOperationPlan(photos, destPath, validatedOpType);
 
+      // Build photoId → timestamp lookup for duplicate verification (step 5)
+      const photoTimestamps = new Map<number, number | null>(
+        photos.map((p) => [p.id, p.timestamp])
+      );
+
       // 5. Enrich plan with reality checks (IO)
       const enrichedOps: FileOperation[] = [];
       const warnings: string[] = [...plan.summary.warnings];
@@ -121,22 +140,59 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
 
         try {
           const destStat = await fs.stat(op.destPath);
-          // File exists at destination - check if it's identical (same size)
-          // Size-equality heuristic: if sizes match we assume the file has already
-          // been copied (idempotent re-run).  This can give false positives when two
-          // completely different photos share the same filename AND file size, but
-          // that is rare enough in practice to accept.  A hash-based check would be
-          // more accurate at the cost of scanning every file.
-          if (destStat.size === op.fileSize) {
-            // Likely the same file already at destination — skip silently.
-            enrichedOp.status = 'skipped';
-          } else {
-            // Different file with same name - real conflict
+          if (destStat.size !== op.fileSize) {
+            // Different byte count — definitely a different file.
             enrichedOp.status = 'conflict';
             enrichedOp.error = 'Different file already exists at destination';
             warnings.push(
               `Conflict: ${path.basename(op.destPath)} already exists (different content)`
             );
+          } else {
+            // Same size — confirm identity using EXIF capture date.
+            // A resize preserves EXIF but changes size, so both must agree.
+            const sourceTimestamp = photoTimestamps.get(op.photoId) ?? null;
+            let destTimestamp: number | null = null;
+            try {
+              const destExif = await exifr.parse(op.destPath, {
+                exif: true,
+                tiff: true,
+                gps: false,
+                makerNote: false,
+                iptc: false,
+                xmp: false,
+                icc: false,
+              });
+              const dt: Date | undefined =
+                destExif?.DateTimeOriginal ?? destExif?.CreateDate ?? destExif?.DateTime;
+              destTimestamp = dt instanceof Date ? dt.getTime() : null;
+            } catch {
+              // Destination file is unreadable by exifr (non-EXIF format, corrupt, etc.)
+            }
+
+            if (sourceTimestamp !== null && destTimestamp !== null) {
+              if (sourceTimestamp === destTimestamp) {
+                // Size matches AND capture date matches — same photo.
+                enrichedOp.status = 'skipped';
+              } else {
+                // Same size, different capture date — distinct photos (camera counter
+                // collision, or resized copy with EXIF from a different source).
+                enrichedOp.status = 'conflict';
+                enrichedOp.error =
+                  'Different file already exists at destination (same size, different capture date)';
+                warnings.push(
+                  `Conflict: ${path.basename(op.destPath)} already exists (same size but different capture date — may be a different photo)`
+                );
+              }
+            } else {
+              // One or both sides have no timestamp — fall back to size-only skip.
+              // Applies to screenshots, edited exports, and other non-EXIF files.
+              enrichedOp.status = 'skipped';
+              if (sourceTimestamp === null) {
+                warnings.push(
+                  `${path.basename(op.destPath)} skipped (same size; no capture date available to confirm identity)`
+                );
+              }
+            }
           }
         } catch (err: any) {
           if (err.code === 'ENOENT') {

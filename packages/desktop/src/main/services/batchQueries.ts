@@ -106,7 +106,7 @@ export function getLastCompletedBatch(): OperationBatch | null {
   };
 }
 
-export function archiveCompletedBatches(): void {
+export function archiveCompletedBatches(): number {
   const result = getDb()
     .prepare("UPDATE operation_batch SET status = 'archived' WHERE status = 'completed'")
     .run();
@@ -114,4 +114,5 @@ export function archiveCompletedBatches(): void {
   if (result.changes > 0) {
     logger.info(`Archived ${result.changes} completed operation batches from previous session`);
   }
+  return result.changes;
 }

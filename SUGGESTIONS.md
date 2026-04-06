@@ -77,6 +77,17 @@
 
 ### Larger work (1–3 days)
 
+- **Library duplicate finder: surface duplicate photos to the user.**
+  Find photos already in the library that are likely the same image and show them in a dedicated review panel. The user decides which copy to keep or remove.
+
+  **Approach (size-bucket + EXIF, hash as tie-breaker):**
+  1. SQL: `SELECT file_size, COUNT(*) FROM photos GROUP BY file_size HAVING COUNT(*) > 1` — only files that share a size need further comparison. For most libraries this is a small fraction of total photos.
+  2. For each same-size group: compare `timestamp` (EXIF capture date already in the DB). If sizes AND timestamps match → strong duplicate candidate.
+  3. Optional deeper check: compute SHA-256 of the first 64 KB of each candidate (fast partial hash). Full hash only if the partial collides. This avoids reading whole RAW files.
+  4. Present candidate groups in a UI panel — show thumbnail, path, source, size, date for each. User selects which to keep; the others can be removed from the library (DB record deleted, file optionally trashed).
+
+  **Why it's non-trivial:** RAW files can be 30–80 MB; even partial hashing across thousands of candidates adds up. Background processing with progress and cancellation is required. DB schema stays unchanged (no new columns needed). Undo is important — deletions should go to trash, not permanent delete.
+
 - **OneDrive photos: "Open in Viewer" and "Show in Folder" actions.**
   Both buttons in `PhotoPreviewModal` call `fs.access(photo.path, R_OK)` → `shell.openPath` / `shell.showItemInFolder`. These will silently fail for OneDrive photos because `photo.path` is a cloud identifier, not a local file path. The fix is source-aware branching in both the UI and the IPC handlers.
 

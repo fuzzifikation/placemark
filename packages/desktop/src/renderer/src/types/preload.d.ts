@@ -88,6 +88,7 @@ export interface PhotosAPI {
     bucketCount: number,
     gpsOnly: boolean
   ) => Promise<{ bucket: number; count: number }[]>;
+  checkFileExists: (photoId: number) => Promise<boolean>;
   onScanProgress: (callback: (progress: ScanProgress) => void) => () => void;
 }
 
@@ -99,6 +100,7 @@ export interface ThumbnailsAPI {
 }
 
 export interface OperationsAPI {
+  wasUndoHistoryCleared: () => Promise<boolean>;
   selectDestination: () => Promise<string | null>;
   generateDryRun: (
     photoIds: number[],

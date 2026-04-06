@@ -114,6 +114,14 @@ function App() {
     }
   }, [folderScan.scanning]);
 
+  useEffect(() => {
+    window.api.ops.wasUndoHistoryCleared().then((cleared) => {
+      if (cleared) {
+        toast.info('Undo history from your previous session has been cleared.');
+      }
+    });
+  }, []);
+
   // --- Local handlers ---
   const handleSelectionModeToggle = useCallback(() => {
     if (selectionMode === 'lasso') {
