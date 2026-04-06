@@ -11,6 +11,7 @@ export interface ScanProgress {
   total: number;
   startTime?: number;
   eta?: number;
+  rate?: number;
 }
 
 export interface ScanResult {
