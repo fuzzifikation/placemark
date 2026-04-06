@@ -73,6 +73,7 @@ function App() {
   const modals = useModals();
   const [fitSignal, setFitSignal] = useState(0);
   const [selectionMode, setSelectionMode] = useState<SelectionMode>('pan');
+  const [isTimelinePlaying, setIsTimelinePlaying] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
 
   // --- Composed action hooks ---
@@ -175,7 +176,7 @@ function App() {
           tileMaxZoom={settings.tileMaxZoom}
           padding={settings.mapPadding}
           autoFit={
-            modals.showTimeline && settings.autoZoomDuringPlay
+            modals.showTimeline && settings.autoZoomDuringPlay && isTimelinePlaying
               ? photoData.filterSource !== 'map'
               : false
           }
@@ -340,6 +341,7 @@ function App() {
             onAutoZoomToggle={() =>
               setSettings((prev) => ({ ...prev, autoZoomDuringPlay: !prev.autoZoomDuringPlay }))
             }
+            onPlayingChange={setIsTimelinePlaying}
             onFitToView={
               timelineActions.fitToViewRange ? timelineActions.handleFitTimelineToView : undefined
             }

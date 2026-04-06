@@ -2,6 +2,7 @@
  * TimelineControls - Play/pause controls, speed selector, and close button
  */
 
+import { CalendarRange } from 'lucide-react';
 import { type Theme } from '../../theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { formatDateWithOptions } from '../../utils/formatLocale';
@@ -27,7 +28,7 @@ interface TimelineControlsProps {
   theme: Theme;
   autoZoomDuringPlay: boolean;
   onAutoZoomToggle: () => void;
-  /** When provided, shows a "Fit to view" button that snaps thumbs to the date range of photos in the current map viewport. */
+  /** When provided, shows a button that snaps the timeline thumbs to span the full library date range (oldest → youngest). */
   onFitToView?: () => void;
 }
 
@@ -120,8 +121,10 @@ export function TimelineControls({
           <button
             onClick={onFitToView}
             style={{
-              padding: '0.25rem 0.5rem',
-              fontSize: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0.25rem 0.4rem',
               backgroundColor: colors.surface,
               color: colors.textPrimary,
               border: `1px solid ${colors.border}`,
@@ -138,9 +141,11 @@ export function TimelineControls({
               e.currentTarget.style.transform = 'scale(1)';
               e.currentTarget.style.backgroundColor = colors.surface;
             }}
-            title="Fit timeline to photos in current map view"
+            title="Fit timeline to full photo date range (oldest → youngest)"
           >
-            Fit to view
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, lineHeight: 1 }}>[</span>
+            <CalendarRange size={14} />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, lineHeight: 1 }}>]</span>
           </button>
         )}
         <button

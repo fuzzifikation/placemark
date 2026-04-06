@@ -151,8 +151,11 @@ export function registerSystemHandlers() {
     } catch {
       // Non-fatal
     }
-    // Relaunch the app cleanly — use quit() not exit() so Windows releases file handles
+    // Use exit(0) instead of quit() to bypass the quit lifecycle (before-quit,
+    // window-all-closed). On Windows, window-all-closed calls app.quit() a second
+    // time which can interfere with the scheduled relaunch. Since DBs are already
+    // closed above, no lifecycle cleanup is needed.
     app.relaunch();
-    app.quit();
+    app.exit(0);
   });
 }

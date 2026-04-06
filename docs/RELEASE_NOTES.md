@@ -11,13 +11,13 @@
 - **Undo history cleared on restart — now notified:** When Placemark archives the previous session's undo history on startup, a toast is shown: "Undo history from your previous session has been cleared." Previously the Undo button simply vanished with no explanation.
 - **Missing local file detected on hover:** Hovering over a map marker for a local photo that no longer exists on disk now shows "File not found — Re-scan to update" in the hover tooltip instead of a generic "No preview" placeholder.
 
+## v0.9.1
+
 ### 🛠️ Internal
 
 - **`calcStats` replaces `calcEta`:** Single function returns both `eta` and `rate`; used by both the local scan and OneDrive import paths with no duplication.
 - **`archiveCompletedBatches` returns count:** Used at startup to conditionally set a one-shot IPC flag (`ops:wasUndoHistoryCleared`) consumed by the renderer on mount.
 - **`photos:checkFileExists` IPC handler:** Lightweight `fs.access` check, local photos only. OneDrive photos are skipped (network absence is indistinguishable from deletion).
-
-
 
 ### 🐛 Fixed
 
