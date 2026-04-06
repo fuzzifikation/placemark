@@ -325,6 +325,11 @@ export function ScanOverlay({
                   ~{formatEta(scanProgress.eta)} remaining
                 </span>
               )}
+              {scanProgress?.rate !== undefined && scanProgress.rate > 0 && (
+                <span style={{ marginLeft: SPACING.LG, color: colors.textMuted }}>
+                  {scanProgress.rate} photos/s
+                </span>
+              )}
             </p>
 
             {/* Current filename (truncated) */}

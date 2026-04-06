@@ -223,4 +223,6 @@
 
 <!-- Features that are explicitly out of scope or require major rethinking -->
 
+- **[Future] English map labels for non-Latin regions (China, Middle East, Cyrillic).** Current raster tiles (OSM light, CARTO dark) bake labels in the local script — no way to override at runtime. The proper fix is vector tiles + `@maplibre/maplibre-gl-language` to force `name_en`. **OpenFreeMap** (openfreemap.org) is a free, no-key option worth evaluating when the app matures. Not worth the migration effort now: most users have libraries in Western Europe/North America where OSM labels are readable.
+
 - **EXIF editing workflow.** Out of scope for Placemark. EXIF is best edited by dedicated tools; Placemark should not attempt external editor integration or try to handle EXIF writes. User can click "Show in folder" in the photo preview modal to open the file location and edit with their preferred tool. Safer, simpler, and stays true to Placemark's focus: organize and visualize, not edit metadata.

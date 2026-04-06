@@ -74,16 +74,20 @@ export async function scanDirectory(
   await runWithConcurrency(imageFiles, IMPORT_CONCURRENCY, async (filePath) => {
     if (abortRequested) return;
     try {
-      if (onProgress) {
-        onProgress({
-          currentFile: filePath,
-          processed: result.processedFiles,
-          total: result.totalFiles,
-        });
-      }
-
       const imported = await processImageFile(filePath, source, result, maxFileSizeMB);
       if (imported) result.processedFiles++;
+
+      if (onProgress) {
+        const done = result.processedFiles;
+        const total = result.totalFiles;
+        if (done % 100 === 0 || done === total) {
+          onProgress({
+            currentFile: filePath,
+            processed: done,
+            total,
+          });
+        }
+      }
     } catch (error) {
       const errorMsg = `Error processing ${path.basename(filePath)}: ${error instanceof Error ? error.message : String(error)}`;
       result.errors.push(errorMsg);

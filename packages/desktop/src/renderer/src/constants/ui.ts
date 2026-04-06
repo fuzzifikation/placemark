@@ -74,6 +74,7 @@ export const LAYOUT = {
 
   /** PlacemarksPanel fixed width. */
   PLACEMARKS_WIDTH: '260px',
+  PLACEMARKS_WIDTH_PX: 260,
 
   /** LibraryStatsPanel fixed width. */
   STATS_PANEL_WIDTH: '320px',

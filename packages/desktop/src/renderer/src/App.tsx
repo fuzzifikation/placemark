@@ -206,7 +206,12 @@ function App() {
                 LAYOUT.TIMELINE_HEIGHT_PX +
                 LAYOUT.PANEL_GAP_PX
               : settings.mapPadding,
-            left: settings.mapPadding,
+            left: modals.showPlacemarks
+              ? settings.mapPadding +
+                LAYOUT.PANEL_INSET_PX +
+                LAYOUT.PLACEMARKS_WIDTH_PX +
+                LAYOUT.PANEL_GAP_PX
+              : settings.mapPadding,
           }}
           targetBounds={placemarkActions.targetMapBounds}
           fitSignal={fitSignal}

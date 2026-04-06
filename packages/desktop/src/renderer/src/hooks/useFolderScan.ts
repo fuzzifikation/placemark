@@ -10,12 +10,19 @@ interface ScanProgress {
   total: number;
   startTime?: number;
   eta?: number; // estimated time remaining in seconds
+  rate?: number; // photos processed per second
 }
 
-function calcEta(startTime: number, processed: number, total: number): number {
-  if (total <= 0 || processed <= 0) return 0;
+function calcStats(
+  startTime: number,
+  processed: number,
+  total: number
+): { eta: number; rate: number } {
+  if (total <= 0 || processed <= 0) return { eta: 0, rate: 0 };
   const elapsed = (Date.now() - startTime) / 1000;
-  return Math.max(0, Math.round(elapsed / (processed / total) - elapsed));
+  const rate = Math.round(processed / elapsed);
+  const eta = Math.max(0, Math.round(elapsed / (processed / total) - elapsed));
+  return { eta, rate };
 }
 
 export function useFolderScan() {
@@ -33,11 +40,8 @@ export function useFolderScan() {
 
     // Set up progress listener
     const removeListener = window.api.photos.onScanProgress((progress) => {
-      setScanProgress({
-        ...progress,
-        startTime,
-        eta: calcEta(startTime, progress.processed, progress.total),
-      });
+      const { eta, rate } = calcStats(startTime, progress.processed, progress.total);
+      setScanProgress({ ...progress, startTime, eta, rate });
     });
 
     try {
@@ -74,12 +78,14 @@ export function useFolderScan() {
 
     const removeListener = window.api.onedrive.onImportProgress((progress) => {
       const processed = progress.imported + progress.duplicates;
+      const { eta, rate } = calcStats(startTime, processed, progress.total);
       setScanProgress({
         currentFile: progress.currentFile,
         processed,
         total: progress.total,
         startTime,
-        eta: calcEta(startTime, processed, progress.total),
+        eta,
+        rate,
       });
     });
 
