@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 import { join, dirname } from 'path';
 import { existsSync } from 'fs';
 
@@ -117,6 +117,25 @@ app.whenReady().then(async () => {
 
     const exportModule = await import('./ipc/export');
     exportModule.registerExportHandlers();
+
+    // Inject Referer header for map tile requests.
+    // In packaged Electron the renderer loads from app://, so no Referer is sent
+    // automatically. OSM and CartoCDN tile servers require it (usage policy).
+    // Referer is a forbidden header in the Fetch spec so it must be injected here
+    // at the network layer — renderer-side transformRequest cannot override it.
+    session.defaultSession.webRequest.onBeforeSendHeaders(
+      {
+        urls: ['https://tile.openstreetmap.org/*', 'https://*.basemaps.cartocdn.com/*'],
+      },
+      (details, callback) => {
+        callback({
+          requestHeaders: {
+            ...details.requestHeaders,
+            Referer: 'https://www.openstreetmap.org/',
+          },
+        });
+      }
+    );
 
     createWindow();
   } catch (error) {

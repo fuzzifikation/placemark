@@ -15,16 +15,19 @@ files:
   - '!node_modules/@img/sharp-{darwin,linux,linuxmusl,wasm32}*/**'
   - '!node_modules/@img/sharp-win32-{arm64,ia32}*/**'
   - '!node_modules/@img/sharp-libvips-*/**'
-  # better-sqlite3: keep only lib/binding/*.node, exclude build artifacts
-  - '!node_modules/better-sqlite3/build/**'
+  # better-sqlite3: exclude source and deps but keep the compiled Release binary
   - '!node_modules/better-sqlite3/deps/**'
   - '!node_modules/better-sqlite3/src/**'
+  - '!node_modules/better-sqlite3/build/!(Release)/**'
+  - '!node_modules/better-sqlite3/build/Release/!(*.node)'
+# Unpack .node native binaries — they cannot be loaded from inside ASAR
+asarUnpack:
+  - '**/*.node'
 win:
   icon: build/icons/win/icon.ico
   target:
     - target: portable
       arch: [x64]
-  signAndEditExecutable: false
 portable:
   artifactName: '${productName}-${version}-portable.exe'
   splashImage: build/splash.bmp
