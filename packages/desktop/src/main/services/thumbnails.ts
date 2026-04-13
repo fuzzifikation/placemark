@@ -83,11 +83,11 @@ export class ThumbnailService {
       }
 
       // For RAW and HEIC/HEIF files, extract embedded JPEG thumbnail first.
-      // - RAW: sharp cannot decode sensor data at all.
-      // - HEIC/HEIF: sharp on Windows only supports AVIF, not H.265/HEIC.
+      // - RAW: sharp cannot decode sensor data on any platform.
+      // - HEIC/HEIF: sharp on Windows does not support HEIC; on macOS libvips handles it natively.
       let inputForSharp: Buffer | string = photoPath;
 
-      if (isRawFile(photoPath) || isHeicFile(photoPath)) {
+      if (isRawFile(photoPath) || (isHeicFile(photoPath) && process.platform !== 'darwin')) {
         const formatLabel = isHeicFile(photoPath) ? 'HEIC' : 'RAW';
         try {
           // exifr.thumbnail() extracts the embedded JPEG preview.

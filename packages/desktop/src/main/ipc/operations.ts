@@ -83,7 +83,7 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
         app.getPath('userData'),
         app.getPath('appData'),
         app.getPath('exe'),
-        process.env.WINDIR || 'C:\\Windows',
+        ...(process.platform === 'win32' ? [process.env.WINDIR ?? 'C:\\Windows'] : []),
         '/System',
         '/Library',
       ];

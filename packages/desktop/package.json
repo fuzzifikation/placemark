@@ -14,7 +14,6 @@
     "postinstall": "electron-rebuild"
   },
   "dependencies": {
-    "@img/sharp-win32-x64": "^0.34.5",
     "@placemark/core": "workspace:*",
     "better-sqlite3": "^12.8.0",
     "exifr": "^7.1.3",

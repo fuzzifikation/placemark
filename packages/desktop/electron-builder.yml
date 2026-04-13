@@ -11,10 +11,9 @@ files:
   - dist-electron/**/*
   - build/icon.png
   - package.json
-  # Sharp: only include win32-x64 platform binary (explicitly added as dependency)
-  - '!node_modules/@img/sharp-{darwin,linux,linuxmusl,wasm32}*/**'
-  - '!node_modules/@img/sharp-win32-{arm64,ia32}*/**'
+  # Sharp: exclude Linux-specific packages (not present on Windows or macOS builds)
   - '!node_modules/@img/sharp-libvips-*/**'
+  - '!node_modules/@img/sharp-{linux,linuxmusl,wasm32}*/**'
   # better-sqlite3: exclude source and deps but keep the compiled Release binary
   - '!node_modules/better-sqlite3/deps/**'
   - '!node_modules/better-sqlite3/src/**'
@@ -28,12 +27,26 @@ win:
   target:
     - target: portable
       arch: [x64]
+  files:
+    # Sharp: exclude non-Windows platform binaries
+    - '!node_modules/@img/sharp-darwin*/**'
+    - '!node_modules/@img/sharp-win32-{arm64,ia32}*/**'
 portable:
   artifactName: '${productName}-${version}-portable.exe'
   splashImage: build/splash.bmp
 mac:
+  icon: build/icons/mac/icon.icns
+  identity: null
   target:
-    - dmg
+    - target: dmg
+      arch: [x64, arm64]
+  files:
+    # Sharp: exclude non-macOS platform binaries
+    - '!node_modules/@img/sharp-win32*/**'
 linux:
   target:
     - AppImage
+  files:
+    # Sharp: exclude non-Linux platform binaries
+    - '!node_modules/@img/sharp-win32*/**'
+    - '!node_modules/@img/sharp-darwin*/**'
