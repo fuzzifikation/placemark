@@ -17,9 +17,11 @@ import * as path from 'path';
 import { getPhotosByIds } from '../services/storage';
 import {
   executeOperations,
+  executeDelete,
   undoLastBatch,
   canUndo,
   requestCancel,
+  confirmTrashUndo,
   CancelledError,
 } from '../services/operations';
 
@@ -67,11 +69,43 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
     'ops:generateDryRun',
     async (_event, photoIds: number[], destPath: string, opType: string) => {
       // 1. Validate operation type strictly
-      const validOpTypes: OperationType[] = ['copy', 'move'];
+      const validOpTypes: OperationType[] = ['copy', 'move', 'delete'];
       if (!validOpTypes.includes(opType as OperationType)) {
         throw new Error(`Invalid operation type: ${opType}`);
       }
       const validatedOpType = opType as OperationType;
+
+      // For delete: skip destination validation — just confirm photos exist and return a plan
+      if (validatedOpType === 'delete') {
+        const photos = getPhotosByIds(photoIds);
+        if (photos.length === 0) {
+          throw new Error('No valid photos found for the provided IDs');
+        }
+        if (photos.length !== photoIds.length) {
+          throw new Error(
+            `Some photo IDs are invalid (requested ${photoIds.length}, found ${photos.length})`
+          );
+        }
+        const result: DryRunResult = {
+          operations: photos.map((p) => ({
+            id: String(p.id),
+            photoId: p.id,
+            type: 'delete',
+            sourcePath: p.path,
+            destPath: '',
+            status: 'pending',
+            fileSize: p.fileSize,
+          })),
+          summary: {
+            totalFiles: photos.length,
+            totalSize: photos.reduce((acc, p) => acc + p.fileSize, 0),
+            warnings: [],
+          },
+        };
+        lastDryRunResult = result;
+        lastOpType = 'delete';
+        return result;
+      }
 
       // 2. Validate destination path
       if (!path.isAbsolute(destPath)) {
@@ -131,7 +165,8 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
       for (const op of plan.operations) {
         const enrichedOp: FileOperation = { ...op };
 
-        // Same-file operation (source already in destination) is a safe no-op
+        // Same file: source path === dest path — always a no-op regardless of operation type.
+        // Moving a file to itself is not a delete; nothing should happen.
         if (isSamePath(op.sourcePath, op.destPath)) {
           enrichedOp.status = 'skipped';
           enrichedOps.push(enrichedOp);
@@ -172,7 +207,7 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
             if (sourceTimestamp !== null && destTimestamp !== null) {
               if (sourceTimestamp === destTimestamp) {
                 // Size matches AND capture date matches — same photo.
-                enrichedOp.status = 'skipped';
+                enrichedOp.status = validatedOpType === 'move' ? 'delete-source' : 'skipped';
               } else {
                 // Same size, different capture date — distinct photos (camera counter
                 // collision, or resized copy with EXIF from a different source).
@@ -186,10 +221,12 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
             } else {
               // One or both sides have no timestamp — fall back to size-only skip.
               // Applies to screenshots, edited exports, and other non-EXIF files.
-              enrichedOp.status = 'skipped';
+              enrichedOp.status = validatedOpType === 'move' ? 'delete-source' : 'skipped';
               if (sourceTimestamp === null) {
+                const action =
+                  validatedOpType === 'move' ? 'source will be sent to Recycle Bin' : 'skipped';
                 warnings.push(
-                  `${path.basename(op.destPath)} skipped (same size; no capture date available to confirm identity)`
+                  `${path.basename(op.destPath)} ${action} (same size; no capture date available to confirm identity)`
                 );
               }
             }
@@ -244,11 +281,21 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
     }
 
     const pendingOps = lastDryRunResult.operations.filter((op) => op.status === 'pending');
-    if (pendingOps.length === 0) {
+    const deleteSourceOps = lastDryRunResult.operations.filter(
+      (op) => op.status === 'delete-source'
+    );
+    if (pendingOps.length === 0 && deleteSourceOps.length === 0) {
       throw new Error('No pending operations to execute.');
     }
 
     try {
+      if (lastOpType === 'delete') {
+        const result = await executeDelete(lastDryRunResult, getMainWindow());
+        lastDryRunResult = null;
+        lastOpType = null;
+        return result;
+      }
+
       const result = await executeOperations(lastDryRunResult, lastOpType, getMainWindow());
 
       // Clear stored dry run after successful execution
@@ -282,5 +329,14 @@ export function registerOperationHandlers(getMainWindow: () => BrowserWindow | n
   // Check if undo is available
   ipcMain.handle('ops:canUndo', async () => {
     return canUndo();
+  });
+
+  // Confirm that the user has manually restored trashed files from the OS Recycle Bin.
+  // Finalises the undo by updating DB photo paths and marking the batch as 'undone'.
+  ipcMain.handle('ops:confirmTrashUndo', (_event, batchId: number) => {
+    if (typeof batchId !== 'number' || !Number.isInteger(batchId) || batchId <= 0) {
+      throw new Error('Invalid batchId');
+    }
+    confirmTrashUndo(batchId);
   });
 }

@@ -57,6 +57,7 @@ contextBridge.exposeInMainWorld('api', {
     cancel: () => ipcRenderer.invoke('ops:cancel'),
     undo: () => ipcRenderer.invoke('ops:undo'),
     canUndo: () => ipcRenderer.invoke('ops:canUndo'),
+    confirmTrashUndo: (batchId: number) => ipcRenderer.invoke('ops:confirmTrashUndo', batchId),
     onProgress: (
       callback: (progress: {
         totalFiles: number;

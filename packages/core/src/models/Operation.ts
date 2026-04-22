@@ -2,7 +2,7 @@
  * Operation models - platform-agnostic
  */
 
-export type OperationType = 'copy' | 'move';
+export type OperationType = 'copy' | 'move' | 'delete';
 
 export type OperationStatus =
   | 'pending'
@@ -10,7 +10,8 @@ export type OperationStatus =
   | 'failed'
   | 'cancelled'
   | 'skipped'
-  | 'conflict';
+  | 'conflict'
+  | 'delete-source'; // move only: file already at dest, source will be trashed
 
 // Batch-level statuses used by the desktop app's operation history/undo system.
 // Keeping them in core avoids type drift between core/desktop.

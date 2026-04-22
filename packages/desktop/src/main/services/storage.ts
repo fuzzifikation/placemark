@@ -14,6 +14,7 @@ export {
   getPhotosByIds,
   getPhotosWithLocation,
   updatePhotoPath,
+  deletePhotosByIds,
   clearAllPhotos,
   getPhotoDateRange,
   getPhotoHistogram,
@@ -27,11 +28,7 @@ export {
   getLastCompletedBatch,
   archiveCompletedBatches,
 } from './batchQueries';
-export type { BatchFile, OperationBatch, BatchInput } from './batchQueries';
+export type { BatchFile, FileOp, OperationBatch, BatchInput } from './batchQueries';
 
-export {
-  setLastImportSummary,
-  getLastImportSummary,
-  getLibraryStats,
-} from './libraryStats';
+export { setLastImportSummary, getLastImportSummary, getLibraryStats } from './libraryStats';
 export type { LastImportSummary, LibraryStats } from './libraryStats';

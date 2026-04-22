@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { Photo, DryRunResult, OperationType } from '@placemark/core';
-import { DryRunPreview } from './DryRunPreview';
+import { OperationPlanPreview } from './OperationPlanPreview';
 import { SourceSummary } from './SourceSummary';
+import { TrashAcknowledgeModal, TrashUndoModal } from './TrashModals';
 import { useTheme } from '../../hooks/useTheme';
 import { formatDateTime, formatBytes } from '../../utils/formatLocale';
 import { SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, Z_INDEX } from '../../constants/ui';
@@ -11,7 +12,7 @@ interface ExecutionProgress {
   completedFiles: number;
   currentFile: string;
   percentage: number;
-  phase: 'executing' | 'complete';
+  phase: 'executing' | 'cleanup' | 'complete';
 }
 
 interface OperationsPanelProps {
@@ -53,6 +54,15 @@ export function OperationsPanel({
   const [progress, setProgress] = useState<ExecutionProgress | null>(null);
   // Incrementing this forces the auto-preview effect to re-run (e.g. after cancel+rollback)
   const [previewVersion, setPreviewVersion] = useState(0);
+  // Trash acknowledgement modal: shown when source files were sent to Recycle Bin during execute
+  const [trashModal, setTrashModal] = useState<{ count: number } | null>(null);
+  // Trash undo modal: shown when undo requires the user to manually restore files from Recycle Bin
+  const [trashUndoModal, setTrashUndoModal] = useState<{
+    count: number;
+    batchId: number;
+    wasMoveOp: boolean;
+    isDeleteOp: boolean;
+  } | null>(null);
 
   // Check undo availability on mount and after operations
   const checkUndoState = async () => {
@@ -68,9 +78,15 @@ export function OperationsPanel({
     checkUndoState();
   }, []);
 
-  // Auto-generate dry-run preview whenever destination or op type changes
+  // Auto-generate dry-run preview whenever destination or op type changes.
+  // Delete does not need a destination path.
   useEffect(() => {
-    if (!destPath || selectedPhotos.length === 0) {
+    if (selectedPhotos.length === 0) {
+      setDryRunResult(null);
+      setLoading(false);
+      return;
+    }
+    if (opType !== 'delete' && !destPath) {
       setDryRunResult(null);
       setLoading(false);
       return;
@@ -79,7 +95,7 @@ export function OperationsPanel({
     setLoading(true);
     const photoIds = selectedPhotos.map((p) => p.id);
     window.api.ops
-      .generateDryRun(photoIds, destPath, opType)
+      .generateDryRun(photoIds, destPath ?? '', opType)
       .then((result) => {
         if (!cancelled) setDryRunResult(result);
       })
@@ -135,14 +151,24 @@ export function OperationsPanel({
         toast.info(result.message);
         // Rollback is complete — force a fresh preview so the UI reflects current filesystem state
         setPreviewVersion((v) => v + 1);
-      } else {
+      } else if (opType === 'delete') {
+        setDryRunResult(null);
+        await checkUndoState();
+        await onRefreshPhotos();
         toast.success(result.message);
+      } else {
         setDryRunResult(null);
         setDestPath(null); // Reset form so preview clears properly after execution
         await checkUndoState();
         // Refresh photos to get updated paths (important for move operations)
         if (opType === 'move') {
           await onRefreshPhotos();
+        }
+        // Show acknowledgement modal if source files were trashed (no undo via Placemark)
+        if (result.trashedSourceCount && result.trashedSourceCount > 0) {
+          setTrashModal({ count: result.trashedSourceCount });
+        } else {
+          toast.success(result.message);
         }
       }
     } catch (err: any) {
@@ -166,13 +192,24 @@ export function OperationsPanel({
   const handleUndo = async () => {
     try {
       const wasMoveOp = undoState.batchInfo?.operation === 'move';
+      const isDeleteOp = undoState.batchInfo?.operation === 'delete';
       const result = await window.api.ops.undo();
       if (result.success) {
-        toast.success(result.message);
         await checkUndoState();
-        // Refresh photos to restore original paths (for move undo)
+        // Refresh photos for any automatically restored files
         if (wasMoveOp) {
           await onRefreshPhotos();
+        }
+        if (result.trashedCount && result.trashedCount > 0) {
+          // Trashed files need manual Recycle Bin restore — show confirmation modal
+          setTrashUndoModal({
+            count: result.trashedCount,
+            batchId: result.batchId!,
+            wasMoveOp,
+            isDeleteOp,
+          });
+        } else {
+          toast.success(result.message);
         }
       } else {
         toast.error(result.message);
@@ -182,13 +219,32 @@ export function OperationsPanel({
     }
   };
 
+  const handleConfirmTrashUndo = async () => {
+    if (!trashUndoModal) return;
+    try {
+      await window.api.ops.confirmTrashUndo(trashUndoModal.batchId);
+      await checkUndoState();
+      if (trashUndoModal.wasMoveOp || trashUndoModal.isDeleteOp) {
+        await onRefreshPhotos();
+      }
+      toast.success('Undo complete.');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to confirm undo');
+    } finally {
+      setTrashUndoModal(null);
+    }
+  };
+
   const totalSize = selectedPhotos.reduce((acc, p) => acc + p.fileSize, 0);
   const totalSizeFormatted = formatBytes(totalSize);
 
   const executeDisabled =
     executing ||
     !dryRunResult ||
-    dryRunResult.operations.filter((op) => op.status === 'pending').length === 0;
+    (dryRunResult.operations.filter((op) => op.status === 'pending').length === 0 &&
+      dryRunResult.operations.filter((op) => op.status === 'delete-source').length === 0);
+
+  const showDestSection = opType !== 'delete';
 
   // Styles
   const styles = {
@@ -312,42 +368,61 @@ export function OperationsPanel({
                 />
                 <span>Move</span>
               </label>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: SPACING.SM,
+                  cursor: executing ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="opType"
+                  checked={opType === 'delete'}
+                  onChange={() => setOpType('delete')}
+                  disabled={executing}
+                />
+                <span style={{ color: opType === 'delete' ? '#ef4444' : undefined }}>Delete</span>
+              </label>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.LG }}>
-              <button
-                onClick={handleSelectDest}
-                disabled={executing}
-                style={{
-                  ...styles.button,
-                  backgroundColor: colors.border,
-                  color: colors.textPrimary,
-                  cursor: executing ? 'not-allowed' : 'pointer',
-                  opacity: executing ? 0.5 : 1,
-                }}
-              >
-                Select Destination
-              </button>
-              <div
-                style={{
-                  flex: 1,
-                  padding: SPACING.SM,
-                  backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : '#f3f4f6',
-                  borderRadius: BORDER_RADIUS.SM,
-                  fontFamily: 'monospace',
-                  fontSize: FONT_SIZE.SM,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {destPath || (
-                  <span style={{ color: colors.textMuted, fontStyle: 'italic' }}>
-                    No folder selected
-                  </span>
-                )}
+            {showDestSection && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.LG }}>
+                <button
+                  onClick={handleSelectDest}
+                  disabled={executing}
+                  style={{
+                    ...styles.button,
+                    backgroundColor: colors.border,
+                    color: colors.textPrimary,
+                    cursor: executing ? 'not-allowed' : 'pointer',
+                    opacity: executing ? 0.5 : 1,
+                  }}
+                >
+                  Select Destination
+                </button>
+                <div
+                  style={{
+                    flex: 1,
+                    padding: SPACING.SM,
+                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : '#f3f4f6',
+                    borderRadius: BORDER_RADIUS.SM,
+                    fontFamily: 'monospace',
+                    fontSize: FONT_SIZE.SM,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {destPath || (
+                    <span style={{ color: colors.textMuted, fontStyle: 'italic' }}>
+                      No folder selected
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Planned operations preview — 3 states */}
@@ -360,18 +435,18 @@ export function OperationsPanel({
               paddingTop: SPACING.LG,
             }}
           >
-            {!destPath && (
+            {!destPath && opType !== 'delete' && (
               <p style={{ color: colors.textMuted, fontStyle: 'italic', margin: 0 }}>
                 Select a destination folder to see the planned operations.
               </p>
             )}
-            {destPath && loading && (
+            {(destPath || opType === 'delete') && loading && (
               <p style={{ color: colors.textSecondary, margin: 0 }}>Generating preview…</p>
             )}
-            {destPath && !loading && dryRunResult && (
-              <DryRunPreview result={dryRunResult} colors={colors} />
+            {(destPath || opType === 'delete') && !loading && dryRunResult && (
+              <OperationPlanPreview result={dryRunResult} colors={colors} />
             )}
-            {destPath && !loading && !dryRunResult && (
+            {(destPath || opType === 'delete') && !loading && !dryRunResult && (
               <p style={{ color: '#ef4444', margin: 0, fontSize: FONT_SIZE.SM }}>
                 Could not generate preview — check the error notification above.
               </p>
@@ -433,16 +508,18 @@ export function OperationsPanel({
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  onClick={handleCancel}
-                  style={{
-                    ...styles.button,
-                    backgroundColor: '#ef4444',
-                    color: 'white',
-                  }}
-                >
-                  Cancel (Rollback)
-                </button>
+                {progress.phase === 'executing' && (
+                  <button
+                    onClick={handleCancel}
+                    style={{
+                      ...styles.button,
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                    }}
+                  >
+                    Cancel (Rollback)
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -476,11 +553,21 @@ export function OperationsPanel({
               disabled={executeDisabled}
               style={{
                 ...styles.actionBtn,
-                backgroundColor: executeDisabled ? colors.textMuted : '#22c55e',
+                backgroundColor: executeDisabled
+                  ? colors.textMuted
+                  : opType === 'delete'
+                    ? '#ef4444'
+                    : '#22c55e',
                 cursor: executeDisabled ? 'not-allowed' : 'pointer',
               }}
             >
-              {executing ? 'Executing…' : `Execute ${opType === 'copy' ? 'Copy' : 'Move'}`}
+              {executing
+                ? 'Executing…'
+                : opType === 'copy'
+                  ? 'Execute Copy'
+                  : opType === 'move'
+                    ? 'Execute Move'
+                    : `Delete ${selectedPhotos.length} file${selectedPhotos.length !== 1 ? 's' : ''}`}
             </button>
           </div>
 
@@ -531,6 +618,29 @@ export function OperationsPanel({
           )}
         </div>
       </div>
+
+      {/* Recycle Bin acknowledgement modal */}
+      {trashModal && (
+        <TrashAcknowledgeModal
+          count={trashModal.count}
+          colors={colors}
+          actionBtnStyle={styles.actionBtn}
+          onClose={() => setTrashModal(null)}
+        />
+      )}
+
+      {/* Trash undo modal — shown when undo involves files that were sent to the Recycle Bin */}
+      {trashUndoModal && (
+        <TrashUndoModal
+          count={trashUndoModal.count}
+          isDeleteOp={trashUndoModal.isDeleteOp}
+          colors={colors}
+          buttonStyle={styles.button}
+          actionBtnStyle={styles.actionBtn}
+          onCancel={() => setTrashUndoModal(null)}
+          onConfirm={handleConfirmTrashUndo}
+        />
+      )}
     </div>
   );
 }

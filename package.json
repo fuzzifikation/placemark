@@ -1,7 +1,7 @@
 {
   "name": "placemark",
   "private": true,
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Privacy-first, local-first photo organizer",
   "author": "Placemark",
   "homepage": "https://github.com/fuzzifikation/placemark",

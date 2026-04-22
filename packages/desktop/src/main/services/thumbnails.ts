@@ -95,7 +95,7 @@ export class ThumbnailService {
           const embeddedThumbnail = await exifr.thumbnail(photoPath);
 
           if (embeddedThumbnail) {
-            inputForSharp = embeddedThumbnail;
+            inputForSharp = Buffer.from(embeddedThumbnail);
           } else {
             logger.warn(
               `${formatLabel} file has no embedded thumbnail: ${path.basename(photoPath)}`

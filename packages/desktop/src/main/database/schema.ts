@@ -40,7 +40,7 @@ const SCHEMA_SQL = `
 
   CREATE TABLE IF NOT EXISTS operation_batch (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    operation TEXT NOT NULL CHECK(operation IN ('copy', 'move')),
+    operation TEXT NOT NULL CHECK(operation IN ('copy', 'move', 'delete')),
     timestamp INTEGER NOT NULL,
     status TEXT NOT NULL CHECK(status IN ('pending', 'completed', 'failed', 'cancelled', 'undone', 'archived')),
     error TEXT
@@ -55,6 +55,7 @@ const SCHEMA_SQL = `
     photo_id INTEGER,
     source_path TEXT NOT NULL,
     dest_path TEXT NOT NULL,
+    file_op TEXT NOT NULL DEFAULT 'move' CHECK(file_op IN ('copy', 'move', 'delete', 'delete-source')),
     FOREIGN KEY (batch_id) REFERENCES operation_batch(id) ON DELETE CASCADE
   );
 

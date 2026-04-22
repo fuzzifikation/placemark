@@ -189,6 +189,15 @@ export function updatePhotoPath(photoId: number, newPath: string): void {
   }
 }
 
+export function deletePhotosByIds(photoIds: number[]): number {
+  if (photoIds.length === 0) return 0;
+  const placeholders = photoIds.map(() => '?').join(',');
+  const result = getDb()
+    .prepare(`DELETE FROM photos WHERE id IN (${placeholders})`)
+    .run(...photoIds);
+  return result.changes;
+}
+
 export function clearAllPhotos(): void {
   const db = getDb();
   db.transaction(() => {

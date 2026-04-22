@@ -113,9 +113,18 @@ export interface OperationsAPI {
     message: string;
     batchId?: number;
     cancelled?: boolean;
+    trashedSourceCount?: number;
+    trashedCount?: number;
+    failedCount?: number;
   }>;
   cancel: () => Promise<{ ok: boolean; message: string }>;
-  undo: () => Promise<{ success: boolean; message: string; undoneCount?: number }>;
+  undo: () => Promise<{
+    success: boolean;
+    message: string;
+    undoneCount?: number;
+    trashedCount?: number;
+    batchId?: number;
+  }>;
   canUndo: () => Promise<{
     canUndo: boolean;
     batchInfo?: {
@@ -125,13 +134,14 @@ export interface OperationsAPI {
       timestamp: number;
     };
   }>;
+  confirmTrashUndo: (batchId: number) => Promise<void>;
   onProgress: (
     callback: (progress: {
       totalFiles: number;
       completedFiles: number;
       currentFile: string;
       percentage: number;
-      phase: 'executing' | 'complete';
+      phase: 'executing' | 'cleanup' | 'complete';
     }) => void
   ) => () => void;
 }

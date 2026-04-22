@@ -1,5 +1,18 @@
 # Release Notes
 
+## v0.9.4 - Undo for Trashed Files (Apr 2026)
+
+### ✨ New
+
+- **Full undo for move operations with already-at-destination files:** When a move sends source files to the OS Recycle Bin (because the file was already present at the destination), those files are now tracked in the undo log alongside the regular moved files. Clicking "Undo Batch" automatically reverses the moved files and then prompts the user to manually restore the trashed files from the OS Recycle Bin. Once the user confirms, Placemark marks the batch as fully undone and restores the database photo paths. Previously, trashed files were omitted from the undo log entirely.
+- **Execution acknowledgement modal updated:** The "Source files sent to Recycle Bin" modal no longer says "cannot be undone via Placemark" — it now directs the user to the Undo Batch button instead.
+
+### 🛠️ Internal
+
+- **`file_op` column in `operation_batch_files`:** New `TEXT CHECK(file_op IN ('copy', 'move', 'delete-source'))` column distinguishes regular copy/move entries from trashed-source entries. Requires deleting and rebuilding `placemark.db`.
+- **`confirmTrashUndo(batchId)` IPC channel (`ops:confirmTrashUndo`):** Called after user confirms Recycle Bin restoration. Updates DB photo paths for trashed files and marks the batch as `'undone'`.
+- **`FileOp` type exported from storage barrel.**
+
 ## v0.9.3 - Placemark Export/Import & Timeline Fixes (Apr 2026)
 
 ### ✨ New

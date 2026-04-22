@@ -22,7 +22,9 @@ import {
   getLastCompletedBatch,
   updateBatchStatus,
   updatePhotoPath,
+  deletePhotosByIds,
 } from './storage';
+import { getDb } from './storageConnection';
 import { logger } from './logger';
 
 // ============================================================================
@@ -57,13 +59,14 @@ interface ExecutionProgress {
   completedFiles: number;
   currentFile: string;
   percentage: number;
-  phase: 'executing' | 'complete';
+  phase: 'executing' | 'cleanup' | 'complete';
 }
 
 interface ExecutionResult {
   success: boolean;
   completedCount: number;
   skippedCount: number;
+  trashedSourceCount: number;
   message: string;
   batchId: number;
 }
@@ -103,24 +106,25 @@ export async function executeOperations(
   // Get operations to execute (already validated by IPC dry-run)
   const toExecute = dryRun.operations.filter((op) => op.status === 'pending');
   const skippedCount = dryRun.operations.filter((op) => op.status === 'skipped').length;
+  const toTrashSource = dryRun.operations.filter((op) => op.status === 'delete-source');
 
-  // Nothing to do
-  if (toExecute.length === 0) {
+  // Nothing pending — but for a move there may still be delete-source ops to execute
+  if (toExecute.length === 0 && toTrashSource.length === 0) {
     activeExecution = null;
     return {
       success: true,
       completedCount: 0,
       skippedCount,
-      message:
-        skippedCount > 0
-          ? `All ${skippedCount} files are already in the destination folder.`
-          : 'No files to process.',
+      trashedSourceCount: 0,
+      message: 'No files to process.',
       batchId: 0,
     };
   }
 
+  const totalFileCount = toExecute.length + toTrashSource.length;
+
   sendProgress(mainWindow, {
-    totalFiles: toExecute.length,
+    totalFiles: totalFileCount,
     completedFiles: 0,
     currentFile: 'Starting...',
     percentage: 0,
@@ -132,17 +136,28 @@ export async function executeOperations(
   const completedOps: FileOperation[] = [];
 
   try {
-    // Log batch to database — inside try so activeExecution is always released by finally
-    batchId = logOperationBatch({
-      operation: opType,
-      files: toExecute.map((op) => ({
-        photoId: op.photoId,
-        sourcePath: op.sourcePath,
-        destPath: op.destPath,
-      })),
-      timestamp: Date.now(),
-      status: 'pending',
-    });
+    // Log batch to database — includes both actual moves/copies and delete-source ops
+    if (toExecute.length > 0 || toTrashSource.length > 0) {
+      batchId = logOperationBatch({
+        operation: opType,
+        files: [
+          ...toExecute.map((op) => ({
+            photoId: op.photoId,
+            sourcePath: op.sourcePath,
+            destPath: op.destPath,
+            fileOp: opType as 'copy' | 'move',
+          })),
+          ...toTrashSource.map((op) => ({
+            photoId: op.photoId,
+            sourcePath: op.sourcePath,
+            destPath: op.destPath,
+            fileOp: 'delete-source' as const,
+          })),
+        ],
+        timestamp: Date.now(),
+        status: 'pending',
+      });
+    }
     for (let i = 0; i < toExecute.length; i++) {
       if (activeExecution?.cancelRequested) {
         throw new CancelledError('Operation cancelled by user.');
@@ -151,10 +166,10 @@ export async function executeOperations(
       const op = toExecute[i];
 
       sendProgress(mainWindow, {
-        totalFiles: toExecute.length,
+        totalFiles: totalFileCount,
         completedFiles: i,
         currentFile: path.basename(op.sourcePath),
-        percentage: Math.round((i / toExecute.length) * 100),
+        percentage: Math.round((i / totalFileCount) * 100),
         phase: 'executing',
       });
 
@@ -194,7 +209,9 @@ export async function executeOperations(
     }
 
     // All succeeded - update batch status
-    updateBatchStatus(batchId, 'completed');
+    if (batchId !== 0) {
+      updateBatchStatus(batchId, 'completed');
+    }
 
     // Update photo paths in database after move (keeps DB in sync with filesystem)
     const pathUpdateFailures: string[] = [];
@@ -210,24 +227,69 @@ export async function executeOperations(
       }
     }
 
+    // For move operations: trash source files that were already at destination
+    // and update their DB paths to point to the destination copy
+    let trashedSourceCount = 0;
+    const trashFailures: string[] = [];
+    if (toTrashSource.length > 0) {
+      sendProgress(mainWindow, {
+        totalFiles: totalFileCount,
+        completedFiles: toExecute.length,
+        currentFile: '',
+        percentage: Math.round((toExecute.length / totalFileCount) * 100),
+        phase: 'cleanup',
+      });
+    }
+    for (let i = 0; i < toTrashSource.length; i++) {
+      const op = toTrashSource[i];
+      sendProgress(mainWindow, {
+        totalFiles: totalFileCount,
+        completedFiles: toExecute.length + i,
+        currentFile: path.basename(op.sourcePath),
+        percentage: Math.round(((toExecute.length + i) / totalFileCount) * 100),
+        phase: 'cleanup',
+      });
+      try {
+        await shell.trashItem(op.sourcePath);
+        trashedSourceCount++;
+        logger.info(`Trashed source (already at dest): ${op.sourcePath}`);
+        // Update DB path so the photo record points to the destination copy
+        try {
+          updatePhotoPath(op.photoId, op.destPath);
+          logger.info(`Updated photo ${op.photoId} path to ${op.destPath} (delete-source)`);
+        } catch (dbErr: any) {
+          logger.error(`Failed to update photo path for ${op.photoId}: ${dbErr.message}`);
+          pathUpdateFailures.push(op.destPath);
+        }
+      } catch (trashErr: any) {
+        trashFailures.push(path.basename(op.sourcePath));
+        logger.error(`Failed to trash source ${op.sourcePath}: ${trashErr.message}`);
+      }
+    }
+
     sendProgress(mainWindow, {
-      totalFiles: toExecute.length,
-      completedFiles: toExecute.length,
+      totalFiles: totalFileCount,
+      completedFiles: totalFileCount,
       currentFile: '',
       percentage: 100,
       phase: 'complete',
     });
 
-    const skippedMsg = skippedCount > 0 ? ` (${skippedCount} already in destination)` : '';
-    const pathUpdateWarning =
-      pathUpdateFailures.length > 0
-        ? ` Warning: ${pathUpdateFailures.length} photo ${pathUpdateFailures.length === 1 ? 'path' : 'paths'} could not be updated in the database — the files are safe at the destination. Re-scan the destination folder to restore them.`
-        : '';
+    const message = buildExecutionMessage({
+      opType,
+      completedCount: completedOps.length,
+      skippedCount,
+      trashedSourceCount,
+      trashFailures,
+      pathUpdateFailures,
+    });
+
     return {
       success: true,
       completedCount: completedOps.length,
       skippedCount,
-      message: `Successfully moved ${completedOps.length} files.${skippedMsg}${pathUpdateWarning}`,
+      trashedSourceCount,
+      message,
       batchId,
     };
   } catch (error: any) {
@@ -252,6 +314,120 @@ export async function executeOperations(
     }
 
     throw new Error(`Operation failed: ${error.message}.${rollbackNote}`);
+  } finally {
+    activeExecution = null;
+  }
+}
+
+// ============================================================================
+// Delete
+// ============================================================================
+
+/**
+ * Send a batch of photos to the OS Recycle Bin and remove their DB records.
+ *
+ * No rollback: once trashed, files sit in the OS Recycle Bin (recoverable by
+ * the user manually). DB records are removed for each successfully trashed file.
+ * Undo prompts the user to restore from the Recycle Bin and re-scan.
+ */
+export async function executeDelete(
+  dryRun: DryRunResult,
+  mainWindow: BrowserWindow | null
+): Promise<{
+  success: boolean;
+  trashedCount: number;
+  failedCount: number;
+  message: string;
+  batchId: number;
+}> {
+  if (activeExecution) {
+    throw new Error('Another operation is already running. Please wait for it to finish.');
+  }
+  activeExecution = { cancelRequested: false };
+
+  const toDelete = dryRun.operations.filter((op) => op.status === 'pending');
+  if (toDelete.length === 0) {
+    activeExecution = null;
+    return {
+      success: true,
+      trashedCount: 0,
+      failedCount: 0,
+      message: 'No files to delete.',
+      batchId: 0,
+    };
+  }
+
+  sendProgress(mainWindow, {
+    totalFiles: toDelete.length,
+    completedFiles: 0,
+    currentFile: 'Starting...',
+    percentage: 0,
+    phase: 'executing',
+  });
+
+  const batchId = logOperationBatch({
+    operation: 'delete',
+    files: toDelete.map((op) => ({
+      photoId: op.photoId,
+      sourcePath: op.sourcePath,
+      destPath: '',
+      fileOp: 'delete' as const,
+    })),
+    timestamp: Date.now(),
+    status: 'pending',
+  });
+
+  const succeededIds: number[] = [];
+  const failures: string[] = [];
+
+  try {
+    for (let i = 0; i < toDelete.length; i++) {
+      if (activeExecution?.cancelRequested) {
+        break;
+      }
+      const op = toDelete[i];
+      sendProgress(mainWindow, {
+        totalFiles: toDelete.length,
+        completedFiles: i,
+        currentFile: path.basename(op.sourcePath),
+        percentage: Math.round((i / toDelete.length) * 100),
+        phase: 'executing',
+      });
+      try {
+        await shell.trashItem(op.sourcePath);
+        succeededIds.push(op.photoId);
+        logger.info(`Deleted (trashed): ${op.sourcePath}`);
+      } catch (err: any) {
+        failures.push(path.basename(op.sourcePath));
+        logger.error(`Failed to trash ${op.sourcePath}: ${err.message}`);
+      }
+    }
+
+    if (succeededIds.length > 0) {
+      deletePhotosByIds(succeededIds);
+    }
+
+    updateBatchStatus(batchId, 'completed');
+
+    sendProgress(mainWindow, {
+      totalFiles: toDelete.length,
+      completedFiles: toDelete.length,
+      currentFile: '',
+      percentage: 100,
+      phase: 'complete',
+    });
+
+    const failureNote =
+      failures.length > 0
+        ? ` ${failures.length} file${failures.length !== 1 ? 's' : ''} could not be sent to the Recycle Bin and were not removed.`
+        : '';
+    return {
+      success: true,
+      trashedCount: succeededIds.length,
+      failedCount: failures.length,
+      message: `Sent ${succeededIds.length} file${succeededIds.length !== 1 ? 's' : ''} to the Recycle Bin.${failureNote}`,
+      batchId,
+    };
   } finally {
     activeExecution = null;
   }
@@ -319,14 +495,21 @@ async function rollbackCompletedOps(
 // ============================================================================
 
 /**
- * Undo the last completed batch operation
- * For copy: move copied files to OS trash (recoverable)
- * For move: move files back to original locations
+ * Undo the last completed batch operation.
+ *
+ * - copy / move files are reversed automatically.
+ * - delete-source files (trashed during a move) cannot be untrashed
+ *   programmatically. Their count is returned so the renderer can prompt
+ *   the user to restore them manually from the OS Recycle Bin.
+ *   The batch is NOT marked 'undone' yet; call confirmTrashUndo() after the
+ *   user acknowledges.
  */
 export async function undoLastBatch(): Promise<{
   success: boolean;
   message: string;
   undoneCount?: number;
+  trashedCount?: number;
+  batchId?: number;
 }> {
   const batch = getLastCompletedBatch();
 
@@ -334,10 +517,17 @@ export async function undoLastBatch(): Promise<{
     return { success: false, message: 'No operation to undo.' };
   }
 
+  const autoUndoFiles = batch.files.filter(
+    (f) => f.fileOp !== 'delete-source' && f.fileOp !== 'delete'
+  );
+  const trashedFiles = batch.files.filter(
+    (f) => f.fileOp === 'delete-source' || f.fileOp === 'delete'
+  );
+
   const errors: string[] = [];
   let undoneCount = 0;
 
-  for (const file of batch.files) {
+  for (const file of autoUndoFiles) {
     try {
       if (batch.operation === 'copy') {
         // Undo copy: verify file still exists, then move to OS trash
@@ -375,7 +565,6 @@ export async function undoLastBatch(): Promise<{
             const srcStat = await fs.stat(file.sourcePath);
             const destStat = await fs.stat(file.destPath);
             if (srcStat.size !== destStat.size) {
-              // Copy failed - remove partial and throw
               await fs.unlink(file.sourcePath);
               throw new Error('Cross-device restore verification failed');
             }
@@ -392,7 +581,6 @@ export async function undoLastBatch(): Promise<{
             logger.info(`Restored photo ${file.photoId} path to ${file.sourcePath}`);
           } catch (err: any) {
             logger.error(`Failed to restore photo path for ${file.photoId}: ${err.message}`);
-            // Continue - file is restored, just log the db update failure
           }
         }
 
@@ -405,11 +593,7 @@ export async function undoLastBatch(): Promise<{
     }
   }
 
-  // Only mark as undone if ALL files were successfully undone
-  if (errors.length === 0) {
-    updateBatchStatus(batch.id, 'undone');
-  } else {
-    // Partial undo - don't mark batch as undone so user knows something's wrong
+  if (errors.length > 0) {
     return {
       success: false,
       message: `Partially undone: ${undoneCount} restored, ${errors.length} failed. Batch NOT marked as undone.`,
@@ -417,11 +601,58 @@ export async function undoLastBatch(): Promise<{
     };
   }
 
+  if (trashedFiles.length > 0) {
+    // Auto-undo succeeded but trashed files need manual Recycle Bin restore.
+    // Do NOT mark batch as undone yet — that happens in confirmTrashUndo().
+    const restoredMsg =
+      undoneCount > 0 ? `${undoneCount} file${undoneCount !== 1 ? 's' : ''} restored. ` : '';
+    return {
+      success: true,
+      message: `${restoredMsg}${trashedFiles.length} file${trashedFiles.length !== 1 ? 's' : ''} need${trashedFiles.length === 1 ? 's' : ''} to be restored from the Recycle Bin.`,
+      undoneCount,
+      trashedCount: trashedFiles.length,
+      batchId: batch.id,
+    };
+  }
+
+  updateBatchStatus(batch.id, 'undone');
   return {
     success: true,
-    message: `Undone: ${batch.operation} of ${undoneCount} files.`,
+    message: `Undone: ${batch.operation} of ${undoneCount} file${undoneCount !== 1 ? 's' : ''}.`,
     undoneCount,
   };
+}
+
+/**
+ * Called after the user confirms they have restored trashed files from the
+ * OS Recycle Bin. Updates photo paths for the delete-source files and marks
+ * the batch as undone.
+ */
+export function confirmTrashUndo(batchId: number): void {
+  const db = getDb();
+
+  const trashedRows = db
+    .prepare(
+      `SELECT photo_id, source_path FROM operation_batch_files
+       WHERE batch_id = ? AND file_op IN ('delete-source', 'delete')`
+    )
+    .all(batchId) as Array<{ photo_id: number; source_path: string }>;
+
+  for (const row of trashedRows) {
+    if (row.photo_id) {
+      try {
+        updatePhotoPath(row.photo_id, row.source_path);
+        logger.info(
+          `Confirmed trash undo: restored photo ${row.photo_id} path to ${row.source_path}`
+        );
+      } catch (err: any) {
+        logger.error(`Failed to restore photo path for ${row.photo_id}: ${err.message}`);
+      }
+    }
+  }
+
+  updateBatchStatus(batchId, 'undone');
+  logger.info(`Batch ${batchId} marked as undone after trash confirmation`);
 }
 
 /**
@@ -446,6 +677,49 @@ export function canUndo(): { canUndo: boolean; batchInfo?: BatchInfo } {
 // ============================================================================
 // Helpers
 // ============================================================================
+
+function plural(count: number, word: string): string {
+  return `${count} ${word}${count !== 1 ? 's' : ''}`;
+}
+
+function buildExecutionMessage(opts: {
+  opType: OperationType;
+  completedCount: number;
+  skippedCount: number;
+  trashedSourceCount: number;
+  trashFailures: string[];
+  pathUpdateFailures: string[];
+}): string {
+  const {
+    opType,
+    completedCount,
+    skippedCount,
+    trashedSourceCount,
+    trashFailures,
+    pathUpdateFailures,
+  } = opts;
+
+  const skippedMsg = skippedCount > 0 ? ` (${skippedCount} already in destination, skipped)` : '';
+  const opLabel = opType === 'copy' ? 'Copied' : 'Moved';
+
+  let message: string;
+  if (completedCount > 0 && trashedSourceCount > 0) {
+    message = `${opLabel} ${plural(completedCount, 'file')}. ${plural(trashedSourceCount, 'source file')} sent to Recycle Bin (already at destination).${skippedMsg}`;
+  } else if (completedCount > 0) {
+    message = `Successfully ${opLabel.toLowerCase()} ${plural(completedCount, 'file')}.${skippedMsg}`;
+  } else {
+    message = `${plural(trashedSourceCount, 'source file')} sent to Recycle Bin — all files were already at the destination.${skippedMsg}`;
+  }
+
+  if (pathUpdateFailures.length > 0) {
+    message += ` Warning: ${plural(pathUpdateFailures.length, 'photo path')} could not be updated in the database — the files are safe at the destination. Re-scan the destination folder to restore them.`;
+  }
+  if (trashFailures.length > 0) {
+    message += ` Warning: ${plural(trashFailures.length, 'source file')} could not be sent to Recycle Bin: ${trashFailures.join(', ')}.`;
+  }
+
+  return message;
+}
 
 function sendProgress(mainWindow: BrowserWindow | null, progress: ExecutionProgress): void {
   if (mainWindow && !mainWindow.isDestroyed()) {

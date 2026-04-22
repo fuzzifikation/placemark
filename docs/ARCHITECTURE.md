@@ -329,7 +329,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 **Sub-components:**
 
 - `SourceSummary` - Selected photos summary
-- `DryRunPreview` - Preview of planned operations
+- `OperationPlanPreview` - Preview of planned operations
 
 ### File Operations Safety Model
 
