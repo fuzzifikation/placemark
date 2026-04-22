@@ -317,19 +317,23 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 ### Operations Panel
 
-**Purpose:** File copy/move operations with dry-run preview.
+**Purpose:** File copy/move/delete operations with dry-run preview.
 
 **Key Features:**
 
-- Destination folder selection
-- Dry-run preview showing source → destination
-- Conflict detection
-- Progress tracking
+- Destination folder selection (copy/move)
+- Delete mode (no destination — sends to OS Recycle Bin)
+- Dry-run preview showing source → destination (or files to delete)
+- Conflict detection (size + EXIF timestamp matching)
+- Progress tracking with cancellation
+- Session-scoped undo with trash restore flow
 
 **Sub-components:**
 
 - `SourceSummary` - Selected photos summary
-- `OperationPlanPreview` - Preview of planned operations
+- `OperationPlanPreview` - Preview of planned operations (per-folder breakdown)
+- `TrashAcknowledgeModal` - Post-execute acknowledgement when sources were trashed
+- `TrashUndoModal` - Post-undo prompt for manual Recycle Bin restore
 
 ### File Operations Safety Model
 
@@ -341,36 +345,51 @@ File operations follow a **safety-first, atomic batch** design. The goal is to n
 
 2. **Never Overwrite:** Operations use `COPYFILE_EXCL` flag - if a file appears at destination between validation and execution, the operation fails safely rather than overwriting.
 
-3. **Identical Files = Skip:** If a file with the same name AND same size exists at destination, it's treated as "already done" (skipped), not a conflict. Different size = real conflict, batch aborts.
+3. **Identical Files = Skip:** If a file with the same name AND same size AND same EXIF capture date exists at destination, it's treated as "already done" (skipped for copy, source trashed for move). Different size or different capture date = real conflict, batch aborts. Files with no EXIF date fall back to size-only check with a warning.
 
 4. **Session-Only Undo:** Completed batches can be undone until app restart. On startup, old batches are archived (no indefinite undo stacking).
+
+5. **Delete = Trash + Remove DB Record:** Delete operations use `shell.trashItem()` (recoverable via OS Recycle Bin) and remove the photo from the database. Undo prompts the user to manually restore from the Recycle Bin, then re-scan.
 
 #### Execution Flow
 
 ```
-User selects photos → Choose destination → Preview (dry-run)
-                                              ↓
-                                    IPC validates each file:
-                                    - Same path? → Skip
-                                    - Same size at dest? → Skip (identical)
-                                    - Different file at dest? → Conflict (abort)
-                                    - No file at dest? → Pending (proceed)
-                                              ↓
-                                    User confirms → Execute
-                                              ↓
-                                    For each file:
-                                    - Create dest directory
-                                    - Copy/move with COPYFILE_EXCL
-                                    - On failure: rollback all completed
-                                              ↓
-                                    Update DB paths (move only) → Done
+User selects photos → Choose operation type
+                         ↓
+            ┌────────────┼────────────┐
+         Copy/Move     Delete
+            ↓              ↓
+    Choose destination   Preview files to delete
+            ↓              ↓
+    Preview (dry-run)    User confirms → Execute
+            ↓              ↓
+    IPC validates:       For each file:
+    - Same path? → Skip  - shell.trashItem()
+    - Same size+date     - Remove DB record
+      at dest? → Skip    - Log to undo batch
+      (or trash source)        ↓
+    - Different? →       Done (undo = manual
+      Conflict (abort)   Recycle Bin restore
+    - No file? →         + re-scan)
+      Pending
+            ↓
+    User confirms → Execute
+            ↓
+    For each file:
+    - Create dest directory
+    - Copy/move with COPYFILE_EXCL
+    - On failure: rollback all completed
+            ↓
+    Update DB paths (move only) → Done
 ```
 
 #### Undo Behavior
 
 - **Copy undo:** Sends copied files to OS Trash (recoverable)
-- **Move undo:** Restores files to original location
+- **Move undo:** Restores files to original location; trashed source files require manual Recycle Bin restore (user prompted via modal)
+- **Delete undo:** Prompts user to restore from OS Recycle Bin, then re-scan source folder to rebuild DB records
 - **Partial undo:** If some files can't be restored, batch stays "completed" (user must investigate)
+- **Batch tracking:** Each file in a batch is tagged with a `file_op` (`copy`, `move`, `delete`, `delete-source`) so undo knows which files can be auto-reversed and which need manual Recycle Bin restore
 
 ## State Management
 

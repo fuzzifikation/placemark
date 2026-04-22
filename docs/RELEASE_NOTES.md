@@ -1,17 +1,29 @@
 # Release Notes
 
-## v0.9.4 - Undo for Trashed Files (Apr 2026)
+## v0.9.4 - Delete Operation & Undo Improvements (Apr 2026)
 
 ### ✨ New
 
+- **Delete operation:** New "Delete" radio option in the Operations panel sends selected photos to the OS Recycle Bin and removes their database records. No destination folder required. Preview shows files that will be deleted, grouped by source folder. Execute button turns red for delete. Undo prompts the user to restore files from the Recycle Bin manually, then re-scan the source folder.
 - **Full undo for move operations with already-at-destination files:** When a move sends source files to the OS Recycle Bin (because the file was already present at the destination), those files are now tracked in the undo log alongside the regular moved files. Clicking "Undo Batch" automatically reverses the moved files and then prompts the user to manually restore the trashed files from the OS Recycle Bin. Once the user confirms, Placemark marks the batch as fully undone and restores the database photo paths. Previously, trashed files were omitted from the undo log entirely.
 - **Execution acknowledgement modal updated:** The "Source files sent to Recycle Bin" modal no longer says "cannot be undone via Placemark" — it now directs the user to the Undo Batch button instead.
 
+### 🐛 Fixed
+
+- **Schema CHECK constraint for `operation_batch.operation`:** Added `'delete'` to the allowed values. Previously, executing a delete operation would crash with a SQLite constraint violation.
+- **Missing `deletePhotosByIds` import:** `executeDelete()` referenced an unimported function — runtime ReferenceError on any delete execution.
+- **Delete preview not rendered:** The dry-run preview section was gated on `destPath` being set, but delete operations don't use a destination. Preview was invisible for delete mode.
+- **Thumbnails `Buffer` type error:** `exifr.thumbnail()` returns `Uint8Array`, but `sharp()` expects `Buffer`. Now wrapped in `Buffer.from()`.
+- **Operation preview text for delete:** The summary text fell through to "will copy from folder(s) below" for delete operations. Now shows "will be deleted from folder(s) below".
+
 ### 🛠️ Internal
 
-- **`file_op` column in `operation_batch_files`:** New `TEXT CHECK(file_op IN ('copy', 'move', 'delete-source'))` column distinguishes regular copy/move entries from trashed-source entries. Requires deleting and rebuilding `placemark.db`.
+- **`file_op` column in `operation_batch_files`:** New `TEXT CHECK(file_op IN ('copy', 'move', 'delete', 'delete-source'))` column distinguishes regular copy/move entries from trashed-source and delete entries. Requires deleting and rebuilding `placemark.db`.
 - **`confirmTrashUndo(batchId)` IPC channel (`ops:confirmTrashUndo`):** Called after user confirms Recycle Bin restoration. Updates DB photo paths for trashed files and marks the batch as `'undone'`.
 - **`FileOp` type exported from storage barrel.**
+- **`TrashModals.tsx` extracted** from OperationsPanel (750 → 612 lines). Contains `TrashAcknowledgeModal` and `TrashUndoModal`.
+- **`buildExecutionMessage()` helper** extracted in operations.ts with a `plural()` utility — replaces inline string construction.
+- **`deletePhotosByIds()` in photoQueries.ts:** Bulk DELETE with parameterized IN clause.
 
 ## v0.9.3 - Placemark Export/Import & Timeline Fixes (Apr 2026)
 

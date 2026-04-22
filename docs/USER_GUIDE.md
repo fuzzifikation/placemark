@@ -98,13 +98,14 @@ Placemarks are stored locally in your database.
 
 ### File operations
 
-Placemark can help you reorganize files safely.
+Placemark can help you reorganize or clean up files safely.
 
 1. Select photos.
-2. Choose **Copy** or **Move**.
-3. Review the preview before anything happens.
-4. Run the operation and follow progress.
-5. Use **Undo** if you need to reverse it.
+2. Choose **Copy**, **Move**, or **Delete**.
+3. For copy/move, select a destination folder. Delete does not need one.
+4. Review the preview before anything happens.
+5. Run the operation and follow progress.
+6. Use **Undo** if you need to reverse it. For files sent to the Recycle Bin (delete or move duplicates), Placemark will guide you through restoring them manually.
 
 Operations are designed to avoid silent overwrites and recover cleanly from failures.
 
