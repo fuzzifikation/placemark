@@ -189,6 +189,25 @@ export function updatePhotoPath(photoId: number, newPath: string): void {
   }
 }
 
+/**
+ * Batch update: sets new paths for many photos in a single transaction.
+ * Returns the photo IDs that could not be updated (row missing).
+ */
+export function updatePhotoPaths(updates: Array<{ photoId: number; newPath: string }>): number[] {
+  if (updates.length === 0) return [];
+  const db = getDb();
+  const stmt = db.prepare('UPDATE photos SET path = ? WHERE id = ?');
+  const missing: number[] = [];
+  const run = db.transaction((items: typeof updates) => {
+    for (const { photoId, newPath } of items) {
+      const result = stmt.run(newPath, photoId);
+      if (result.changes === 0) missing.push(photoId);
+    }
+  });
+  run(updates);
+  return missing;
+}
+
 export function deletePhotosByIds(photoIds: number[]): number {
   if (photoIds.length === 0) return 0;
   const placeholders = photoIds.map(() => '?').join(',');

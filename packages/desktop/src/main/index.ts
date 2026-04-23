@@ -106,6 +106,9 @@ app.whenReady().then(async () => {
       opsModule.setStartupUndoCleared(true);
     }
 
+    // Mark any batches left 'pending' from a crashed previous run as failed.
+    storageModule.failStalePendingBatches();
+
     // Initialize features
     photosModule.registerPhotoHandlers();
     // Note: operations handlers need mainWindow for progress events

@@ -121,3 +121,21 @@ export function archiveCompletedBatches(): number {
   }
   return result.changes;
 }
+
+/**
+ * Mark any batches left in 'pending' state as 'failed'. A pending row at
+ * startup means the previous run crashed or was killed mid-execution — the
+ * filesystem is in an unknown state and the batch can never complete.
+ */
+export function failStalePendingBatches(): number {
+  const result = getDb()
+    .prepare(
+      "UPDATE operation_batch SET status = 'failed', error = 'Interrupted: app exited during operation' WHERE status = 'pending'"
+    )
+    .run();
+
+  if (result.changes > 0) {
+    logger.warn(`Marked ${result.changes} stale pending operation batch(es) as failed`);
+  }
+  return result.changes;
+}

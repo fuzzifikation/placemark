@@ -14,6 +14,7 @@ export {
   getPhotosByIds,
   getPhotosWithLocation,
   updatePhotoPath,
+  updatePhotoPaths,
   deletePhotosByIds,
   clearAllPhotos,
   getPhotoDateRange,
@@ -27,6 +28,7 @@ export {
   updateBatchStatus,
   getLastCompletedBatch,
   archiveCompletedBatches,
+  failStalePendingBatches,
 } from './batchQueries';
 export type { BatchFile, FileOp, OperationBatch, BatchInput } from './batchQueries';
 

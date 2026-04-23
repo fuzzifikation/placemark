@@ -508,7 +508,7 @@ export function OperationsPanel({
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                {progress.phase === 'executing' && (
+                {progress.phase === 'executing' && opType !== 'delete' && (
                   <button
                     onClick={handleCancel}
                     style={{
