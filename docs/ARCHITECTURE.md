@@ -106,6 +106,16 @@ placemark/
 │           │   └── services/      # Business logic services
 │           │       ├── exif.ts
 │           │       ├── filesystem.ts
+│           │       ├── operations/ # File operations engine modules
+│           │       │   ├── execution.ts
+│           │       │   ├── deleter.ts
+│           │       │   ├── undo.ts
+│           │       │   ├── dryRun.ts
+│           │       │   ├── cancel.ts
+│           │       │   ├── messages.ts
+│           │       │   ├── progress.ts
+│           │       │   ├── moveFile.ts
+│           │       │   └── index.ts
 │           │       ├── photoMetadata.ts
 │           │       ├── storage.ts
 │           │       └── thumbnails.ts

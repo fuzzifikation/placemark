@@ -30,6 +30,7 @@ All items below must ship before Microsoft Store submission. Ordered by implemen
 
 **Recent Work:**
 
+- **Unreleased (Apr 2026) — Operations reliability hardening + modularization:** Replaced monolithic operations service with focused modules under `packages/desktop/src/main/services/operations/`. Fixed lock release guarantees around execution lifecycle, corrected trash-failure propagation to use `photoId` (not basename matching), and added startup fail-closed handling for stale pending batches.
 - **v0.9.4 — Delete operation & undo improvements (Apr 2026):** New delete operation sends selected photos to OS Recycle Bin and removes DB records. Trashed files (from move delete-source and delete ops) now tracked in undo log with manual Recycle Bin restore flow. Bug fixes: schema CHECK constraint, thumbnails Buffer type, delete preview rendering. Refactoring: TrashModals extracted, message builder helper.
 - **v0.9.0 — Stats & Filters UI overhaul (Apr 2026):** Stats panel converted from a full-height modal overlay to a non-blocking floating glass panel (matching Placemarks panel pattern). Format and camera rows in the stats panel are now interactive filters — click to toggle, activates instantly on the map. Active filter chips moved out of the header bar into a dedicated strip below it (wraps on overflow, respects stats panel width). Map controls (zoom +/−, fit) permanently positioned below the floating header, shift right when the stats panel is open. Stats button in header acts as a toggle (highlights blue when open).
 - **OneDrive import (Mar 2026, pre-release):** Full metadata import pipeline — Graph API subfolder walk, photo record creation, duplicate dedup via SHA-256 + item ID, abort support, subdirectory toggle, progress reporting. `photo_issues` schema table records validation anomalies (`gps_zero`, `future_timestamp`, `invalid_timestamp`) from both local and OneDrive scans. Shared `photoMetadata.ts` normalizers used by both paths.
@@ -196,7 +197,7 @@ All items below must ship before Microsoft Store submission. Ordered by implemen
 
 **Completed Tasks:**
 
-1. ✅ Implemented `packages/desktop/src/main/services/operations.ts` with atomic batch execution
+1. ✅ Implemented modular operations engine under `packages/desktop/src/main/services/operations/` (entry point: `index.ts`) with atomic batch execution
 2. ✅ Added `operation_batch` and `operation_batch_files` tables (migrations v3, v4)
 3. ✅ Progress tracking with file-by-file updates via IPC
 4. ✅ File copy/move with cross-device support and verification

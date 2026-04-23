@@ -1,5 +1,20 @@
 # Release Notes
 
+## Unreleased - Operations Reliability & Refactor (Apr 2026)
+
+### 🐛 Fixed
+
+- **Trash failure propagation keyed by `photoId`:** When source-trash fails for one move operation, database path updates now filter by failed photo IDs instead of basenames. This prevents false exclusions when different folders contain files with the same name.
+- **Execution lock leak on early progress failures:** `executeOperations()` and `executeDelete()` now guarantee `endExecution()` via an outer `try/finally`, even if the initial progress update throws.
+
+### 🛠️ Internal
+
+- **Operations service modularized:** Replaced monolithic `services/operations.ts` with focused modules under `services/operations/` (`execution`, `deleter`, `undo`, `dryRun`, `cancel`, `messages`, `progress`, `moveFile`).
+- **`beginExecution()` simplified:** Return type changed to `void` (the previous return value was unused by callers).
+- **`fetchPhotosStrict()` extracted in dry-run flow:** Shared strict photo ID validation is now reused by both delete and copy/move dry runs.
+- **Core destination/path validation centralized:** `normalizePath`, normalized `isSamePath`, and `isForbiddenDestination` now define path safety behavior used by desktop operations.
+- **Delete execution UX tightened:** The cancel button is hidden while delete is running to avoid implying interruptibility during recycle-bin operations.
+
 ## v0.9.4 - Delete Operation & Undo Improvements (Apr 2026)
 
 ### ✨ New
@@ -22,7 +37,7 @@
 - **`confirmTrashUndo(batchId)` IPC channel (`ops:confirmTrashUndo`):** Called after user confirms Recycle Bin restoration. Updates DB photo paths for trashed files and marks the batch as `'undone'`.
 - **`FileOp` type exported from storage barrel.**
 - **`TrashModals.tsx` extracted** from OperationsPanel (750 → 612 lines). Contains `TrashAcknowledgeModal` and `TrashUndoModal`.
-- **`buildExecutionMessage()` helper** extracted in operations.ts with a `plural()` utility — replaces inline string construction.
+- **`buildExecutionMessage()` helper** extracted to `services/operations/messages.ts` with a `plural()` utility — replaces inline string construction.
 - **`deletePhotosByIds()` in photoQueries.ts:** Bulk DELETE with parameterized IN clause.
 
 ## v0.9.3 - Placemark Export/Import & Timeline Fixes (Apr 2026)
