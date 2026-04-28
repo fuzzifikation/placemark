@@ -1,15 +1,20 @@
 # Release Notes
 
-## Unreleased - Operations Reliability & Refactor (Apr 2026)
+## v0.9.5 - UI Polish & Operations Reliability (Apr 2026)
+
+### ✨ New
+
+- **Compact header mode for small screens:** The floating header automatically switches to icon-only mode at window widths below 1100px. All text labels are hidden; only icons and `title` tooltips remain. The branding name and photo count are also hidden. Makes Placemark usable at 1024px monitor width without layout breakage.
 
 ### 🐛 Fixed
 
-- **Trash failure propagation keyed by `photoId`:** When source-trash fails for one move operation, database path updates now filter by failed photo IDs instead of basenames. This prevents false exclusions when different folders contain files with the same name.
-- **Execution lock leak on early progress failures:** `executeOperations()` and `executeDelete()` now guarantee `endExecution()` via an outer `try/finally`, even if the initial progress update throws.
+- **Missing tooltip on "Add folder" button:** The Add button in the floating header had no `title` attribute, so hovering showed nothing in compact mode. Now shows "Add folder to library".
 
 ### 🛠️ Internal
 
 - **Operations service modularized:** Replaced monolithic `services/operations.ts` with focused modules under `services/operations/` (`execution`, `deleter`, `undo`, `dryRun`, `cancel`, `messages`, `progress`, `moveFile`).
+- **Trash failure propagation keyed by `photoId`:** When source-trash fails for one move operation, database path updates now filter by failed photo IDs instead of basenames. This prevents false exclusions when different folders contain files with the same name.
+- **Execution lock leak on early progress failures:** `executeOperations()` and `executeDelete()` now guarantee `endExecution()` via an outer `try/finally`, even if the initial progress update throws.
 - **`beginExecution()` simplified:** Return type changed to `void` (the previous return value was unused by callers).
 - **`fetchPhotosStrict()` extracted in dry-run flow:** Shared strict photo ID validation is now reused by both delete and copy/move dry runs.
 - **Core destination/path validation centralized:** `normalizePath`, normalized `isSamePath`, and `isForbiddenDestination` now define path safety behavior used by desktop operations.

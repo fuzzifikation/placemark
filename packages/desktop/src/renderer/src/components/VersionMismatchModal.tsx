@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, RefreshCw, X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import type { Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
 import {
@@ -44,8 +44,8 @@ export function VersionMismatchModal({
 
   const handleWipe = async () => {
     setWiping(true);
-    await window.api.system.wipeAndRestart();
-    // App will relaunch — this branch is effectively unreachable
+    await window.api.system.wipeAndQuit();
+    // App will exit — this branch is effectively unreachable
   };
 
   return (
@@ -180,14 +180,7 @@ export function VersionMismatchModal({
               gap: SPACING.XS,
             }}
           >
-            {wiping ? (
-              <>
-                <RefreshCw size={14} />
-                Wiping…
-              </>
-            ) : (
-              'Wipe data & restart'
-            )}
+            {wiping ? 'Wiping…' : 'Wipe data & quit'}
           </button>
         </div>
       </div>

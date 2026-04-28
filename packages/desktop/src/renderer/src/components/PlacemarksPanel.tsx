@@ -5,7 +5,17 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Bookmark, Plus, Trash2, Calendar, MapPin, Save, Download, Upload } from 'lucide-react';
+import {
+  X,
+  Bookmark,
+  Plus,
+  Trash2,
+  Calendar,
+  MapPin,
+  Save,
+  FolderOutput,
+  FolderInput,
+} from 'lucide-react';
 import { type Theme } from '../theme';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useReverseGeocoding } from '../hooks/useReverseGeocoding';
@@ -603,7 +613,7 @@ export function PlacemarksPanel({
             }}
             title="Export placemarks to file"
           >
-            <Download size={13} />
+            <FolderOutput size={13} />
           </button>
           <button
             onClick={handleImport}
@@ -625,7 +635,7 @@ export function PlacemarksPanel({
             }}
             title="Import placemarks from file"
           >
-            <Upload size={13} />
+            <FolderInput size={13} />
           </button>
           <button
             onClick={onClose}

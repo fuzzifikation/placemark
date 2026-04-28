@@ -160,7 +160,7 @@ export interface SystemAPI {
   reverseGeocode: (lat: number, lng: number) => Promise<string | null>;
   checkVersionStamp: () => Promise<VersionStampResult>;
   acceptVersionStamp: () => Promise<void>;
-  wipeAndRestart: () => Promise<void>;
+  wipeAndQuit: () => Promise<void>;
 }
 
 export interface PlacemarkWithCount extends Placemark {

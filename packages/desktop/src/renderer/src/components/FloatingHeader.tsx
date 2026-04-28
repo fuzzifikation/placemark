@@ -50,6 +50,7 @@ interface FloatingHeaderProps {
   onScanFolder: () => void;
   onClearLibrary: () => void;
   onHelpOpen: () => void;
+  compact?: boolean;
 }
 
 export function FloatingHeader({
@@ -74,6 +75,7 @@ export function FloatingHeader({
   onScanFolder,
   onClearLibrary,
   onHelpOpen,
+  compact = false,
 }: FloatingHeaderProps) {
   // Reusable styles
   const divider = (
@@ -89,7 +91,7 @@ export function FloatingHeader({
   );
 
   const outlinedButtonBase: React.CSSProperties = {
-    padding: `${SPACING.XS} ${SPACING.MD}`,
+    padding: compact ? SPACING.SM : `${SPACING.XS} ${SPACING.MD}`,
     fontSize: FONT_SIZE.SM,
     fontWeight: FONT_WEIGHT.MEDIUM,
     border: `1px solid ${colors.border}`,
@@ -125,23 +127,24 @@ export function FloatingHeader({
     gap: SPACING.SM,
   };
 
-  const groupLabel = (text: string) => (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: '-12px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        fontSize: FONT_SIZE.XS,
-        color: colors.textMuted,
-        fontWeight: 400,
-        fontFamily: FONT_FAMILY,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {text}
-    </div>
-  );
+  const groupLabel = (text: string) =>
+    compact ? null : (
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '-12px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          fontSize: FONT_SIZE.XS,
+          color: colors.textMuted,
+          fontWeight: 400,
+          fontFamily: FONT_FAMILY,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {text}
+      </div>
+    );
 
   const iconButtonHoverOn = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.currentTarget.style.backgroundColor = colors.surfaceHover;
@@ -181,32 +184,35 @@ export function FloatingHeader({
           src="./icon.png"
           alt="Placemark"
           style={{ width: 32, height: 32, borderRadius: '4px', flexShrink: 0 }}
+          title={compact ? `Placemark — ${photoCount} photos found` : undefined}
         />
-        <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: FONT_SIZE.LG,
-              fontWeight: FONT_WEIGHT.BOLD,
-              color: colors.textPrimary,
-              letterSpacing: '-0.025em',
-              fontFamily: FONT_FAMILY,
-            }}
-          >
-            Placemark
-          </h1>
-          <p
-            style={{
-              margin: 0,
-              color: colors.textSecondary,
-              fontSize: FONT_SIZE.XS,
-              fontWeight: FONT_WEIGHT.NORMAL,
-              fontFamily: FONT_FAMILY,
-            }}
-          >
-            {photoCount} photos found
-          </p>
-        </div>
+        {!compact && (
+          <div>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: FONT_SIZE.LG,
+                fontWeight: FONT_WEIGHT.BOLD,
+                color: colors.textPrimary,
+                letterSpacing: '-0.025em',
+                fontFamily: FONT_FAMILY,
+              }}
+            >
+              Placemark
+            </h1>
+            <p
+              style={{
+                margin: 0,
+                color: colors.textSecondary,
+                fontSize: FONT_SIZE.XS,
+                fontWeight: FONT_WEIGHT.NORMAL,
+                fontFamily: FONT_FAMILY,
+              }}
+            >
+              {photoCount} photos found
+            </p>
+          </div>
+        )}
       </div>
 
       {divider}
@@ -228,7 +234,7 @@ export function FloatingHeader({
             title="Clear library (remove all photos from database)"
           >
             <Trash2 size={16} />
-            Clear
+            {!compact && 'Clear'}
           </button>
 
           {/* Add Folder */}
@@ -249,9 +255,10 @@ export function FloatingHeader({
             onMouseLeave={(e) => {
               if (!scanning) outlinedHoverOff(e);
             }}
+            title="Add folder to library"
           >
             <FolderPlus size={16} />
-            Add
+            {!compact && 'Add'}
           </button>
         </div>
 
@@ -291,7 +298,7 @@ export function FloatingHeader({
         }}
       >
         <History size={16} />
-        Timeline
+        {!compact && 'Timeline'}
       </button>
 
       <button
@@ -313,7 +320,7 @@ export function FloatingHeader({
         }}
       >
         <Bookmark size={16} />
-        Placemarks
+        {!compact && 'Placemarks'}
       </button>
 
       {divider}
@@ -345,7 +352,7 @@ export function FloatingHeader({
             }}
           >
             <Lasso size={16} />
-            Select
+            {!compact && 'Select'}
           </button>
 
           {/* Organize */}
@@ -369,7 +376,7 @@ export function FloatingHeader({
             }}
           >
             <FolderOpen size={16} />
-            Organize {selectionCount > 0 ? `(${selectionCount})` : ''}
+            {!compact && `Organize${selectionCount > 0 ? ` (${selectionCount})` : ''}`}
           </button>
 
           {/* Export */}
@@ -386,7 +393,7 @@ export function FloatingHeader({
             onMouseLeave={outlinedHoverOff}
           >
             <Download size={16} />
-            Export
+            {!compact && 'Export'}
           </button>
         </div>
 

@@ -90,7 +90,7 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke('system:reverseGeocode', lat, lng),
     checkVersionStamp: () => ipcRenderer.invoke('system:checkVersionStamp'),
     acceptVersionStamp: () => ipcRenderer.invoke('system:acceptVersionStamp'),
-    wipeAndRestart: () => ipcRenderer.invoke('system:wipeAndRestart'),
+    wipeAndQuit: () => ipcRenderer.invoke('system:wipeAndQuit'),
   },
   placemarks: {
     getAll: () => ipcRenderer.invoke('placemarks:getAll'),

@@ -123,7 +123,7 @@ export function registerSystemHandlers() {
     }
   });
 
-  ipcMain.handle('system:wipeAndRestart', async () => {
+  ipcMain.handle('system:wipeAndQuit', async () => {
     const userDataPath = app.getPath('userData');
     // Close DB connections before deleting (Windows locks open files)
     const { closeStorage } = await import('../services/storage');
@@ -145,17 +145,14 @@ export function registerSystemHandlers() {
         // File may not exist yet — that's fine
       }
     }
-    // Write fresh version stamp
+    // Write fresh version stamp so next launch doesn't show mismatch again
     try {
       fs.writeFileSync(path.join(userDataPath, 'version.txt'), app.getVersion(), 'utf8');
     } catch {
       // Non-fatal
     }
-    // Use exit(0) instead of quit() to bypass the quit lifecycle (before-quit,
-    // window-all-closed). On Windows, window-all-closed calls app.quit() a second
-    // time which can interfere with the scheduled relaunch. Since DBs are already
-    // closed above, no lifecycle cleanup is needed.
-    app.relaunch();
+    // Just quit — no relaunch. Restarting reliably from within the app is
+    // fragile (especially in dev mode). The user relaunches manually.
     app.exit(0);
   });
 }

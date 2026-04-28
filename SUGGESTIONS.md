@@ -15,10 +15,6 @@
 
 ---
 
-- **Floating header minimum width / responsive layout.** The floating header is a fixed horizontal row with no wrapping or overflow handling. At approximately **~1 200 px** window width (no filter chips active), buttons to the right start clipping outside the visible area and become inaccessible. Recommended two-step fix:
-  1. **Enforce `minWidth: 1220`** in the Electron `BrowserWindow` config as an immediate guard — prevents the broken state entirely for desktop use.
-  2. **Icon-only compact mode** below a ~1 100 px threshold — a `useWindowWidth` hook drives a `compact: boolean` prop on `FloatingHeader`; all buttons hide their text label and show only the icon. Buttons already carry `title` tooltips so keyboard/screen-reader users are unaffected. This cuts ~35–40 % of horizontal width and gives users on smaller displays a usable layout.
-
 - **Global search box: search locations, GPS coordinates, and filenames.** Add a unified search input (global and/or map-scoped) that supports:
   - **Place name lookup** — search by human-readable location (city, POI, admin area) with autocomplete and reverse-geocode suggestions (respect `reverseGeocodeEnabled`).
   - **Direct GPS input** — accept decimal or DMS coordinate pairs and pan the map to the location, with an option to show matching nearby photos.
@@ -60,15 +56,6 @@
 
 - **Duplicate detection: strengthen the current heuristic before considering hashing.** The current `filename + filesize` rule is cheap, but it can incorrectly merge distinct photos once local and OneDrive libraries mix at scale. Investigate a safer duplicate-candidate approach that adds more lightweight metadata, such as **taken date/time**, and possibly camera info or source path context, before auto-skipping an import. Keep hashing as a last resort only — full-content hashes are more correct, but they significantly slow file reads and database ingest, which cuts against Placemark's large-library performance goals.
 
-- **Rename and expand the Stats panel into a "Stats & Filters" panel.** The panel becomes the primary filtering surface for the map — always usable alongside the live map (no modal blocking). Every stat row is a filter. Vision:
-  - **File formats** — click "HEIC (1 243)" to show only HEIC photos on the map. Multiple rows can be selected (OR logic). Active filters appear as dismissible chips in the floating header.
-  - **Cameras** — click "Samsung SM-G991B (412)" to filter. Same chip pattern.
-  - **No GPS** — a dedicated row/badge showing the count of photos that have no coordinates. Clicking it opens a side-list or separate view of those photos (this becomes the natural entry point for the Phase 10 GPS-editing workflow — users can see and act on their unlocated photos without a separate panel).
-  - **More filter dimensions over time:** rating, year, folder/source, orientation (landscape / portrait / square), file size buckets.
-  - **Filter summary header** — when any stats filter is active, a compact "Filtered: 412 of 3 204 photos" line appears at the top of the panel and a "Clear all filters" button appears in the floating header alongside the individual chips.
-  - **Panel stays open while interacting with the map** — important: the stats panel must not capture pointer events outside its own bounds. The map should remain pannable and zoomable while the panel is open.
-  - **Implementation path:** rename `LibraryStatsPanel` → `StatsFiltesPanel` (or keep filename, change title); add `activeFilters: StatsFilter[]` state to `usePhotoData`; extend `getPhotosWithLocation` SQL to accept format/camera/hasGps predicates; pass `onFilterToggle` callback into the panel; chips + "Clear" in `FloatingHeader`. No-GPS filter requires a separate IPC call + list view (Phase 10 dependency — stub the row as non-clickable until then).
-
 - **[Future, skip for now] Drag and Drop.** Electron supports `webContents.startDrag({ files, icon })` for native OS drag. A drag handle chip in the floating header (visible when photos are selected) could let users drag a selection straight into Explorer. **Constraints:** copy-only (OS performs the copy — no dry-run, no undo, DB stays consistent); move via drag is unsafe (DB paths go stale). Not suitable for large batches (no progress/cancel). Complement to Organize, not a replacement. Implementation: drag handle in `FloatingHeader.tsx` → IPC → `event.sender.startDrag()`.
 
 - **Pre-Store: audit and clean up `console.log` statements.** ✅ Already clean — all app code uses `console.error` only in catch blocks. Main process uses the structured `logger` service. No raw debug `console.log` calls in renderer or main.
@@ -87,44 +74,6 @@
   4. Present candidate groups in a UI panel — show thumbnail, path, source, size, date for each. User selects which to keep; the others can be removed from the library (DB record deleted, file optionally trashed).
 
   **Why it's non-trivial:** RAW files can be 30–80 MB; even partial hashing across thousands of candidates adds up. Background processing with progress and cancellation is required. DB schema stays unchanged (no new columns needed). Undo is important — deletions should go to trash, not permanent delete.
-
-- **OneDrive photos: "Open in Viewer" and "Show in Folder" actions.**
-  Both buttons in `PhotoPreviewModal` call `fs.access(photo.path, R_OK)` → `shell.openPath` / `shell.showItemInFolder`. These will silently fail for OneDrive photos because `photo.path` is a cloud identifier, not a local file path. The fix is source-aware branching in both the UI and the IPC handlers.
-
-  **What to store during import (`onedriveImport.ts`):**
-  The Graph API `DriveItem` already carries the fields we need. Store two extra columns during import:
-  - `cloud_web_url TEXT` — the item's `webUrl` (direct HTTPS link to the file's OneDrive web viewer). Available on every `DriveItem`, costs nothing extra.
-  - `cloud_folder_web_url TEXT` — `parentReference.path` gives the folder path but not a clickable URL; instead store the `webUrl` of the folder fetched once via `GET /me/drive/items/{folderId}?$select=webUrl`. Alternatively derive it from the item's own `webUrl` (trim the filename segment). The second approach avoids an extra API call.
-
-  Add both columns to the `photos` schema (instruct user to delete and rebuild DB — alpha).
-
-  **"Open in Viewer" on OneDrive:**
-  Option A (recommended) — **on-demand download to temp, then `shell.openPath`.**
-  - IPC handler checks `photo.source === 'onedrive'`
-  - Calls `GET /me/drive/items/{cloudItemId}/content` (Graph API redirect to CDN URL)
-  - Streams response to `os.tmpdir()/placemark-preview/{photoId}.{ext}`
-  - Opens the local temp file with `shell.openPath()`
-  - Clean up temp file on app exit (or after a configurable TTL, e.g. 30 min)
-  - Show a short loading state in the modal while the download runs (spinner, "Downloading…")
-
-  Option B — open `cloud_web_url` in the browser via `shell.openExternal()`. Zero implementation effort, but the system image viewer never opens — it lands in a browser tab showing OneDrive's built-in viewer. Not consistent with local photo experience.
-
-  Option A is the right call: the user gets their configured image viewer, the experience is identical to local photos.
-
-  **"Show in Folder" on OneDrive:**
-  Rename the button label to **"Open in OneDrive"** when `photo.source === 'onedrive'` and call `shell.openExternal(photo.cloudFolderWebUrl)`. This opens the OneDrive folder in the browser, which is the correct analogy — you can't open a Finder/Explorer window pointing at a cloud path. Internet connection required (make this clear: grey out the button with tooltip "Requires internet" if offline detection is available).
-
-  **UI changes (`PhotoPreviewModal.tsx`):**
-  - Both buttons already receive the full `Photo` object — no prop change needed
-  - Conditionally swap labels: `photo.source === 'onedrive' ? 'Open in OneDrive' : 'Show in Folder'`
-  - "Open in Viewer": show spinner while download is in progress (small loading state beside the button)
-  - No need to hide either button for OneDrive photos — both are meaningful actions
-
-  **IPC changes (`photos.ts`):**
-  - `photos:openInViewer` → branch on `photo.source`; local path: existing `shell.openPath`; OneDrive: download-then-open flow
-  - `photos:showInFolder` → branch on `photo.source`; local path: existing `shell.showItemInFolder`; OneDrive: `shell.openExternal(photo.cloudFolderWebUrl)`
-
-  **Scope note:** temp-file cleanup and a reuse cache (avoid re-downloading the same photo) are nice-to-haves but not blockers. Ship the basic download-to-temp flow first.
 
 - **Concurrent import: parallel EXIF reads (local) and parallel subfolder walks (OneDrive).**
   Both import paths are currently sequential. The shared fix is a `runWithConcurrency(items, limit, asyncFn)` utility — a simple pool that keeps N async tasks in flight at a time, pulling the next item when a slot frees. One implementation, used in both places.
@@ -180,6 +129,12 @@
 ## Addressed
 
 <!-- Move items here once resolved -->
+
+- **Floating header compact mode for small monitors.** `useWindowWidth` hook drives a `compact: boolean` prop on `FloatingHeader`. Below 1100px all text labels are hidden — icons + `title` tooltips remain, making the app usable at 1024px. The branding title/photo-count text is also hidden in compact mode; the logo stays. Group labels ("Library", "Tools") are suppressed too.
+
+- **Stats & Filters panel (clickable format/camera rows + chips).** `LibraryStatsPanel` is now a floating non-blocking glass panel. Format and camera rows are clickable filters (OR logic). Active filters shown as dismissible chips in the strip below the header. Map controls shift right when the stats panel is open.
+
+- **OneDrive photos: "Open in Viewer" and "Open in OneDrive".** `PhotoPreviewModal` is source-aware. For OneDrive photos, "Open in Viewer" downloads the file on-demand to a temp path and opens it in the OS default viewer. "Show in Folder" is relabelled "Open in OneDrive" and opens the parent folder in the browser via `shell.openExternal`.
 
 - **OneDrive import: "include subdirectories" toggle.** The subfolder toggle in `ScanOverlay` is now shared between local and OneDrive import modes. `useFolderScan.importOneDriveFolder` already threaded the param through to the IPC call; the only change was rendering the toggle in the OneDrive branch of `ScanOverlay`.
 

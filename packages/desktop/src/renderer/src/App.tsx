@@ -25,6 +25,7 @@ import { useScanActions } from './hooks/useScanActions';
 import { useTimelineActions } from './hooks/useTimelineActions';
 import { usePlacemarkActions } from './hooks/usePlacemarkActions';
 import { useExportData } from './hooks/useExportData';
+import { useWindowWidth } from './hooks/useWindowWidth';
 import { ToastContainer } from './components/Toast/ToastContainer';
 import { initSystemLocale } from './utils/formatLocale';
 import { LAYOUT, Z_INDEX, TRANSITIONS, getGlassStyle } from './constants/ui';
@@ -101,6 +102,8 @@ function App() {
   });
 
   const exportData = useExportData({ photoData });
+  const windowWidth = useWindowWidth();
+  const compactHeader = windowWidth < 1100;
 
   // --- Side effects ---
   useEffect(() => {
@@ -260,6 +263,7 @@ function App() {
           onScanFolder={() => modals.setShowScanOverlay(true)}
           onClearLibrary={scanActions.handleClearLibrary}
           onHelpOpen={() => modals.setShowHelp(true)}
+          compact={compactHeader}
         />
       </div>
 

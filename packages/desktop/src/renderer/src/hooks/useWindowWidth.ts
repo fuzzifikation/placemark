@@ -1,0 +1,17 @@
+import { useState, useEffect } from 'react';
+
+/**
+ * Returns the current window inner width, updating on resize.
+ * Used to drive compact/responsive layout changes.
+ */
+export function useWindowWidth(): number {
+  const [width, setWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return width;
+}
